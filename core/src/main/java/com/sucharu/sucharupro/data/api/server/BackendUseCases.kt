@@ -17778,6 +17778,140 @@ class BackendUseCases(
         return service.exportHandoffContract(principal.projectId, selectionId)
     }
 
+    // --- Module 19 Step 04: Auto-Replenishment Triggers & Supplier Reorder Alerts ---
+
+    suspend fun evaluateSubstrateReplenishment(
+        principal: AuthenticatedPrincipal,
+        request: EvaluateSubstrateReplenishmentRequestDto
+    ): SubstrateReplenishmentResponseDto {
+        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.AI_AGENT)
+        val service = repositoryFactory.createSubstrateReplenishmentService(principal.projectId)
+
+        val stockType = try {
+            PaperStockType.valueOf(request.stockType)
+        } catch (_: Exception) {
+            PaperStockType.ART_PAPER
+        }
+
+        val policyType = try {
+            ReplenishmentPolicyType.valueOf(request.policyType)
+        } catch (_: Exception) {
+            ReplenishmentPolicyType.DEMAND_AWARE
+        }
+
+        val policy = SubstrateReplenishmentPolicy(
+            policyId = "POL-${request.sku}-${principal.projectId}",
+            tenantId = principal.projectId,
+            sku = request.sku,
+            policyType = policyType,
+            minimumStockSheets = request.minimumStockSheets,
+            safetyStockSheets = request.safetyStockSheets,
+            reorderPointSheets = request.reorderPointSheets,
+            targetStockSheets = request.targetStockSheets,
+            minimumOrderQuantitySheets = request.minimumOrderQuantitySheets,
+            standardPackReamSize = request.standardPackReamSize,
+            leadTimeDays = request.leadTimeDays,
+            policyVersion = request.policyVersion
+        )
+
+        // Query active vendors from Module 12 authority
+        val vendorRepo = repositoryFactory.createVendorRepository()
+        val vendors = when (val res = vendorRepo.listVendors(principal.projectId, status = com.sucharu.sucharupro.domain.model.vendor.VendorStatus.ACTIVE)) {
+            is DomainResult.Success -> res.data
+            else -> emptyList()
+        }
+
+        val input = SubstrateReplenishmentEngine.EvaluationInput(
+            tenantId = principal.projectId,
+            productId = request.productId,
+            sku = request.sku,
+            materialName = request.materialName,
+            stockType = stockType,
+            gsm = request.gsm,
+            sheetDimension = PrintingDimension(
+                width = request.sheetWidthMm,
+                height = request.sheetHeightMm,
+                unit = MeasurementUnit.MILLIMETERS
+            ),
+            warehouseId = request.warehouseId,
+            warehouseName = request.warehouseName,
+            onHandPhysicalSheets = request.onHandPhysicalSheets,
+            activeReservedSheets = request.activeReservedSheets,
+            pendingInboundSheets = request.pendingInboundSheets,
+            plannedDemandSheets = request.plannedDemandSheets,
+            policy = policy,
+            candidateVendors = vendors,
+            evaluator = principal.username
+        )
+
+        val result = service.evaluateReplenishment(principal.projectId, input)
+        return result.toDto()
+    }
+
+    suspend fun triggerSupplierReorderAlert(
+        principal: AuthenticatedPrincipal,
+        evaluationId: String,
+        vendorId: String? = null
+    ): SupplierReorderAlertResponseDto {
+        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF)
+        val service = repositoryFactory.createSubstrateReplenishmentService(principal.projectId)
+        val alert = service.triggerSupplierAlert(principal.projectId, evaluationId, vendorId, principal.username)
+        return alert.toDto()
+    }
+
+    suspend fun updateSubstrateReplenishmentStatus(
+        principal: AuthenticatedPrincipal,
+        evaluationId: String,
+        newStateStr: String,
+        reason: String
+    ): SubstrateReplenishmentResponseDto {
+        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF)
+        val service = repositoryFactory.createSubstrateReplenishmentService(principal.projectId)
+        val newState = ReplenishmentTriggerState.valueOf(newStateStr)
+        val updated = service.updateReplenishmentStatus(principal.projectId, evaluationId, newState, reason, principal.username)
+        return updated.toDto()
+    }
+
+    suspend fun getSubstrateReplenishmentEvaluation(
+        principal: AuthenticatedPrincipal,
+        evaluationId: String
+    ): SubstrateReplenishmentResponseDto? {
+        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.AI_AGENT)
+        val service = repositoryFactory.createSubstrateReplenishmentService(principal.projectId)
+        return service.getEvaluationById(principal.projectId, evaluationId)?.toDto()
+    }
+
+    suspend fun listSubstrateReplenishmentEvaluations(
+        principal: AuthenticatedPrincipal,
+        sku: String? = null,
+        stateStr: String? = null,
+        limit: Int = 50
+    ): List<SubstrateReplenishmentResponseDto> {
+        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.AI_AGENT)
+        val service = repositoryFactory.createSubstrateReplenishmentService(principal.projectId)
+        val state = stateStr?.let { runCatching { ReplenishmentTriggerState.valueOf(it) }.getOrNull() }
+        return service.listEvaluations(principal.projectId, sku, state, limit).map { it.toDto() }
+    }
+
+    suspend fun listSupplierReorderAlerts(
+        principal: AuthenticatedPrincipal,
+        evaluationId: String? = null,
+        limit: Int = 50
+    ): List<SupplierReorderAlertResponseDto> {
+        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.AI_AGENT)
+        val service = repositoryFactory.createSubstrateReplenishmentService(principal.projectId)
+        return service.listAlerts(principal.projectId, evaluationId, limit).map { it.toDto() }
+    }
+
+    suspend fun exportSubstrateReplenishmentHandoff(
+        principal: AuthenticatedPrincipal,
+        evaluationId: String
+    ): Module19Step04ReplenishmentHandoffContract {
+        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.AI_AGENT)
+        val service = repositoryFactory.createSubstrateReplenishmentService(principal.projectId)
+        return service.exportHandoffContract(principal.projectId, evaluationId)
+    }
+
     // ========================================================================
     // SECTION 75: DYNAMIC IMPOSITION & SHEET LAYOUT (Module 18 Step 01)
     // ========================================================================

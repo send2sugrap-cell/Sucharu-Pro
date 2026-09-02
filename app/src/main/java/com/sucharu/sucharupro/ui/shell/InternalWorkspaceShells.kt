@@ -282,6 +282,14 @@ fun InternalWorkspaceShell(
             com.sucharu.sucharupro.ui.features.substratereservation.SubstrateBatchSelectionCommandCenterScreen(
                 viewModel = androidx.lifecycle.viewmodel.compose.viewModel()
             )
+        } else if (currentDestination == AppDestination.Staff.SubstrateReplenishment ||
+            currentDestination == AppDestination.Manager.SubstrateReplenishment ||
+            currentDestination == AppDestination.Admin.SubstrateReplenishment
+        ) {
+            com.sucharu.sucharupro.ui.features.substratereservation.SubstrateReplenishmentCommandCenterScreen(
+                viewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
+                onNavigateBack = {}
+            )
         } else {
             Surface(
                 color = Color(0xFF1C2541),

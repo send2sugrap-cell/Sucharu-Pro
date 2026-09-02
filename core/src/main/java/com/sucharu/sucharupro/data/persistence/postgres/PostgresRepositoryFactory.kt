@@ -1964,6 +1964,28 @@ open class PostgresRepositoryFactory(
         )
     }
 
+    open fun createSubstrateReplenishmentDataSource(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.data.datasource.substratereservation.SubstrateReplenishmentDataSource {
+        return PostgresSubstrateReplenishmentDataSource(transactionManager)
+    }
+
+    open fun createSubstrateReplenishmentRepository(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.domain.repository.substratereservation.SubstrateReplenishmentRepository {
+        val dataSource = createSubstrateReplenishmentDataSource(tenantId)
+        return com.sucharu.sucharupro.data.repository.substratereservation.SubstrateReplenishmentRepositoryImpl(dataSource)
+    }
+
+    open fun createSubstrateReplenishmentService(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.domain.service.substratereservation.SubstrateReplenishmentService {
+        val repo = createSubstrateReplenishmentRepository(tenantId)
+        return com.sucharu.sucharupro.domain.service.substratereservation.SubstrateReplenishmentServiceImpl(
+            repository = repo
+        )
+    }
+
     // --- Module 18: Advanced Dynamic Imposition & Gang-Run Optimizer Engine ---
 
     open fun createImpositionDataSource(

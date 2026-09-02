@@ -2700,7 +2700,68 @@ class BackendRouter(
             HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
         }
 
-        request.path.startsWith("/api/v1/substrate-reservations") && request.method == "GET" && !request.path.contains("/jobs/") && !request.path.contains("/ai-handoff") && !request.path.contains("/step02-handoff") && !request.path.startsWith("/api/v1/substrate-reservations/real-time-availability") && (request.path == "/api/v1/substrate-reservations" || request.path.startsWith("/api/v1/substrate-reservations?")) -> {
+        // --- Module 19 Step 04: Auto-Replenishment Triggers & Supplier Reorder Alerts ---
+
+        request.path == "/api/v1/substrate-reservations/replenishment/evaluate" && request.method == "POST" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val reqDto = parseEvaluateSubstrateReplenishmentRequest(request.body)
+            val res = useCases.evaluateSubstrateReplenishment(principal, reqDto)
+            HttpResponse(201, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/substrate-reservations/replenishment/[^/]+/alert$")) && request.method == "POST" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val evaluationId = request.path.removePrefix("/api/v1/substrate-reservations/replenishment/").removeSuffix("/alert")
+            val map = parseBodyMap(request.body)
+            val vendorId = map["vendorId"]?.toString()
+            val res = useCases.triggerSupplierReorderAlert(principal, evaluationId, vendorId)
+            HttpResponse(201, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/substrate-reservations/replenishment/[^/]+/status$")) && request.method == "POST" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val evaluationId = request.path.removePrefix("/api/v1/substrate-reservations/replenishment/").removeSuffix("/status")
+            val map = parseBodyMap(request.body)
+            val newState = map["newState"]?.toString() ?: "PROCUREMENT_PENDING"
+            val reason = map["reason"]?.toString() ?: "Status transition requested"
+            val res = useCases.updateSubstrateReplenishmentStatus(principal, evaluationId, newState, reason)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/substrate-reservations/replenishment/[^/]+/handoff$")) && request.method == "GET" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val evaluationId = request.path.removePrefix("/api/v1/substrate-reservations/replenishment/").removeSuffix("/handoff")
+            val res = useCases.exportSubstrateReplenishmentHandoff(principal, evaluationId)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.startsWith("/api/v1/substrate-reservations/replenishment/alerts") && request.method == "GET" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val queryParams = parseQueryParams(request.path)
+            val evaluationId = queryParams["evaluationId"]
+            val limit = queryParams["limit"]?.toIntOrNull() ?: 50
+            val res = useCases.listSupplierReorderAlerts(principal, evaluationId, limit)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.startsWith("/api/v1/substrate-reservations/replenishment") && request.method == "GET" && (request.path == "/api/v1/substrate-reservations/replenishment" || request.path.startsWith("/api/v1/substrate-reservations/replenishment?")) -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val queryParams = parseQueryParams(request.path)
+            val sku = queryParams["sku"]
+            val state = queryParams["state"]
+            val limit = queryParams["limit"]?.toIntOrNull() ?: 50
+            val res = useCases.listSubstrateReplenishmentEvaluations(principal, sku, state, limit)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/substrate-reservations/replenishment/[^/]+$")) && request.method == "GET" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val evaluationId = request.path.removePrefix("/api/v1/substrate-reservations/replenishment/")
+            val res = useCases.getSubstrateReplenishmentEvaluation(principal, evaluationId)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.startsWith("/api/v1/substrate-reservations") && request.method == "GET" && !request.path.contains("/jobs/") && !request.path.contains("/ai-handoff") && !request.path.contains("/step02-handoff") && !request.path.startsWith("/api/v1/substrate-reservations/real-time-availability") && !request.path.startsWith("/api/v1/substrate-reservations/batch-selection") && !request.path.startsWith("/api/v1/substrate-reservations/replenishment") && (request.path == "/api/v1/substrate-reservations" || request.path.startsWith("/api/v1/substrate-reservations?")) -> {
             val principal = securityContext.authenticate(request.authorizationHeader)
             val queryParams = parseQueryParams(request.path)
             val limit = queryParams["limit"]?.toIntOrNull() ?: 50
@@ -15527,6 +15588,39 @@ private fun parseEvaluateBatchSelectionRequest(body: Any?): com.sucharu.sucharup
             selectionPolicy = map["selectionPolicy"]?.toString() ?: "FIFO",
             preferredWarehouseId = map["preferredWarehouseId"]?.toString(),
             candidateBatches = candidates
+        )
+    }
+}
+
+@Suppress("UNCHECKED_CAST")
+private fun parseEvaluateSubstrateReplenishmentRequest(body: Any?): com.sucharu.sucharupro.data.api.model.substratereservation.EvaluateSubstrateReplenishmentRequestDto = when (body) {
+    is com.sucharu.sucharupro.data.api.model.substratereservation.EvaluateSubstrateReplenishmentRequestDto -> body
+    else -> {
+        val map = parseBodyMap(body)
+        com.sucharu.sucharupro.data.api.model.substratereservation.EvaluateSubstrateReplenishmentRequestDto(
+            productId = map["productId"]?.toString() ?: "PROD-SUB-01",
+            sku = map["sku"]?.toString() ?: "",
+            materialName = map["materialName"]?.toString() ?: "",
+            stockType = map["stockType"]?.toString() ?: "ART_PAPER",
+            gsm = (map["gsm"]?.toString() ?: "120.0000").toBigDecimalOrNull() ?: BigDecimal("120.0000"),
+            sheetWidthMm = (map["sheetWidthMm"]?.toString() ?: "635.0000").toBigDecimalOrNull() ?: BigDecimal("635.0000"),
+            sheetHeightMm = (map["sheetHeightMm"]?.toString() ?: "914.4000").toBigDecimalOrNull() ?: BigDecimal("914.4000"),
+            warehouseId = map["warehouseId"]?.toString() ?: "WH-MAIN-01",
+            warehouseName = map["warehouseName"]?.toString() ?: "Central Warehouse",
+            onHandPhysicalSheets = (map["onHandPhysicalSheets"] as? Number)?.toLong() ?: map["onHandPhysicalSheets"]?.toString()?.toLongOrNull() ?: 0L,
+            activeReservedSheets = (map["activeReservedSheets"] as? Number)?.toLong() ?: map["activeReservedSheets"]?.toString()?.toLongOrNull() ?: 0L,
+            pendingInboundSheets = (map["pendingInboundSheets"] as? Number)?.toLong() ?: map["pendingInboundSheets"]?.toString()?.toLongOrNull() ?: 0L,
+            plannedDemandSheets = (map["plannedDemandSheets"] as? Number)?.toLong() ?: map["plannedDemandSheets"]?.toString()?.toLongOrNull() ?: 0L,
+            policyType = map["policyType"]?.toString() ?: "DEMAND_AWARE",
+            minimumStockSheets = (map["minimumStockSheets"] as? Number)?.toLong() ?: map["minimumStockSheets"]?.toString()?.toLongOrNull() ?: 2000L,
+            safetyStockSheets = (map["safetyStockSheets"] as? Number)?.toLong() ?: map["safetyStockSheets"]?.toString()?.toLongOrNull() ?: 4000L,
+            reorderPointSheets = (map["reorderPointSheets"] as? Number)?.toLong() ?: map["reorderPointSheets"]?.toString()?.toLongOrNull() ?: 10000L,
+            targetStockSheets = (map["targetStockSheets"] as? Number)?.toLong() ?: map["targetStockSheets"]?.toString()?.toLongOrNull() ?: 30000L,
+            minimumOrderQuantitySheets = (map["minimumOrderQuantitySheets"] as? Number)?.toLong() ?: map["minimumOrderQuantitySheets"]?.toString()?.toLongOrNull() ?: 5000L,
+            standardPackReamSize = (map["standardPackReamSize"] as? Number)?.toInt() ?: map["standardPackReamSize"]?.toString()?.toIntOrNull() ?: 500,
+            leadTimeDays = (map["leadTimeDays"] as? Number)?.toInt() ?: map["leadTimeDays"]?.toString()?.toIntOrNull() ?: 5,
+            policyVersion = map["policyVersion"]?.toString() ?: "1.0.0",
+            notes = map["notes"]?.toString()
         )
     }
 }
