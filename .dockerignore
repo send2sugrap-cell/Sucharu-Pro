@@ -1,0 +1,24 @@
+# ==============================================================================
+# SUCHARU PRO — DOCKER BUILD IGNORE
+# ==============================================================================
+# Never copy build artifacts, secrets, credentials, or development caches into image context
+
+.git
+.gitignore
+.gradle
+.idea
+.kotlin
+*.log
+*.hprof
+*.tmp
+local.properties
+.env*
+!deploy/.env.production.example
+backend/build/reports
+backend/build/test-results
+core/build/reports
+core/build/test-results
+app/build
+docs
+.artifacts
+scratch

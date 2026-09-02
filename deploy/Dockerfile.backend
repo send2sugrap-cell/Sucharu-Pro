@@ -1,0 +1,43 @@
+# ==============================================================================
+# SUCHARU PRO PRODUCTION BACKEND DOCKERFILE (INFRA-05 Step 07)
+# ==============================================================================
+# Multi-stage or optimized runtime container for standalone Sucharu Pro backend.
+# Guarantees least privilege non-root execution, container-aware JVM memory tuning,
+# and deterministic health probe compatibility.
+
+FROM eclipse-temurin:17-jre-alpine AS runtime
+
+LABEL maintainer="Sucharu Pro Engineering <engineering@sucharu.pro>"
+LABEL description="Sucharu Pro Commercial Printing ERP Production Backend Runtime"
+LABEL version="1.0.0"
+
+# Security: Install curl for healthchecks and ca-certificates, then clean apk cache
+RUN apk update && \
+    apk add --no-cache curl ca-certificates && \
+    rm -rf /var/cache/apk/*
+
+# Security: Create non-root system user and group (UID/GID: 10001)
+RUN addgroup -g 10001 -S sucharu && \
+    adduser -u 10001 -S sucharu -G sucharu -s /sbin/nologin
+
+WORKDIR /app
+
+# Copy executable production fat JAR (built by Gradle: `./gradlew :backend:jar`)
+COPY --chown=sucharu:sucharu backend/build/libs/sucharu-server.jar /app/sucharu-server.jar
+
+# Enforce non-root execution
+USER sucharu:sucharu
+
+# Runtime Environment Defaults (Override in docker-compose or Kubernetes secrets)
+ENV PORT=8080
+ENV ENVIRONMENT=production
+ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:+UseG1GC -XX:+ExitOnOutOfMemoryError -Djava.security.egd=file:/dev/./urandom"
+
+EXPOSE 8080
+
+# Production Healthcheck using native /ready endpoint
+HEALTHCHECK --interval=15s --timeout=5s --start-period=20s --retries=3 \
+  CMD curl -f http://localhost:8080/ready || exit 1
+
+# Launch backend runtime
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar /app/sucharu-server.jar"]

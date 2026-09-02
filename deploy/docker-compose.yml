@@ -1,0 +1,84 @@
+version: '3.8'
+
+# ==============================================================================
+# SUCHARU PRO ERP — LOCAL & STAGING DOCKER COMPOSE CONFIGURATION
+# ==============================================================================
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: sucharu_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DATABASE_NAME:-sucharu_pro_db}
+      POSTGRES_USER: ${DATABASE_USER:-sucharu_app}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-sucharu_local_dev_pass_2026}
+    ports:
+      - "${DATABASE_PORT:-5432}:5432"
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER:-sucharu_app} -d ${DATABASE_NAME:-sucharu_pro_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sucharu_network
+
+  redis:
+    image: redis:7-alpine
+    container_name: sucharu_redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_dev_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    networks:
+      - sucharu_network
+
+  backend:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.backend
+    container_name: sucharu_backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ENVIRONMENT: development
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_NAME: ${DATABASE_NAME:-sucharu_pro_db}
+      DATABASE_USER: ${DATABASE_USER:-sucharu_app}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:-sucharu_local_dev_pass_2026}
+      DATABASE_URL: jdbc:postgresql://postgres:5432/${DATABASE_NAME:-sucharu_pro_db}
+      DATABASE_POOL_SIZE: ${DATABASE_POOL_SIZE:-10}
+      PORT: 8080
+      JWT_SIGNING_SECRET: ${JWT_SIGNING_SECRET:-sucharu_local_development_jwt_secret_key_32_chars}
+      FLYWAY_ENABLED: "true"
+      MIGRATION_MODE: "AUTO_APPLY"
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/ready || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    networks:
+      - sucharu_network
+
+volumes:
+  postgres_dev_data:
+    driver: local
+  redis_dev_data:
+    driver: local
+
+networks:
+  sucharu_network:
+    driver: bridge

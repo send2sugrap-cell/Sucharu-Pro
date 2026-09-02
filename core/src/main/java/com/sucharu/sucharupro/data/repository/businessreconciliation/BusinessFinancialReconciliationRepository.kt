@@ -1,0 +1,30 @@
+package com.sucharu.sucharupro.data.repository.businessreconciliation
+
+import com.sucharu.sucharupro.data.datasource.businessreconciliation.*
+import com.sucharu.sucharupro.domain.model.businessreconciliation.*
+
+interface BusinessFinancialReconciliationRepository {
+    // Runs
+    suspend fun createRun(run: BusinessFinancialReconciliationRun): BusinessFinancialReconciliationRun
+    suspend fun updateRun(run: BusinessFinancialReconciliationRun): BusinessFinancialReconciliationRun
+    suspend fun findRunById(id: String, tenantId: String, projectId: String): BusinessFinancialReconciliationRun?
+    suspend fun findRunByNumber(runNumber: String, tenantId: String, projectId: String): BusinessFinancialReconciliationRun?
+    suspend fun listRuns(tenantId: String, projectId: String, filter: ReconciliationRunFilter = ReconciliationRunFilter()): List<BusinessFinancialReconciliationRun>
+    suspend fun countRuns(tenantId: String, projectId: String, filter: ReconciliationRunFilter = ReconciliationRunFilter()): Long
+
+    // Discrepancies
+    suspend fun createDiscrepancy(discrepancy: BusinessFinancialReconciliationDiscrepancy): BusinessFinancialReconciliationDiscrepancy
+    suspend fun createDiscrepanciesBatch(discrepancies: List<BusinessFinancialReconciliationDiscrepancy>): List<BusinessFinancialReconciliationDiscrepancy>
+    suspend fun updateDiscrepancy(discrepancy: BusinessFinancialReconciliationDiscrepancy): BusinessFinancialReconciliationDiscrepancy
+    suspend fun findDiscrepancyById(id: String, tenantId: String, projectId: String): BusinessFinancialReconciliationDiscrepancy?
+    suspend fun listDiscrepancies(tenantId: String, projectId: String, filter: DiscrepancyFilter = DiscrepancyFilter()): List<BusinessFinancialReconciliationDiscrepancy>
+    suspend fun countDiscrepancies(tenantId: String, projectId: String, filter: DiscrepancyFilter = DiscrepancyFilter()): Long
+
+    // Snapshots
+    suspend fun saveSnapshot(snapshot: BusinessFinancialReconciliationSnapshot): BusinessFinancialReconciliationSnapshot
+    suspend fun findSnapshotByRunId(runId: String, tenantId: String, projectId: String): BusinessFinancialReconciliationSnapshot?
+
+    // Audit Events
+    suspend fun recordAuditEvent(event: BusinessFinancialReconciliationAuditEvent): BusinessFinancialReconciliationAuditEvent
+    suspend fun listAuditEvents(tenantId: String, projectId: String, runId: String? = null, discrepancyId: String? = null): List<BusinessFinancialReconciliationAuditEvent>
+}

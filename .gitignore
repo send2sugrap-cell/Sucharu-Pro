@@ -1,0 +1,45 @@
+# Built application files
+*.apk
+*.aar
+*.aab
+*.bundle
+
+# Android Studio / IntelliJ / Eclipse / Visual Studio Code
+*.iml
+.idea/
+.gradle/
+.kotlin/
+.artifacts/
+local.properties
+/local.properties
+.DS_Store
+Thumbs.db
+
+# Build and cache directories
+build/
+**/build/
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Log files and crash dumps
+*.log
+hs_err_pid*
+replay_pid*
+test_output.txt
+
+# Secrets & Local Environment (Use .example files for templates)
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+*.keystore
+*.jks
+*.p12
+
+# OS / Temporary
+*.tmp
+*.bak
+*.swp
+*~

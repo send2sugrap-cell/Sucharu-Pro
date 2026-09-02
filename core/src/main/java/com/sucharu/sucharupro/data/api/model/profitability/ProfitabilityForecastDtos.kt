@@ -1,0 +1,551 @@
+package com.sucharu.sucharupro.data.api.model.profitability
+
+import com.sucharu.sucharupro.domain.model.profitability.*
+import java.math.BigDecimal
+
+data class ProfitabilityGenerateForecastRequestDto(
+    val targetScope: String = "BUSINESS",
+    val targetEntityId: String = "ALL",
+    val targetEntityLabel: String = "All Business Operations",
+    val historicalPeriodStart: String = "2026-M01",
+    val historicalPeriodEnd: String = "2026-M08",
+    val forecastPeriodStart: String = "2026-M09",
+    val forecastPeriodEnd: String = "2026-M09",
+    val horizon: String = "NEXT_1_PERIOD",
+    val forecastMethod: String = "ROLLING_AVERAGE",
+    val scenarioType: String = "BASELINE",
+    val scenarioId: String? = null,
+    val idempotencyKey: String? = null
+)
+
+data class CreateScenarioRequestDto(
+    val scenarioName: String,
+    val scenarioType: String = "CUSTOM",
+    val description: String? = null,
+    val targetScope: String = "BUSINESS",
+    val revenueAdjustmentPercentage: BigDecimal = BigDecimal.ZERO,
+    val volumeAdjustmentPercentage: BigDecimal = BigDecimal.ZERO,
+    val materialCostAdjustmentPercentage: BigDecimal = BigDecimal.ZERO,
+    val labourCostAdjustmentPercentage: BigDecimal = BigDecimal.ZERO,
+    val machineCostAdjustmentPercentage: BigDecimal = BigDecimal.ZERO,
+    val vendorCostAdjustmentPercentage: BigDecimal = BigDecimal.ZERO,
+    val reworkAdjustmentPercentage: BigDecimal = BigDecimal.ZERO,
+    val wastageAdjustmentPercentage: BigDecimal = BigDecimal.ZERO,
+    val indirectCostAdjustmentPercentage: BigDecimal = BigDecimal.ZERO,
+    val assumptions: List<ScenarioAssumptionDto> = emptyList()
+)
+
+data class ScenarioAssumptionDto(
+    val assumptionId: String,
+    val scenarioId: String,
+    val parameterKey: String,
+    val parameterName: String,
+    val parameterDescription: String? = null,
+    val adjustmentPercentage: BigDecimal = BigDecimal.ZERO,
+    val absoluteAdjustmentAmount: BigDecimal? = null,
+    val isApplied: Boolean = true
+)
+
+data class ProfitabilityScenarioDto(
+    val scenarioId: String,
+    val tenantId: String,
+    val projectId: String,
+    val scenarioName: String,
+    val scenarioType: String,
+    val description: String?,
+    val targetScope: String,
+    val revenueAdjustmentPercentage: BigDecimal,
+    val volumeAdjustmentPercentage: BigDecimal,
+    val materialCostAdjustmentPercentage: BigDecimal,
+    val labourCostAdjustmentPercentage: BigDecimal,
+    val machineCostAdjustmentPercentage: BigDecimal,
+    val vendorCostAdjustmentPercentage: BigDecimal,
+    val reworkAdjustmentPercentage: BigDecimal,
+    val wastageAdjustmentPercentage: BigDecimal,
+    val indirectCostAdjustmentPercentage: BigDecimal,
+    val assumptions: List<ScenarioAssumptionDto>,
+    val createdAt: Long,
+    val createdBy: String,
+    val isDefault: Boolean
+)
+
+data class ProfitabilityForecastComponentDto(
+    val componentId: String,
+    val forecastId: String,
+    val tenantId: String,
+    val componentType: String,
+    val projectedAmount: BigDecimal,
+    val percentageOfTotalCost: BigDecimal,
+    val baselineAmount: BigDecimal?,
+    val deltaAmount: BigDecimal?,
+    val growthRatePercentage: BigDecimal?,
+    val driverDescription: String?
+)
+
+data class ForecastManagementInsightDto(
+    val insightId: String,
+    val forecastId: String,
+    val tenantId: String,
+    val insightType: String,
+    val severity: String,
+    val dimensionType: String,
+    val targetEntityId: String,
+    val targetEntityLabel: String,
+    val title: String,
+    val explanation: String,
+    val financialImpact: BigDecimal,
+    val supportingSourceReferences: List<String>,
+    val recommendedActionCode: String?,
+    val generatedAt: Long
+)
+
+data class ProfitabilityForecastProvenanceDto(
+    val provenanceId: String,
+    val forecastId: String,
+    val tenantId: String,
+    val projectId: String,
+    val sourceModule: String,
+    val sourceEntityType: String,
+    val sourceEntityId: String,
+    val sourceSnapshotId: String?,
+    val sourcePeriodId: String?,
+    val metricType: String,
+    val amount: BigDecimal,
+    val fingerprint: String
+)
+
+data class ProfitabilityForecastSnapshotDto(
+    val forecastId: String,
+    val tenantId: String,
+    val projectId: String,
+    val forecastVersion: Int,
+    val forecastMethod: String,
+    val scenarioType: String,
+    val scenarioId: String?,
+    val targetScope: String,
+    val targetEntityId: String,
+    val targetEntityLabel: String,
+    val historicalPeriodStart: String,
+    val historicalPeriodEnd: String,
+    val forecastPeriodStart: String,
+    val forecastPeriodEnd: String,
+    val horizon: String,
+    val currency: String,
+    val status: String,
+    val projectedRevenue: BigDecimal,
+    val projectedTotalCost: BigDecimal,
+    val projectedGrossProfit: BigDecimal,
+    val projectedGrossMarginPercentage: BigDecimal?,
+    val projectedContribution: BigDecimal,
+    val projectedContributionMarginPercentage: BigDecimal?,
+    val projectedUnits: Long,
+    val projectedRevenuePerUnit: BigDecimal?,
+    val projectedCostPerUnit: BigDecimal?,
+    val projectedProfitPerUnit: BigDecimal?,
+    val baselineRevenue: BigDecimal?,
+    val baselineCost: BigDecimal?,
+    val baselineGrossProfit: BigDecimal?,
+    val baselineGrossMarginPercentage: BigDecimal?,
+    val projectedRevenueDelta: BigDecimal?,
+    val projectedCostDelta: BigDecimal?,
+    val projectedProfitDelta: BigDecimal?,
+    val projectedMarginDeltaPercentage: BigDecimal?,
+    val breakEvenRevenue: BigDecimal?,
+    val breakEvenUnits: Long?,
+    val marginOfSafetyPercentage: BigDecimal?,
+    val isBreakEvenAttainable: Boolean,
+    val confidenceScore: BigDecimal,
+    val confidenceLevel: String,
+    val riskLevel: String,
+    val sourceReadiness: String,
+    val componentCount: Int,
+    val assumptionCount: Int,
+    val insightCount: Int,
+    val generatedAt: Long,
+    val generatedBy: String,
+    val calculationVersion: String,
+    val integrityHash: String,
+    val warnings: List<String>
+)
+
+data class ProfitabilityScenarioComparisonItemDto(
+    val scenarioId: String,
+    val scenarioName: String,
+    val scenarioType: String,
+    val projectedRevenue: BigDecimal,
+    val projectedTotalCost: BigDecimal,
+    val projectedGrossProfit: BigDecimal,
+    val projectedGrossMarginPercentage: BigDecimal?,
+    val projectedContribution: BigDecimal,
+    val projectedContributionMarginPercentage: BigDecimal?,
+    val projectedUnits: Long,
+    val revenueDeltaFromBaseline: BigDecimal,
+    val costDeltaFromBaseline: BigDecimal,
+    val profitDeltaFromBaseline: BigDecimal,
+    val marginDeltaFromBaselinePercentage: BigDecimal?,
+    val financialImpact: BigDecimal,
+    val riskLevel: String
+)
+
+data class ProfitabilityScenarioComparisonDto(
+    val comparisonId: String,
+    val tenantId: String,
+    val projectId: String,
+    val baselineForecastId: String,
+    val targetScope: String,
+    val targetEntityId: String,
+    val horizon: String,
+    val baselineScenario: ProfitabilityScenarioComparisonItemDto,
+    val comparedScenarios: List<ProfitabilityScenarioComparisonItemDto>,
+    val generatedAt: Long
+)
+
+data class ForecastActualComparisonDto(
+    val comparisonId: String,
+    val tenantId: String,
+    val projectId: String,
+    val forecastId: String,
+    val actualPeriodId: String,
+    val targetScope: String,
+    val targetEntityId: String,
+    val targetEntityLabel: String,
+    val forecastRevenue: BigDecimal,
+    val actualRevenue: BigDecimal,
+    val revenueVariance: BigDecimal,
+    val revenueVariancePercentage: BigDecimal?,
+    val forecastCost: BigDecimal,
+    val actualCost: BigDecimal,
+    val costVariance: BigDecimal,
+    val costVariancePercentage: BigDecimal?,
+    val forecastGrossProfit: BigDecimal,
+    val actualGrossProfit: BigDecimal,
+    val profitVariance: BigDecimal,
+    val profitVariancePercentage: BigDecimal?,
+    val forecastMarginPercentage: BigDecimal?,
+    val actualMarginPercentage: BigDecimal?,
+    val marginVariancePercentage: BigDecimal?,
+    val forecastUnits: Long,
+    val actualUnits: Long,
+    val unitsVariance: Long,
+    val isDirectionallyAccurate: Boolean,
+    val meanAbsolutePercentageError: BigDecimal?,
+    val evaluationNotes: String?,
+    val comparedAt: Long
+)
+
+data class ForecastReconciliationEventDto(
+    val eventId: String,
+    val tenantId: String,
+    val projectId: String,
+    val forecastId: String,
+    val isBalanced: Boolean,
+    val revenueDifference: BigDecimal,
+    val costDifference: BigDecimal,
+    val profitDifference: BigDecimal,
+    val marginDifference: BigDecimal,
+    val componentDifference: BigDecimal,
+    val errorDetails: List<String>,
+    val timestamp: Long
+)
+
+data class ForecastAuditEventDto(
+    val auditId: String,
+    val tenantId: String,
+    val projectId: String,
+    val forecastId: String,
+    val actionType: String,
+    val actorId: String,
+    val actorRole: String,
+    val details: String,
+    val previousStateHash: String?,
+    val newStateHash: String?,
+    val timestamp: Long
+)
+
+data class Module16Step08ProfitabilityForecastHandoffContractDto(
+    val contractVersion: String,
+    val forecastId: String,
+    val tenantId: String,
+    val projectId: String,
+    val targetScope: String,
+    val targetEntityId: String,
+    val targetEntityLabel: String,
+    val forecastPeriod: String,
+    val horizon: String,
+    val forecastMethod: String,
+    val scenarioType: String,
+    val projectedRevenue: BigDecimal,
+    val projectedTotalCost: BigDecimal,
+    val projectedGrossProfit: BigDecimal,
+    val projectedGrossMarginPercentage: BigDecimal?,
+    val projectedUnits: Long,
+    val confidenceScore: BigDecimal,
+    val confidenceLevel: String,
+    val riskLevel: String,
+    val breakEvenRevenue: BigDecimal?,
+    val majorDrivers: List<String>,
+    val majorRisks: List<String>,
+    val topManagementInsights: List<String>,
+    val scenarioSummaryDeltas: Map<String, BigDecimal>,
+    val isReconciled: Boolean,
+    val integrityHash: String,
+    val generatedAt: Long
+)
+
+// Extension mappers
+fun ProfitabilityForecastSnapshot.toDto(): ProfitabilityForecastSnapshotDto = ProfitabilityForecastSnapshotDto(
+    forecastId = forecastId,
+    tenantId = tenantId,
+    projectId = projectId,
+    forecastVersion = forecastVersion,
+    forecastMethod = forecastMethod.name,
+    scenarioType = scenarioType.name,
+    scenarioId = scenarioId,
+    targetScope = targetScope.name,
+    targetEntityId = targetEntityId,
+    targetEntityLabel = targetEntityLabel,
+    historicalPeriodStart = historicalPeriodStart,
+    historicalPeriodEnd = historicalPeriodEnd,
+    forecastPeriodStart = forecastPeriodStart,
+    forecastPeriodEnd = forecastPeriodEnd,
+    horizon = horizon.name,
+    currency = currency,
+    status = status.name,
+    projectedRevenue = projectedRevenue,
+    projectedTotalCost = projectedTotalCost,
+    projectedGrossProfit = projectedGrossProfit,
+    projectedGrossMarginPercentage = projectedGrossMarginPercentage,
+    projectedContribution = projectedContribution,
+    projectedContributionMarginPercentage = projectedContributionMarginPercentage,
+    projectedUnits = projectedUnits,
+    projectedRevenuePerUnit = projectedRevenuePerUnit,
+    projectedCostPerUnit = projectedCostPerUnit,
+    projectedProfitPerUnit = projectedProfitPerUnit,
+    baselineRevenue = baselineRevenue,
+    baselineCost = baselineCost,
+    baselineGrossProfit = baselineGrossProfit,
+    baselineGrossMarginPercentage = baselineGrossMarginPercentage,
+    projectedRevenueDelta = projectedRevenueDelta,
+    projectedCostDelta = projectedCostDelta,
+    projectedProfitDelta = projectedProfitDelta,
+    projectedMarginDeltaPercentage = projectedMarginDeltaPercentage,
+    breakEvenRevenue = breakEvenRevenue,
+    breakEvenUnits = breakEvenUnits,
+    marginOfSafetyPercentage = marginOfSafetyPercentage,
+    isBreakEvenAttainable = isBreakEvenAttainable,
+    confidenceScore = confidenceScore,
+    confidenceLevel = confidenceLevel.name,
+    riskLevel = riskLevel.name,
+    sourceReadiness = sourceReadiness.name,
+    componentCount = components.size,
+    assumptionCount = assumptions.size,
+    insightCount = insights.size,
+    generatedAt = generatedAt,
+    generatedBy = generatedBy,
+    calculationVersion = calculationVersion,
+    integrityHash = integrityHash,
+    warnings = warnings
+)
+
+fun ProfitabilityForecastComponent.toDto(): ProfitabilityForecastComponentDto = ProfitabilityForecastComponentDto(
+    componentId = componentId,
+    forecastId = forecastId,
+    tenantId = tenantId,
+    componentType = componentType.name,
+    projectedAmount = projectedAmount,
+    percentageOfTotalCost = percentageOfTotalCost,
+    baselineAmount = baselineAmount,
+    deltaAmount = deltaAmount,
+    growthRatePercentage = growthRatePercentage,
+    driverDescription = driverDescription
+)
+
+fun ProfitabilityScenarioAssumption.toDto(): ScenarioAssumptionDto = ScenarioAssumptionDto(
+    assumptionId = assumptionId,
+    scenarioId = scenarioId,
+    parameterKey = parameterKey,
+    parameterName = parameterName,
+    parameterDescription = parameterDescription,
+    adjustmentPercentage = adjustmentPercentage,
+    absoluteAdjustmentAmount = absoluteAdjustmentAmount,
+    isApplied = isApplied
+)
+
+fun ProfitabilityScenario.toDto(): ProfitabilityScenarioDto = ProfitabilityScenarioDto(
+    scenarioId = scenarioId,
+    tenantId = tenantId,
+    projectId = projectId,
+    scenarioName = scenarioName,
+    scenarioType = scenarioType.name,
+    description = description,
+    targetScope = targetScope.name,
+    revenueAdjustmentPercentage = revenueAdjustmentPercentage,
+    volumeAdjustmentPercentage = volumeAdjustmentPercentage,
+    materialCostAdjustmentPercentage = materialCostAdjustmentPercentage,
+    labourCostAdjustmentPercentage = labourCostAdjustmentPercentage,
+    machineCostAdjustmentPercentage = machineCostAdjustmentPercentage,
+    vendorCostAdjustmentPercentage = vendorCostAdjustmentPercentage,
+    reworkAdjustmentPercentage = reworkAdjustmentPercentage,
+    wastageAdjustmentPercentage = wastageAdjustmentPercentage,
+    indirectCostAdjustmentPercentage = indirectCostAdjustmentPercentage,
+    assumptions = assumptions.map { it.toDto() },
+    createdAt = createdAt,
+    createdBy = createdBy,
+    isDefault = isDefault
+)
+
+fun ForecastManagementInsight.toDto(): ForecastManagementInsightDto = ForecastManagementInsightDto(
+    insightId = insightId,
+    forecastId = forecastId,
+    tenantId = tenantId,
+    insightType = insightType.name,
+    severity = severity.name,
+    dimensionType = dimensionType.name,
+    targetEntityId = targetEntityId,
+    targetEntityLabel = targetEntityLabel,
+    title = title,
+    explanation = explanation,
+    financialImpact = financialImpact,
+    supportingSourceReferences = supportingSourceReferences,
+    recommendedActionCode = recommendedActionCode,
+    generatedAt = generatedAt
+)
+
+fun ProfitabilityForecastProvenance.toDto(): ProfitabilityForecastProvenanceDto = ProfitabilityForecastProvenanceDto(
+    provenanceId = provenanceId,
+    forecastId = forecastId,
+    tenantId = tenantId,
+    projectId = projectId,
+    sourceModule = sourceModule,
+    sourceEntityType = sourceEntityType,
+    sourceEntityId = sourceEntityId,
+    sourceSnapshotId = sourceSnapshotId,
+    sourcePeriodId = sourcePeriodId,
+    metricType = metricType,
+    amount = amount,
+    fingerprint = fingerprint
+)
+
+fun ProfitabilityScenarioComparisonItem.toDto(): ProfitabilityScenarioComparisonItemDto = ProfitabilityScenarioComparisonItemDto(
+    scenarioId = scenarioId,
+    scenarioName = scenarioName,
+    scenarioType = scenarioType.name,
+    projectedRevenue = projectedRevenue,
+    projectedTotalCost = projectedTotalCost,
+    projectedGrossProfit = projectedGrossProfit,
+    projectedGrossMarginPercentage = projectedGrossMarginPercentage,
+    projectedContribution = projectedContribution,
+    projectedContributionMarginPercentage = projectedContributionMarginPercentage,
+    projectedUnits = projectedUnits,
+    revenueDeltaFromBaseline = revenueDeltaFromBaseline,
+    costDeltaFromBaseline = costDeltaFromBaseline,
+    profitDeltaFromBaseline = profitDeltaFromBaseline,
+    marginDeltaFromBaselinePercentage = marginDeltaFromBaselinePercentage,
+    financialImpact = financialImpact,
+    riskLevel = riskLevel.name
+)
+
+fun ProfitabilityScenarioComparison.toDto(): ProfitabilityScenarioComparisonDto = ProfitabilityScenarioComparisonDto(
+    comparisonId = comparisonId,
+    tenantId = tenantId,
+    projectId = projectId,
+    baselineForecastId = baselineForecastId,
+    targetScope = targetScope.name,
+    targetEntityId = targetEntityId,
+    horizon = horizon.name,
+    baselineScenario = baselineScenario.toDto(),
+    comparedScenarios = comparedScenarios.map { it.toDto() },
+    generatedAt = generatedAt
+)
+
+fun ForecastActualComparison.toDto(): ForecastActualComparisonDto = ForecastActualComparisonDto(
+    comparisonId = comparisonId,
+    tenantId = tenantId,
+    projectId = projectId,
+    forecastId = forecastId,
+    actualPeriodId = actualPeriodId,
+    targetScope = targetScope.name,
+    targetEntityId = targetEntityId,
+    targetEntityLabel = targetEntityLabel,
+    forecastRevenue = forecastRevenue,
+    actualRevenue = actualRevenue,
+    revenueVariance = revenueVariance,
+    revenueVariancePercentage = revenueVariancePercentage,
+    forecastCost = forecastCost,
+    actualCost = actualCost,
+    costVariance = costVariance,
+    costVariancePercentage = costVariancePercentage,
+    forecastGrossProfit = forecastGrossProfit,
+    actualGrossProfit = actualGrossProfit,
+    profitVariance = profitVariance,
+    profitVariancePercentage = profitVariancePercentage,
+    forecastMarginPercentage = forecastMarginPercentage,
+    actualMarginPercentage = actualMarginPercentage,
+    marginVariancePercentage = marginVariancePercentage,
+    forecastUnits = forecastUnits,
+    actualUnits = actualUnits,
+    unitsVariance = unitsVariance,
+    isDirectionallyAccurate = isDirectionallyAccurate,
+    meanAbsolutePercentageError = meanAbsolutePercentageError,
+    evaluationNotes = evaluationNotes,
+    comparedAt = comparedAt
+)
+
+fun ProfitabilityForecastReconciliationEvent.toDto(): ForecastReconciliationEventDto = ForecastReconciliationEventDto(
+    eventId = eventId,
+    tenantId = tenantId,
+    projectId = projectId,
+    forecastId = forecastId,
+    isBalanced = isBalanced,
+    revenueDifference = revenueDifference,
+    costDifference = costDifference,
+    profitDifference = profitDifference,
+    marginDifference = marginDifference,
+    componentDifference = componentDifference,
+    errorDetails = errorDetails,
+    timestamp = timestamp
+)
+
+fun ProfitabilityForecastAuditEvent.toDto(): ForecastAuditEventDto = ForecastAuditEventDto(
+    auditId = auditId,
+    tenantId = tenantId,
+    projectId = projectId,
+    forecastId = forecastId,
+    actionType = actionType,
+    actorId = actorId,
+    actorRole = actorRole,
+    details = details,
+    previousStateHash = previousStateHash,
+    newStateHash = newStateHash,
+    timestamp = timestamp
+)
+
+fun Module16Step08ProfitabilityForecastHandoffContract.toDto(): Module16Step08ProfitabilityForecastHandoffContractDto = Module16Step08ProfitabilityForecastHandoffContractDto(
+    contractVersion = contractVersion,
+    forecastId = forecastId,
+    tenantId = tenantId,
+    projectId = projectId,
+    targetScope = targetScope.name,
+    targetEntityId = targetEntityId,
+    targetEntityLabel = targetEntityLabel,
+    forecastPeriod = forecastPeriod,
+    horizon = horizon,
+    forecastMethod = forecastMethod,
+    scenarioType = scenarioType,
+    projectedRevenue = projectedRevenue,
+    projectedTotalCost = projectedTotalCost,
+    projectedGrossProfit = projectedGrossProfit,
+    projectedGrossMarginPercentage = projectedGrossMarginPercentage,
+    projectedUnits = projectedUnits,
+    confidenceScore = confidenceScore,
+    confidenceLevel = confidenceLevel,
+    riskLevel = riskLevel,
+    breakEvenRevenue = breakEvenRevenue,
+    majorDrivers = majorDrivers,
+    majorRisks = majorRisks,
+    topManagementInsights = topManagementInsights,
+    scenarioSummaryDeltas = scenarioSummaryDeltas,
+    isReconciled = isReconciled,
+    integrityHash = integrityHash,
+    generatedAt = generatedAt
+)
