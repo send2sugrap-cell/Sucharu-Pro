@@ -1,4 +1,4 @@
-package com.sucharu.sucharupro.domain.service.affiliate
+﻿package com.sucharu.sucharupro.domain.service.affiliate
 
 import com.sucharu.sucharupro.domain.model.affiliate.*
 import org.junit.Assert.*

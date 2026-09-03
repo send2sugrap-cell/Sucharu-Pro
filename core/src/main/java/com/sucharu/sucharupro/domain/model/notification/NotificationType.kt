@@ -55,6 +55,15 @@ enum class NotificationType(val defaultLabel: String, val category: Notification
     SYSTEM_ALERT("System Alert", NotificationCategory.SYSTEM, isMandatory = true),
     SECURITY_ALERT("Security Alert", NotificationCategory.SYSTEM, isMandatory = true),
 
+    // Affiliate Management (Module 20 Step 04)
+    AFFILIATE_APPLICATION_STATUS("Affiliate Application Status", NotificationCategory.AFFILIATE),
+    AFFILIATE_ENROLLMENT_STATUS("Affiliate Enrollment Status", NotificationCategory.AFFILIATE),
+    AFFILIATE_PROFILE_UPDATE("Affiliate Profile Update", NotificationCategory.AFFILIATE),
+    AFFILIATE_VERIFICATION_RESULT("Affiliate Verification Result", NotificationCategory.AFFILIATE),
+    AFFILIATE_PROGRAM_NOTICE("Affiliate Program Notice", NotificationCategory.AFFILIATE),
+    AFFILIATE_GOVERNANCE_NOTICE("Affiliate Governance Notice", NotificationCategory.AFFILIATE, isMandatory = true),
+    AFFILIATE_SECURITY_NOTICE("Affiliate Security Notice", NotificationCategory.AFFILIATE, isMandatory = true),
+
     // General
     GENERAL("General Announcement", NotificationCategory.GENERAL)
 }
@@ -68,5 +77,6 @@ enum class NotificationCategory(val defaultLabel: String) {
     INVENTORY("Inventory & Stock"),
     FINANCE("Financial & Payments"),
     SYSTEM("System & Security"),
+    AFFILIATE("Affiliate Management"),
     GENERAL("General")
 }

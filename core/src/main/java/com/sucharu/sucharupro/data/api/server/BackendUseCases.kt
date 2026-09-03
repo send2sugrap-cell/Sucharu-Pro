@@ -19466,7 +19466,953 @@ class BackendUseCases(
         val service = repositoryFactory.createAffiliateProgramService(principal.projectId)
         return service.getHandoffContract(principal.projectId, enrollmentId)
     }
+
+    // =========================================================================
+    // SECTION 83: AFFILIATE PROFILE, VERIFICATION & GOVERNANCE (MODULE 20 STEP 03)
+    // =========================================================================
+
+    suspend fun getAffiliateOperationalProfile(
+        principal: AuthenticatedPrincipal,
+        affiliateId: String
+    ): com.sucharu.sucharupro.data.api.model.affiliate.AffiliateOperationalProfileResponseDto {
+        BackendAuthorizationPolicy.requireRole(
+            principal,
+            UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.AFFILIATE, UserRole.AI_AGENT
+        )
+        assertAffiliateOwnership(principal, affiliateId)
+        val service = repositoryFactory.createAffiliateProfileService(principal.projectId)
+        val profile = service.getProfileByAffiliateId(principal.projectId, affiliateId)
+            ?: throw NotFoundException("Operational profile for affiliate '$affiliateId' not found.")
+        return profile.toDto()
+    }
+
+    suspend fun upsertAffiliateOperationalProfile(
+        principal: AuthenticatedPrincipal,
+        affiliateId: String,
+        request: com.sucharu.sucharupro.data.api.model.affiliate.UpsertAffiliateProfileRequestDto
+    ): com.sucharu.sucharupro.data.api.model.affiliate.AffiliateOperationalProfileResponseDto {
+        BackendAuthorizationPolicy.requireRole(
+            principal,
+            UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.AFFILIATE
+        )
+        assertAffiliateOwnership(principal, affiliateId)
+        val service = repositoryFactory.createAffiliateProfileService(principal.projectId)
+        val saved = service.upsertProfile(
+            tenantId = principal.projectId,
+            affiliateId = affiliateId,
+            request = request,
+            actorUserId = principal.userId,
+            actorRole = principal.role.name,
+            actorType = if (principal.role == UserRole.AI_AGENT) com.sucharu.sucharupro.domain.model.affiliate.AffiliateActorType.AI_AGENT else com.sucharu.sucharupro.domain.model.affiliate.AffiliateActorType.HUMAN
+        )
+        return saved.toDto()
+    }
+
+    suspend fun submitAffiliateOperationalProfile(
+        principal: AuthenticatedPrincipal,
+        affiliateId: String,
+        idempotencyKey: String? = null
+    ): com.sucharu.sucharupro.data.api.model.affiliate.AffiliateOperationalProfileResponseDto {
+        BackendAuthorizationPolicy.requireRole(
+            principal,
+            UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.AFFILIATE
+        )
+        assertAffiliateOwnership(principal, affiliateId)
+        val service = repositoryFactory.createAffiliateProfileService(principal.projectId)
+        val submitted = service.submitProfile(
+            tenantId = principal.projectId,
+            affiliateId = affiliateId,
+            actorUserId = principal.userId,
+            actorRole = principal.role.name,
+            actorType = com.sucharu.sucharupro.domain.model.affiliate.AffiliateActorType.HUMAN,
+            idempotencyKey = idempotencyKey
+        )
+        return submitted.toDto()
+    }
+
+    suspend fun getAffiliateProfileCompleteness(
+        principal: AuthenticatedPrincipal,
+        affiliateId: String
+    ): com.sucharu.sucharupro.data.api.model.affiliate.ProfileCompletenessResponseDto {
+        BackendAuthorizationPolicy.requireRole(
+            principal,
+            UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.AFFILIATE, UserRole.AI_AGENT
+        )
+        assertAffiliateOwnership(principal, affiliateId)
+        val service = repositoryFactory.createAffiliateProfileService(principal.projectId)
+        val completeness = service.getProfileCompleteness(principal.projectId, affiliateId)
+        return completeness.toDto()
+    }
+
+    suspend fun requestAffiliateVerification(
+        principal: AuthenticatedPrincipal,
+        affiliateId: String,
+        request: com.sucharu.sucharupro.data.api.model.affiliate.RequestVerificationRequestDto
+    ): com.sucharu.sucharupro.data.api.model.affiliate.AffiliateVerificationResponseDto {
+        BackendAuthorizationPolicy.requireRole(
+            principal,
+            UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.AFFILIATE
+        )
+        assertAffiliateOwnership(principal, affiliateId)
+        val service = repositoryFactory.createAffiliateProfileService(principal.projectId)
+        val record = service.requestVerification(
+            tenantId = principal.projectId,
+            affiliateId = affiliateId,
+            request = request,
+            actorUserId = principal.userId,
+            actorRole = principal.role.name
+        )
+        return record.toDto()
+    }
+
+    suspend fun approveAffiliateVerification(
+        principal: AuthenticatedPrincipal,
+        verificationId: String,
+        request: com.sucharu.sucharupro.data.api.model.affiliate.ReviewVerificationRequestDto
+    ): com.sucharu.sucharupro.data.api.model.affiliate.AffiliateVerificationResponseDto {
+        BackendAuthorizationPolicy.requireRole(
+            principal,
+            UserRole.ADMIN, UserRole.MANAGER
+        )
+        val service = repositoryFactory.createAffiliateProfileService(principal.projectId)
+        val approved = service.approveVerification(
+            tenantId = principal.projectId,
+            verificationId = verificationId,
+            request = request,
+            actorUserId = principal.userId,
+            actorRole = principal.role.name
+        )
+        return approved.toDto()
+    }
+
+    suspend fun rejectAffiliateVerification(
+        principal: AuthenticatedPrincipal,
+        verificationId: String,
+        request: com.sucharu.sucharupro.data.api.model.affiliate.ReviewVerificationRequestDto
+    ): com.sucharu.sucharupro.data.api.model.affiliate.AffiliateVerificationResponseDto {
+        BackendAuthorizationPolicy.requireRole(
+            principal,
+            UserRole.ADMIN, UserRole.MANAGER
+        )
+        val service = repositoryFactory.createAffiliateProfileService(principal.projectId)
+        val rejected = service.rejectVerification(
+            tenantId = principal.projectId,
+            verificationId = verificationId,
+            request = request,
+            actorUserId = principal.userId,
+            actorRole = principal.role.name
+        )
+        return rejected.toDto()
+    }
+
+    suspend fun requestAffiliateVerificationChanges(
+        principal: AuthenticatedPrincipal,
+        verificationId: String,
+        request: com.sucharu.sucharupro.data.api.model.affiliate.ReviewVerificationRequestDto
+    ): com.sucharu.sucharupro.data.api.model.affiliate.AffiliateVerificationResponseDto {
+        BackendAuthorizationPolicy.requireRole(
+            principal,
+            UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF
+        )
+        val service = repositoryFactory.createAffiliateProfileService(principal.projectId)
+        val changed = service.requestChanges(
+            tenantId = principal.projectId,
+            verificationId = verificationId,
+            request = request,
+            actorUserId = principal.userId,
+            actorRole = principal.role.name
+        )
+        return changed.toDto()
+    }
+
+    suspend fun listAffiliateVerifications(
+        principal: AuthenticatedPrincipal,
+        affiliateId: String
+    ): List<com.sucharu.sucharupro.data.api.model.affiliate.AffiliateVerificationResponseDto> {
+        BackendAuthorizationPolicy.requireRole(
+            principal,
+            UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.AFFILIATE, UserRole.AI_AGENT
+        )
+        assertAffiliateOwnership(principal, affiliateId)
+        val service = repositoryFactory.createAffiliateProfileService(principal.projectId)
+        val list = service.listVerifications(principal.projectId, affiliateId)
+        return list.map { it.toDto() }
+    }
+
+    suspend fun addAffiliateDocumentReference(
+        principal: AuthenticatedPrincipal,
+        affiliateId: String,
+        request: com.sucharu.sucharupro.data.api.model.affiliate.AddDocumentReferenceRequestDto
+    ): com.sucharu.sucharupro.data.api.model.affiliate.AffiliateDocumentResponseDto {
+        BackendAuthorizationPolicy.requireRole(
+            principal,
+            UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.AFFILIATE
+        )
+        assertAffiliateOwnership(principal, affiliateId)
+        val service = repositoryFactory.createAffiliateProfileService(principal.projectId)
+        val doc = service.addDocumentReference(
+            tenantId = principal.projectId,
+            affiliateId = affiliateId,
+            request = request,
+            actorUserId = principal.userId,
+            actorRole = principal.role.name
+        )
+        return doc.toDto()
+    }
+
+    suspend fun verifyAffiliateDocument(
+        principal: AuthenticatedPrincipal,
+        documentId: String,
+        idempotencyKey: String? = null
+    ): com.sucharu.sucharupro.data.api.model.affiliate.AffiliateDocumentResponseDto {
+        BackendAuthorizationPolicy.requireRole(
+            principal,
+            UserRole.ADMIN, UserRole.MANAGER
+        )
+        val service = repositoryFactory.createAffiliateProfileService(principal.projectId)
+        val verified = service.verifyDocument(
+            tenantId = principal.projectId,
+            documentId = documentId,
+            actorUserId = principal.userId,
+            actorRole = principal.role.name,
+            idempotencyKey = idempotencyKey
+        )
+        return verified.toDto()
+    }
+
+    suspend fun rejectAffiliateDocument(
+        principal: AuthenticatedPrincipal,
+        documentId: String,
+        request: com.sucharu.sucharupro.data.api.model.affiliate.ReviewDocumentRequestDto
+    ): com.sucharu.sucharupro.data.api.model.affiliate.AffiliateDocumentResponseDto {
+        BackendAuthorizationPolicy.requireRole(
+            principal,
+            UserRole.ADMIN, UserRole.MANAGER
+        )
+        val service = repositoryFactory.createAffiliateProfileService(principal.projectId)
+        val rejected = service.rejectDocument(
+            tenantId = principal.projectId,
+            documentId = documentId,
+            request = request,
+            actorUserId = principal.userId,
+            actorRole = principal.role.name
+        )
+        return rejected.toDto()
+    }
+
+    suspend fun listAffiliateDocuments(
+        principal: AuthenticatedPrincipal,
+        affiliateId: String
+    ): List<com.sucharu.sucharupro.data.api.model.affiliate.AffiliateDocumentResponseDto> {
+        BackendAuthorizationPolicy.requireRole(
+            principal,
+            UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.AFFILIATE, UserRole.AI_AGENT
+        )
+        assertAffiliateOwnership(principal, affiliateId)
+        val service = repositoryFactory.createAffiliateProfileService(principal.projectId)
+        val list = service.listDocuments(principal.projectId, affiliateId)
+        return list.map { it.toDto() }
+    }
+
+    suspend fun suspendAffiliateProfile(
+        principal: AuthenticatedPrincipal,
+        affiliateId: String,
+        reason: String,
+        idempotencyKey: String? = null
+    ): com.sucharu.sucharupro.data.api.model.affiliate.AffiliateOperationalProfileResponseDto {
+        BackendAuthorizationPolicy.requireRole(
+            principal,
+            UserRole.ADMIN, UserRole.MANAGER
+        )
+        val service = repositoryFactory.createAffiliateProfileService(principal.projectId)
+        val suspended = service.suspendProfile(
+            tenantId = principal.projectId,
+            affiliateId = affiliateId,
+            reason = reason,
+            actorUserId = principal.userId,
+            actorRole = principal.role.name,
+            idempotencyKey = idempotencyKey
+        )
+        return suspended.toDto()
+    }
+
+    suspend fun reactivateAffiliateProfile(
+        principal: AuthenticatedPrincipal,
+        affiliateId: String,
+        reason: String,
+        idempotencyKey: String? = null
+    ): com.sucharu.sucharupro.data.api.model.affiliate.AffiliateOperationalProfileResponseDto {
+        BackendAuthorizationPolicy.requireRole(
+            principal,
+            UserRole.ADMIN, UserRole.MANAGER
+        )
+        val service = repositoryFactory.createAffiliateProfileService(principal.projectId)
+        val reactivated = service.reactivateProfile(
+            tenantId = principal.projectId,
+            affiliateId = affiliateId,
+            reason = reason,
+            actorUserId = principal.userId,
+            actorRole = principal.role.name,
+            idempotencyKey = idempotencyKey
+        )
+        return reactivated.toDto()
+    }
+
+    suspend fun listAffiliateProfileAuditRecords(
+        principal: AuthenticatedPrincipal,
+        affiliateId: String
+    ): List<com.sucharu.sucharupro.data.api.model.affiliate.AffiliateProfileAuditResponseDto> {
+        BackendAuthorizationPolicy.requireRole(
+            principal,
+            UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.AFFILIATE, UserRole.AI_AGENT
+        )
+        assertAffiliateOwnership(principal, affiliateId)
+        val service = repositoryFactory.createAffiliateProfileService(principal.projectId)
+        val list = service.listAuditRecords(principal.projectId, affiliateId)
+        return list.map { it.toDto() }
+    }
+
+    suspend fun getAffiliateProfileGovernanceSummary(
+        principal: AuthenticatedPrincipal
+    ): com.sucharu.sucharupro.data.api.model.affiliate.AffiliateProfileGovernanceSummaryResponseDto {
+        BackendAuthorizationPolicy.requireRole(
+            principal,
+            UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.AI_AGENT
+        )
+        val service = repositoryFactory.createAffiliateProfileService(principal.projectId)
+        val summary = service.getGovernanceSummary(principal.projectId)
+        return summary.toDto()
+    }
+
+    suspend fun getAffiliateProfileHandoffContract(
+        principal: AuthenticatedPrincipal,
+        affiliateId: String
+    ): com.sucharu.sucharupro.domain.model.affiliate.Module20Step03AffiliateProfileHandoffContract {
+        BackendAuthorizationPolicy.requireRole(
+            principal,
+            UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.AFFILIATE, UserRole.AI_AGENT
+        )
+        assertAffiliateOwnership(principal, affiliateId)
+        val service = repositoryFactory.createAffiliateProfileService(principal.projectId)
+        return service.getHandoffContract(principal.projectId, affiliateId)
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════════════════
+    // MODULE 20 STEP 04: AFFILIATE COMMUNICATION, NOTIFICATION & LIFECYCLE GOVERNANCE
+    // ═══════════════════════════════════════════════════════════════════════════════════════
+
+    suspend fun listAffiliateNotifications(
+        principal: com.sucharu.sucharupro.data.api.model.AuthenticatedPrincipal,
+        affiliateId: String,
+        status: String? = null,
+        communicationType: String? = null
+    ): List<com.sucharu.sucharupro.data.api.model.affiliate.AffiliateCommunicationResponseDto> {
+        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.AFFILIATE, UserRole.AI_AGENT)
+        assertAffiliateOwnership(principal, affiliateId)
+        val service = repositoryFactory.createAffiliateCommunicationService(principal.projectId)
+        val parsedStatus = status?.let {
+            runCatching {
+                com.sucharu.sucharupro.domain.model.affiliate.AffiliateCommunicationStatus.valueOf(it.trim().uppercase())
+            }.getOrNull()
+        }
+        val parsedType = communicationType?.let {
+            runCatching {
+                com.sucharu.sucharupro.domain.model.affiliate.AffiliateCommunicationType.valueOf(it.trim().uppercase())
+            }.getOrNull()
+        }
+        return service.listCommunications(principal.projectId, affiliateId, parsedStatus, parsedType)
+            .map { it.toDto() }
+    }
+
+    suspend fun getAffiliateUnreadNotificationCount(
+        principal: com.sucharu.sucharupro.data.api.model.AuthenticatedPrincipal,
+        affiliateId: String
+    ): com.sucharu.sucharupro.data.api.model.affiliate.AffiliateUnreadSummaryResponseDto {
+        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.AFFILIATE, UserRole.AI_AGENT)
+        assertAffiliateOwnership(principal, affiliateId)
+        val service = repositoryFactory.createAffiliateCommunicationService(principal.projectId)
+        val summary = service.getUnreadCount(principal.projectId, affiliateId)
+        return summary.toDto()
+    }
+
+    suspend fun markAffiliateNotificationRead(
+        principal: com.sucharu.sucharupro.data.api.model.AuthenticatedPrincipal,
+        affiliateId: String,
+        communicationId: String
+    ): com.sucharu.sucharupro.data.api.model.affiliate.AffiliateCommunicationResponseDto {
+        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.AFFILIATE)
+        assertAffiliateOwnership(principal, affiliateId)
+        val service = repositoryFactory.createAffiliateCommunicationService(principal.projectId)
+        val updated = service.markRead(
+            tenantId = principal.projectId,
+            communicationId = communicationId,
+            actorUserId = principal.userId,
+            actorRole = principal.role.name
+        )
+        return updated.toDto()
+    }
+
+    suspend fun markAllAffiliateNotificationsRead(
+        principal: com.sucharu.sucharupro.data.api.model.AuthenticatedPrincipal,
+        affiliateId: String
+    ): com.sucharu.sucharupro.data.api.model.affiliate.MarkAllReadResponseDto {
+        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.AFFILIATE)
+        assertAffiliateOwnership(principal, affiliateId)
+        val service = repositoryFactory.createAffiliateCommunicationService(principal.projectId)
+        val count = service.markAllRead(
+            tenantId = principal.projectId,
+            affiliateId = affiliateId,
+            actorUserId = principal.userId,
+            actorRole = principal.role.name
+        )
+        return com.sucharu.sucharupro.data.api.model.affiliate.MarkAllReadResponseDto(
+            affiliateId = affiliateId,
+            markedCount = count,
+            success = true
+        )
+    }
+
+    suspend fun emitAffiliateCommunication(
+        principal: com.sucharu.sucharupro.data.api.model.AuthenticatedPrincipal,
+        request: com.sucharu.sucharupro.data.api.model.affiliate.EmitAffiliateCommunicationRequestDto
+    ): com.sucharu.sucharupro.data.api.model.affiliate.AffiliateCommunicationResponseDto {
+        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.AI_AGENT)
+        val parsedType = runCatching {
+            com.sucharu.sucharupro.domain.model.affiliate.AffiliateCommunicationType.valueOf(
+                request.communicationType.trim().uppercase()
+            )
+        }.getOrElse {
+            throw ValidationException("Invalid communicationType '${request.communicationType}'.")
+        }
+
+        val affService = repositoryFactory.createAffiliateService(principal.projectId)
+        val affiliate = affService.getAffiliateById(principal.projectId, request.affiliateId, principal)
+
+        val service = repositoryFactory.createAffiliateCommunicationService(principal.projectId)
+        val correlationId = "CORR-EMIT-${java.util.UUID.randomUUID().toString().take(8)}"
+
+        val (defaultTitle, defaultMessage) = com.sucharu.sucharupro.domain.service.affiliate.AffiliateCommunicationPolicyEngine
+            .buildDefaultNotificationContent(parsedType, request.referenceType, request.referenceId)
+
+        val record = service.createCommunication(
+            tenantId = principal.projectId,
+            affiliateId = request.affiliateId,
+            recipientUserId = affiliate.userId,
+            communicationType = parsedType,
+            title = request.title ?: defaultTitle,
+            message = request.message ?: defaultMessage,
+            referenceType = request.referenceType,
+            referenceId = request.referenceId,
+            actorUserId = principal.userId,
+            actorRole = principal.role.name,
+            actorType = com.sucharu.sucharupro.domain.model.affiliate.AffiliateActorType.HUMAN,
+            idempotencyKey = request.idempotencyKey,
+            correlationId = correlationId
+        )
+        return record.toDto()
+    }
+
+    suspend fun getAffiliateNotificationPreferences(
+        principal: com.sucharu.sucharupro.data.api.model.AuthenticatedPrincipal,
+        affiliateId: String
+    ): List<com.sucharu.sucharupro.data.api.model.affiliate.AffiliateNotificationPreferenceResponseDto> {
+        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.AFFILIATE)
+        assertAffiliateOwnership(principal, affiliateId)
+        val service = repositoryFactory.createAffiliateCommunicationService(principal.projectId)
+        return service.getPreferences(principal.projectId, affiliateId).map { it.toDto() }
+    }
+
+    suspend fun updateAffiliateNotificationPreference(
+        principal: com.sucharu.sucharupro.data.api.model.AuthenticatedPrincipal,
+        affiliateId: String,
+        request: com.sucharu.sucharupro.data.api.model.affiliate.UpdateAffiliateNotificationPreferenceRequestDto
+    ): com.sucharu.sucharupro.data.api.model.affiliate.AffiliateNotificationPreferenceResponseDto {
+        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.AFFILIATE)
+        assertAffiliateOwnership(principal, affiliateId)
+        val parsedType = runCatching {
+            com.sucharu.sucharupro.domain.model.affiliate.AffiliateCommunicationType.valueOf(
+                request.communicationType.trim().uppercase()
+            )
+        }.getOrElse {
+            throw ValidationException("Invalid communicationType '${request.communicationType}'.")
+        }
+        val service = repositoryFactory.createAffiliateCommunicationService(principal.projectId)
+        val correlationId = "CORR-PREF-${java.util.UUID.randomUUID().toString().take(8)}"
+        val updated = service.upsertPreference(
+            tenantId = principal.projectId,
+            affiliateId = affiliateId,
+            userId = principal.userId,
+            communicationType = parsedType,
+            inAppEnabled = request.inAppEnabled,
+            pushEnabled = request.pushEnabled,
+            emailEnabled = request.emailEnabled,
+            smsEnabled = request.smsEnabled,
+            actorUserId = principal.userId,
+            actorRole = principal.role.name,
+            correlationId = correlationId
+        )
+        return updated.toDto()
+    }
+
+    suspend fun listAffiliateCommunicationAuditRecords(
+        principal: com.sucharu.sucharupro.data.api.model.AuthenticatedPrincipal,
+        affiliateId: String
+    ): List<com.sucharu.sucharupro.data.api.model.affiliate.AffiliateCommunicationAuditResponseDto> {
+        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.AFFILIATE, UserRole.AI_AGENT)
+        assertAffiliateOwnership(principal, affiliateId)
+        val service = repositoryFactory.createAffiliateCommunicationService(principal.projectId)
+        return service.listAuditRecords(principal.projectId, affiliateId).map { it.toDto() }
+    }
+
+    suspend fun getAffiliateCommunicationGovernanceSummary(
+        principal: com.sucharu.sucharupro.data.api.model.AuthenticatedPrincipal
+    ): com.sucharu.sucharupro.data.api.model.affiliate.AffiliateNotificationGovernanceSummaryResponseDto {
+        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF)
+        val service = repositoryFactory.createAffiliateCommunicationService(principal.projectId)
+        return service.getGovernanceSummary(principal.projectId).toDto()
+    }
+
+    suspend fun getAffiliateCommunicationHandoffContract(
+        principal: com.sucharu.sucharupro.data.api.model.AuthenticatedPrincipal,
+        affiliateId: String
+    ): com.sucharu.sucharupro.domain.model.affiliate.Module20Step04AffiliateCommunicationHandoffContract {
+        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.AFFILIATE, UserRole.AI_AGENT)
+        assertAffiliateOwnership(principal, affiliateId)
+        val service = repositoryFactory.createAffiliateCommunicationService(principal.projectId)
+        return service.getHandoffContract(principal.projectId, affiliateId, principal.userId)
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════════════════
+    // MODULE 20 STEP 05: AFFILIATE ADMINISTRATIVE COMMAND CENTER & GOVERNANCE OPERATIONS
+    // ═══════════════════════════════════════════════════════════════════════════════════════
+
+    suspend fun getAffiliateCommandCenterOverview(
+        principal: com.sucharu.sucharupro.data.api.model.AuthenticatedPrincipal
+    ): com.sucharu.sucharupro.data.api.model.affiliate.AffiliateCommandCenterOverviewResponseDto {
+        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF)
+        val service = repositoryFactory.createAffiliateCommandCenterService(principal.projectId)
+        val overview = service.getCommandCenterOverview(principal.projectId)
+        return overview.toDto()
+    }
+
+    suspend fun listAffiliateGovernanceWorkItems(
+        principal: com.sucharu.sucharupro.data.api.model.AuthenticatedPrincipal,
+        priority: String? = null,
+        status: String? = null,
+        itemType: String? = null,
+        affiliateId: String? = null
+    ): List<com.sucharu.sucharupro.data.api.model.affiliate.AffiliateGovernanceWorkItemResponseDto> {
+        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.AI_AGENT)
+        val service = repositoryFactory.createAffiliateCommandCenterService(principal.projectId)
+        val parsedPriority = priority?.let {
+            runCatching { com.sucharu.sucharupro.domain.model.affiliate.AffiliateGovernanceWorkItemPriority.valueOf(it.trim().uppercase()) }.getOrNull()
+        }
+        val parsedStatus = status?.let {
+            runCatching { com.sucharu.sucharupro.domain.model.affiliate.AffiliateGovernanceWorkItemStatus.valueOf(it.trim().uppercase()) }.getOrNull()
+        }
+        val parsedType = itemType?.let {
+            runCatching { com.sucharu.sucharupro.domain.model.affiliate.AffiliateGovernanceWorkItemType.valueOf(it.trim().uppercase()) }.getOrNull()
+        }
+        return service.listWorkItems(principal.projectId, parsedPriority, parsedStatus, parsedType, affiliateId)
+            .map { it.toDto() }
+    }
+
+    suspend fun resolveAffiliateGovernanceWorkItem(
+        principal: com.sucharu.sucharupro.data.api.model.AuthenticatedPrincipal,
+        workItemId: String,
+        request: com.sucharu.sucharupro.data.api.model.affiliate.ResolveWorkItemRequestDto
+    ): com.sucharu.sucharupro.data.api.model.affiliate.AffiliateGovernanceWorkItemResponseDto {
+        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF)
+        val service = repositoryFactory.createAffiliateCommandCenterService(principal.projectId)
+        val parsedStatus = runCatching {
+            com.sucharu.sucharupro.domain.model.affiliate.AffiliateGovernanceWorkItemStatus.valueOf(request.status.trim().uppercase())
+        }.getOrDefault(com.sucharu.sucharupro.domain.model.affiliate.AffiliateGovernanceWorkItemStatus.RESOLVED)
+
+        val correlationId = "CORR-RESOLVE-${java.util.UUID.randomUUID().toString().take(8)}"
+        val updated = service.resolveWorkItem(
+            tenantId = principal.projectId,
+            workItemId = workItemId,
+            resolutionNotes = request.resolutionNotes,
+            status = parsedStatus,
+            actorUserId = principal.userId,
+            actorRole = principal.role.name,
+            correlationId = correlationId
+        )
+        return updated.toDto()
+    }
+
+    suspend fun getAffiliateAdministrativeDetailView(
+        principal: com.sucharu.sucharupro.data.api.model.AuthenticatedPrincipal,
+        affiliateId: String
+    ): com.sucharu.sucharupro.domain.model.affiliate.AffiliateAdministrativeDetailView {
+        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.AI_AGENT)
+        val service = repositoryFactory.createAffiliateCommandCenterService(principal.projectId)
+        return service.getAdministrativeDetailView(principal.projectId, affiliateId, principal.userId)
+    }
+
+    suspend fun executeAffiliateAdminAction(
+        principal: com.sucharu.sucharupro.data.api.model.AuthenticatedPrincipal,
+        affiliateId: String,
+        request: com.sucharu.sucharupro.data.api.model.affiliate.AdminLifecycleActionRequestDto
+    ): com.sucharu.sucharupro.data.api.model.affiliate.AffiliateProfileDto {
+        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER)
+        val service = repositoryFactory.createAffiliateCommandCenterService(principal.projectId)
+        val correlationId = "CORR-ADMIN-ACT-${java.util.UUID.randomUUID().toString().take(8)}"
+        val result = service.executeAdminAction(
+            tenantId = principal.projectId,
+            affiliateId = affiliateId,
+            action = request.action,
+            reason = request.reason,
+            actorUserId = principal.userId,
+            actorRole = principal.role.name,
+            actorType = com.sucharu.sucharupro.domain.model.affiliate.AffiliateActorType.HUMAN,
+            correlationId = correlationId
+        )
+        return com.sucharu.sucharupro.data.api.model.affiliate.AffiliateProfileDto(
+            affiliateId = result.affiliateId,
+            tenantId = result.tenantId,
+            userId = result.userId,
+            customerId = result.customerId,
+            displayName = result.displayName,
+            affiliateCode = result.affiliateCode,
+            status = result.status.name,
+            affiliateType = result.affiliateType.name,
+            contactPhone = result.contactPhone,
+            contactEmail = result.contactEmail,
+            taxIdOrGst = result.taxIdOrGst,
+            onboardingState = result.onboardingState.name,
+            verificationState = result.verificationState.name,
+            agreementReference = result.agreementReference,
+            agreementVersion = result.agreementVersion,
+            agreementAcceptedAt = result.agreementAcceptedAt,
+            agreementAcceptedBy = result.agreementAcceptedBy,
+            joinedAt = result.joinedAt,
+            activatedAt = result.activatedAt,
+            suspendedAt = result.suspendedAt,
+            terminatedAt = result.terminatedAt,
+            createdAt = result.createdAt,
+            updatedAt = result.updatedAt,
+            version = result.version,
+            metadataJson = result.metadataJson
+        )
+    }
+
+    suspend fun listAffiliateCommandCenterAuditRecords(
+        principal: com.sucharu.sucharupro.data.api.model.AuthenticatedPrincipal,
+        affiliateId: String? = null
+    ): List<com.sucharu.sucharupro.data.api.model.affiliate.AffiliateCommandCenterAuditResponseDto> {
+        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.AI_AGENT)
+        val service = repositoryFactory.createAffiliateCommandCenterService(principal.projectId)
+        return service.listAuditRecords(principal.projectId, affiliateId).map { it.toDto() }
+    }
+
+    suspend fun getAffiliateCommandCenterHandoffContract(
+        principal: com.sucharu.sucharupro.data.api.model.AuthenticatedPrincipal
+    ): com.sucharu.sucharupro.domain.model.affiliate.Module20Step05AffiliateCommandCenterHandoffContract {
+        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.AI_AGENT)
+        val service = repositoryFactory.createAffiliateCommandCenterService(principal.projectId)
+        return service.getHandoffContract(principal.projectId, principal.userId)
+    }
+
+    private suspend fun assertAffiliateOwnership(principal: AuthenticatedPrincipal, affiliateId: String) {
+        if (principal.role == UserRole.AFFILIATE) {
+            val affService = repositoryFactory.createAffiliateService(principal.projectId)
+            val aff = affService.getAffiliateById(principal.projectId, affiliateId, principal)
+            if (aff.userId != principal.userId) {
+                throw ForbiddenException("Access denied. You can only view and manage your own affiliate profile.")
+            }
+        }
+    }
+
+    // =========================================================================
+    // SECTION 86: AFFILIATE GOVERNANCE INTEGRITY & CROSS-MODULE READINESS (MODULE 20 STEP 06)
+    // =========================================================================
+
+    /**
+     * Performs a full cross-step lifecycle integrity assessment for an affiliate.
+     * READ-ONLY. No mutations.
+     */
+    suspend fun getAffiliateLifecycleIntegrityResult(
+        principal: AuthenticatedPrincipal,
+        affiliateId: String
+    ): com.sucharu.sucharupro.domain.model.affiliate.AffiliateLifecycleIntegrityResult {
+        BackendAuthorizationPolicy.requireRole(
+            principal,
+            UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.AFFILIATE, UserRole.AI_AGENT
+        )
+        val service = repositoryFactory.createAffiliateGovernanceIntegrityService(principal.projectId)
+        return service.assessIntegrity(
+            tenantId = principal.projectId,
+            affiliateId = affiliateId,
+            assessorId = principal.userId
+        )
+    }
+
+    /**
+     * Builds and returns the integration readiness state for an affiliate.
+     * READ-ONLY. Computes Module 21–24 readiness gates.
+     */
+    suspend fun getAffiliateIntegrationReadiness(
+        principal: AuthenticatedPrincipal,
+        affiliateId: String
+    ): com.sucharu.sucharupro.domain.model.affiliate.AffiliateIntegrationReadinessState {
+        BackendAuthorizationPolicy.requireRole(
+            principal,
+            UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.AFFILIATE, UserRole.AI_AGENT
+        )
+        val service = repositoryFactory.createAffiliateGovernanceIntegrityService(principal.projectId)
+        return service.buildIntegrationReadiness(
+            tenantId = principal.projectId,
+            affiliateId = affiliateId,
+            assessorId = principal.userId
+        )
+    }
+
+    /**
+     * Returns the authoritative Module 20 Step 06 final governance handoff contract.
+     * READ-ONLY. The sealed contract for Modules 21–24 integration handshake.
+     */
+    suspend fun getAffiliateFinalGovernanceHandoffContract(
+        principal: AuthenticatedPrincipal,
+        affiliateId: String
+    ): com.sucharu.sucharupro.domain.model.affiliate.Module20Step06FinalGovernanceHandoffContract {
+        BackendAuthorizationPolicy.requireRole(
+            principal,
+            UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.AFFILIATE, UserRole.AI_AGENT
+        )
+        val service = repositoryFactory.createAffiliateGovernanceIntegrityService(principal.projectId)
+        return service.getFinalHandoffContract(
+            tenantId = principal.projectId,
+            affiliateId = affiliateId,
+            requestingUserId = principal.userId
+        )
+    }
+
+    /**
+     * Verifies the SHA-256 audit chain integrity for an affiliate.
+     * READ-ONLY. Detects tamper attempts in the audit record chain.
+     */
+    suspend fun verifyAffiliateAuditChain(
+        principal: AuthenticatedPrincipal,
+        affiliateId: String
+    ): com.sucharu.sucharupro.domain.model.affiliate.AuditChainVerificationResult {
+        BackendAuthorizationPolicy.requireRole(
+            principal,
+            UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.AI_AGENT
+        )
+        val service = repositoryFactory.createAffiliateGovernanceIntegrityService(principal.projectId)
+        return service.verifyAuditChain(
+            tenantId = principal.projectId,
+            affiliateId = affiliateId
+        )
+    }
 }
+
+// --- Step 04 DTO Mappers ---
+
+private fun com.sucharu.sucharupro.domain.model.affiliate.AffiliateCommunicationRecord.toDto() =
+    com.sucharu.sucharupro.data.api.model.affiliate.AffiliateCommunicationResponseDto(
+        communicationId = communicationId,
+        tenantId = tenantId,
+        affiliateId = affiliateId,
+        recipientUserId = recipientUserId,
+        communicationType = communicationType.name,
+        subject = subject,
+        bodyPreview = bodyPreview,
+        channelsJson = channelsJson,
+        status = status.name,
+        canonicalNotificationId = canonicalNotificationId,
+        referenceType = referenceType,
+        referenceId = referenceId,
+        idempotencyKey = idempotencyKey,
+        correlationId = correlationId,
+        version = version,
+        createdAt = createdAt,
+        deliveredAt = deliveredAt,
+        readAt = readAt,
+        failureReason = failureReason
+    )
+
+private fun com.sucharu.sucharupro.domain.model.affiliate.AffiliateUnreadSummary.toDto() =
+    com.sucharu.sucharupro.data.api.model.affiliate.AffiliateUnreadSummaryResponseDto(
+        affiliateId = affiliateId,
+        totalUnread = totalUnread,
+        byType = byType
+    )
+
+private fun com.sucharu.sucharupro.domain.model.affiliate.AffiliateNotificationPreference.toDto() =
+    com.sucharu.sucharupro.data.api.model.affiliate.AffiliateNotificationPreferenceResponseDto(
+        preferenceId = preferenceId,
+        tenantId = tenantId,
+        affiliateId = affiliateId,
+        userId = userId,
+        communicationType = communicationType.name,
+        isMandatory = communicationType.isMandatory,
+        inAppEnabled = inAppEnabled,
+        pushEnabled = pushEnabled,
+        emailEnabled = emailEnabled,
+        smsEnabled = smsEnabled,
+        version = version,
+        createdAt = createdAt,
+        updatedAt = updatedAt
+    )
+
+private fun com.sucharu.sucharupro.domain.model.affiliate.AffiliateNotificationGovernanceSummary.toDto() =
+    com.sucharu.sucharupro.data.api.model.affiliate.AffiliateNotificationGovernanceSummaryResponseDto(
+        tenantId = tenantId,
+        totalCommunications = totalCommunications,
+        deliveredCount = deliveredCount,
+        readCount = readCount,
+        failedCount = failedCount,
+        cancelledCount = cancelledCount,
+        pendingCount = pendingCount,
+        unreadCount = unreadCount,
+        byType = byType
+    )
+
+private fun com.sucharu.sucharupro.domain.model.affiliate.AffiliateCommunicationAuditRecord.toDto() =
+    com.sucharu.sucharupro.data.api.model.affiliate.AffiliateCommunicationAuditResponseDto(
+        auditId = auditId,
+        tenantId = tenantId,
+        affiliateId = affiliateId,
+        communicationId = communicationId,
+        actorUserId = actorUserId,
+        actorRole = actorRole,
+        actorType = actorType.name,
+        action = action,
+        previousStatus = previousStatus,
+        newStatus = newStatus,
+        reason = reason,
+        correlationId = correlationId,
+        recordHash = recordHash,
+        previousAuditHash = previousAuditHash,
+        chainHash = chainHash,
+        timestamp = timestamp
+    )
+
+// --- Step 03 Profile DTO Mappers ---
+
+private fun com.sucharu.sucharupro.domain.model.affiliate.AffiliateOperationalProfile.toDto() =
+    com.sucharu.sucharupro.data.api.model.affiliate.AffiliateOperationalProfileResponseDto(
+        tenantId = tenantId,
+        affiliateId = affiliateId,
+        displayName = displayName,
+        legalName = legalName,
+        businessType = businessType.name,
+        businessDescription = businessDescription,
+        contactEmail = contactEmail,
+        contactPhone = contactPhone,
+        website = website,
+        addressLine1 = addressLine1,
+        addressLine2 = addressLine2,
+        city = city,
+        region = region,
+        country = country,
+        postalCode = postalCode,
+        taxIdOrGst = taxIdOrGst,
+        taxInformationReference = taxInformationReference,
+        profileStatus = profileStatus.name,
+        completenessScore = completenessScore,
+        completenessDetailsJson = completenessDetailsJson,
+        submittedAt = submittedAt,
+        verifiedAt = verifiedAt,
+        suspendedAt = suspendedAt,
+        createdAt = createdAt,
+        updatedAt = updatedAt,
+        version = version,
+        metadataJson = metadataJson
+    )
+
+private fun com.sucharu.sucharupro.domain.model.affiliate.ProfileCompletenessResult.toDto() =
+    com.sucharu.sucharupro.data.api.model.affiliate.ProfileCompletenessResponseDto(
+        affiliateId = affiliateId,
+        score = score,
+        requiredFields = requiredFields,
+        completedFields = completedFields,
+        missingFields = missingFields,
+        blockingIssues = blockingIssues,
+        isComplete = isComplete,
+        calculatedAt = calculatedAt
+    )
+
+private fun com.sucharu.sucharupro.domain.model.affiliate.AffiliateVerificationRecord.toDto() =
+    com.sucharu.sucharupro.data.api.model.affiliate.AffiliateVerificationResponseDto(
+        tenantId = tenantId,
+        verificationId = verificationId,
+        affiliateId = affiliateId,
+        verificationType = verificationType.name,
+        status = status.name,
+        submittedAt = submittedAt,
+        reviewedAt = reviewedAt,
+        reviewerUserId = reviewerUserId,
+        reason = reason,
+        changeRequestNotes = changeRequestNotes,
+        metadataReference = metadataReference,
+        previousVerificationId = previousVerificationId,
+        expiresAt = expiresAt,
+        createdAt = createdAt,
+        updatedAt = updatedAt,
+        version = version
+    )
+
+private fun com.sucharu.sucharupro.domain.model.affiliate.AffiliateDocumentReference.toDto() =
+    com.sucharu.sucharupro.data.api.model.affiliate.AffiliateDocumentResponseDto(
+        tenantId = tenantId,
+        documentId = documentId,
+        affiliateId = affiliateId,
+        verificationId = verificationId,
+        documentType = documentType.name,
+        storageReference = storageReference,
+        fileName = fileName,
+        fileSizeBytes = fileSizeBytes,
+        mimeType = mimeType,
+        status = status.name,
+        rejectionReason = rejectionReason,
+        uploadedAt = uploadedAt,
+        expiresAt = expiresAt,
+        verifiedAt = verifiedAt,
+        createdAt = createdAt,
+        updatedAt = updatedAt,
+        version = version
+    )
+
+private fun com.sucharu.sucharupro.domain.model.affiliate.AffiliateProfileAuditRecord.toDto() =
+    com.sucharu.sucharupro.data.api.model.affiliate.AffiliateProfileAuditResponseDto(
+        tenantId = tenantId,
+        auditId = auditId,
+        affiliateId = affiliateId,
+        actorUserId = actorUserId,
+        actorRole = actorRole,
+        actorType = actorType.name,
+        action = action,
+        entityReference = entityReference,
+        previousState = previousState,
+        newState = newState,
+        reason = reason,
+        correlationId = correlationId,
+        idempotencyKey = idempotencyKey,
+        recordHash = recordHash,
+        previousAuditHash = previousAuditHash,
+        chainHash = chainHash,
+        timestamp = timestamp
+    )
+
+private fun com.sucharu.sucharupro.domain.model.affiliate.AffiliateProfileGovernanceSummary.toDto() =
+    com.sucharu.sucharupro.data.api.model.affiliate.AffiliateProfileGovernanceSummaryResponseDto(
+        tenantId = tenantId,
+        totalProfiles = totalProfiles,
+        verifiedProfiles = verifiedProfiles,
+        pendingReviewProfiles = pendingReviewProfiles,
+        incompleteProfiles = incompleteProfiles,
+        changesRequiredProfiles = changesRequiredProfiles,
+        suspendedProfiles = suspendedProfiles,
+        totalVerifications = totalVerifications,
+        verifiedVerifications = verifiedVerifications,
+        pendingVerifications = pendingVerifications,
+        rejectedVerifications = rejectedVerifications,
+        totalDocuments = totalDocuments,
+        verifiedDocuments = verifiedDocuments
+    )
 
 
 

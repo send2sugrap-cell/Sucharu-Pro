@@ -14890,6 +14890,200 @@ class BackendRouter(
             HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
         }
 
+        // =========================================================================
+        // SECTION 83: AFFILIATE PROFILE, VERIFICATION & GOVERNANCE REST ENDPOINTS
+        // =========================================================================
+
+        request.path == "/api/v1/affiliates/profile-governance/overview" && request.method == "GET" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val res = useCases.getAffiliateProfileGovernanceSummary(principal)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/affiliates/[^/]+/operational-profile$")) && request.method == "GET" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val affiliateId = request.path.removePrefix("/api/v1/affiliates/").removeSuffix("/operational-profile")
+            val res = useCases.getAffiliateOperationalProfile(principal, affiliateId)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/affiliates/[^/]+/operational-profile$")) && (request.method == "PUT" || request.method == "POST") -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val affiliateId = request.path.removePrefix("/api/v1/affiliates/").removeSuffix("/operational-profile")
+            val reqDto = parseUpsertAffiliateProfileRequest(request.body)
+            val res = useCases.upsertAffiliateOperationalProfile(principal, affiliateId, reqDto)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/affiliates/[^/]+/operational-profile/submit$")) && request.method == "POST" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val affiliateId = request.path.removePrefix("/api/v1/affiliates/").removeSuffix("/operational-profile/submit")
+            val reqDto = parseProfileLifecycleActionRequest(request.body)
+            val res = useCases.submitAffiliateOperationalProfile(principal, affiliateId, reqDto.idempotencyKey)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/affiliates/[^/]+/completeness$")) && request.method == "GET" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val affiliateId = request.path.removePrefix("/api/v1/affiliates/").removeSuffix("/completeness")
+            val res = useCases.getAffiliateProfileCompleteness(principal, affiliateId)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/affiliates/[^/]+/verifications$")) && request.method == "GET" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val affiliateId = request.path.removePrefix("/api/v1/affiliates/").removeSuffix("/verifications")
+            val res = useCases.listAffiliateVerifications(principal, affiliateId)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/affiliates/[^/]+/verifications$")) && request.method == "POST" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val affiliateId = request.path.removePrefix("/api/v1/affiliates/").removeSuffix("/verifications")
+            val reqDto = parseRequestVerificationRequest(request.body)
+            val res = useCases.requestAffiliateVerification(principal, affiliateId, reqDto)
+            HttpResponse(201, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/affiliates/verifications/[^/]+/approve$")) && request.method == "POST" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val verificationId = request.path.removePrefix("/api/v1/affiliates/verifications/").removeSuffix("/approve")
+            val reqDto = parseReviewVerificationRequest(request.body)
+            val res = useCases.approveAffiliateVerification(principal, verificationId, reqDto)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/affiliates/verifications/[^/]+/reject$")) && request.method == "POST" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val verificationId = request.path.removePrefix("/api/v1/affiliates/verifications/").removeSuffix("/reject")
+            val reqDto = parseReviewVerificationRequest(request.body)
+            val res = useCases.rejectAffiliateVerification(principal, verificationId, reqDto)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/affiliates/verifications/[^/]+/request-changes$")) && request.method == "POST" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val verificationId = request.path.removePrefix("/api/v1/affiliates/verifications/").removeSuffix("/request-changes")
+            val reqDto = parseReviewVerificationRequest(request.body)
+            val res = useCases.requestAffiliateVerificationChanges(principal, verificationId, reqDto)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/affiliates/[^/]+/documents$")) && request.method == "GET" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val affiliateId = request.path.removePrefix("/api/v1/affiliates/").removeSuffix("/documents")
+            val res = useCases.listAffiliateDocuments(principal, affiliateId)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/affiliates/[^/]+/documents$")) && request.method == "POST" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val affiliateId = request.path.removePrefix("/api/v1/affiliates/").removeSuffix("/documents")
+            val reqDto = parseAddDocumentReferenceRequest(request.body)
+            val res = useCases.addAffiliateDocumentReference(principal, affiliateId, reqDto)
+            HttpResponse(201, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/affiliates/documents/[^/]+/verify$")) && request.method == "POST" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val documentId = request.path.removePrefix("/api/v1/affiliates/documents/").removeSuffix("/verify")
+            val res = useCases.verifyAffiliateDocument(principal, documentId)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/affiliates/documents/[^/]+/reject$")) && request.method == "POST" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val documentId = request.path.removePrefix("/api/v1/affiliates/documents/").removeSuffix("/reject")
+            val reqDto = parseReviewDocumentRequest(request.body)
+            val res = useCases.rejectAffiliateDocument(principal, documentId, reqDto)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/affiliates/[^/]+/profile/suspend$")) && request.method == "POST" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val affiliateId = request.path.removePrefix("/api/v1/affiliates/").removeSuffix("/profile/suspend")
+            val reqDto = parseProfileLifecycleActionRequest(request.body)
+            val res = useCases.suspendAffiliateProfile(principal, affiliateId, reqDto.reason, reqDto.idempotencyKey)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/affiliates/[^/]+/profile/reactivate$")) && request.method == "POST" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val affiliateId = request.path.removePrefix("/api/v1/affiliates/").removeSuffix("/profile/reactivate")
+            val reqDto = parseProfileLifecycleActionRequest(request.body)
+            val res = useCases.reactivateAffiliateProfile(principal, affiliateId, reqDto.reason, reqDto.idempotencyKey)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/affiliates/[^/]+/profile-audit$")) && request.method == "GET" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val affiliateId = request.path.removePrefix("/api/v1/affiliates/").removeSuffix("/profile-audit")
+            val res = useCases.listAffiliateProfileAuditRecords(principal, affiliateId)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/affiliates/[^/]+/profile-handoff$")) && request.method == "GET" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val affiliateId = request.path.removePrefix("/api/v1/affiliates/").removeSuffix("/profile-handoff")
+            val res = useCases.getAffiliateProfileHandoffContract(principal, affiliateId)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        // --- Step 05: Affiliate Administrative Command Center & Governance Operations ---
+        request.path == "/api/v1/affiliates/command-center/overview" && request.method == "GET" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val res = useCases.getAffiliateCommandCenterOverview(principal)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        (request.path == "/api/v1/affiliates/command-center/work-items" || request.path.startsWith("/api/v1/affiliates/command-center/work-items?")) && request.method == "GET" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val queryParams = parseQueryParams(request.path)
+            val priority = queryParams["priority"]
+            val status = queryParams["status"]
+            val itemType = queryParams["itemType"]
+            val affiliateId = queryParams["affiliateId"]
+            val res = useCases.listAffiliateGovernanceWorkItems(principal, priority, status, itemType, affiliateId)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/affiliates/command-center/work-items/[^/]+/resolve$")) && request.method == "POST" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val workItemId = request.path.removePrefix("/api/v1/affiliates/command-center/work-items/").removeSuffix("/resolve")
+            val reqDto = parseResolveWorkItemRequest(request.body)
+            val res = useCases.resolveAffiliateGovernanceWorkItem(principal, workItemId, reqDto)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/affiliates/[^/]+/administrative-detail$")) && request.method == "GET" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val affiliateId = request.path.removePrefix("/api/v1/affiliates/").removeSuffix("/administrative-detail")
+            val res = useCases.getAffiliateAdministrativeDetailView(principal, affiliateId)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/affiliates/[^/]+/admin-action$")) && request.method == "POST" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val affiliateId = request.path.removePrefix("/api/v1/affiliates/").removeSuffix("/admin-action")
+            val reqDto = parseAdminLifecycleActionRequest(request.body)
+            val res = useCases.executeAffiliateAdminAction(principal, affiliateId, reqDto)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        (request.path == "/api/v1/affiliates/command-center/audit" || request.path.startsWith("/api/v1/affiliates/command-center/audit?")) && request.method == "GET" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val queryParams = parseQueryParams(request.path)
+            val affiliateId = queryParams["affiliateId"]
+            val res = useCases.listAffiliateCommandCenterAuditRecords(principal, affiliateId)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path == "/api/v1/affiliates/command-center/handoff" && request.method == "GET" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val res = useCases.getAffiliateCommandCenterHandoffContract(principal)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
         else -> null
     }
 }
@@ -16269,6 +16463,132 @@ private fun parseEnrollAffiliateRequest(body: Any?): com.sucharu.sucharupro.data
             effectiveFrom = (map["effectiveFrom"] as? Number)?.toLong() ?: map["effectiveFrom"]?.toString()?.toLongOrNull(),
             effectiveTo = (map["effectiveTo"] as? Number)?.toLong() ?: map["effectiveTo"]?.toString()?.toLongOrNull(),
             metadataJson = map["metadataJson"]?.toString()
+        )
+    }
+}
+
+// --- Step 03 Profile Parsers ---
+
+@Suppress("UNCHECKED_CAST")
+private fun parseUpsertAffiliateProfileRequest(body: Any?): com.sucharu.sucharupro.data.api.model.affiliate.UpsertAffiliateProfileRequestDto = when (body) {
+    is com.sucharu.sucharupro.data.api.model.affiliate.UpsertAffiliateProfileRequestDto -> body
+    else -> {
+        val map = parseBodyMap(body)
+        com.sucharu.sucharupro.data.api.model.affiliate.UpsertAffiliateProfileRequestDto(
+            displayName = map["displayName"]?.toString() ?: "",
+            legalName = map["legalName"]?.toString(),
+            businessType = map["businessType"]?.toString() ?: "INDIVIDUAL",
+            businessDescription = map["businessDescription"]?.toString(),
+            contactEmail = map["contactEmail"]?.toString(),
+            contactPhone = map["contactPhone"]?.toString(),
+            website = map["website"]?.toString(),
+            addressLine1 = map["addressLine1"]?.toString(),
+            addressLine2 = map["addressLine2"]?.toString(),
+            city = map["city"]?.toString(),
+            region = map["region"]?.toString(),
+            country = map["country"]?.toString(),
+            postalCode = map["postalCode"]?.toString(),
+            taxIdOrGst = map["taxIdOrGst"]?.toString(),
+            taxInformationReference = map["taxInformationReference"]?.toString(),
+            metadataJson = map["metadataJson"]?.toString(),
+            idempotencyKey = map["idempotencyKey"]?.toString()
+        )
+    }
+}
+
+@Suppress("UNCHECKED_CAST")
+private fun parseRequestVerificationRequest(body: Any?): com.sucharu.sucharupro.data.api.model.affiliate.RequestVerificationRequestDto = when (body) {
+    is com.sucharu.sucharupro.data.api.model.affiliate.RequestVerificationRequestDto -> body
+    else -> {
+        val map = parseBodyMap(body)
+        com.sucharu.sucharupro.data.api.model.affiliate.RequestVerificationRequestDto(
+            verificationType = map["verificationType"]?.toString() ?: "OTHER",
+            metadataReference = map["metadataReference"]?.toString(),
+            reason = map["reason"]?.toString(),
+            previousVerificationId = map["previousVerificationId"]?.toString(),
+            idempotencyKey = map["idempotencyKey"]?.toString()
+        )
+    }
+}
+
+@Suppress("UNCHECKED_CAST")
+private fun parseReviewVerificationRequest(body: Any?): com.sucharu.sucharupro.data.api.model.affiliate.ReviewVerificationRequestDto = when (body) {
+    is com.sucharu.sucharupro.data.api.model.affiliate.ReviewVerificationRequestDto -> body
+    else -> {
+        val map = parseBodyMap(body)
+        com.sucharu.sucharupro.data.api.model.affiliate.ReviewVerificationRequestDto(
+            reason = map["reason"]?.toString() ?: "",
+            changeRequestNotes = map["changeRequestNotes"]?.toString(),
+            expiresAt = (map["expiresAt"] as? Number)?.toLong() ?: map["expiresAt"]?.toString()?.toLongOrNull(),
+            idempotencyKey = map["idempotencyKey"]?.toString()
+        )
+    }
+}
+
+@Suppress("UNCHECKED_CAST")
+private fun parseAddDocumentReferenceRequest(body: Any?): com.sucharu.sucharupro.data.api.model.affiliate.AddDocumentReferenceRequestDto = when (body) {
+    is com.sucharu.sucharupro.data.api.model.affiliate.AddDocumentReferenceRequestDto -> body
+    else -> {
+        val map = parseBodyMap(body)
+        com.sucharu.sucharupro.data.api.model.affiliate.AddDocumentReferenceRequestDto(
+            verificationId = map["verificationId"]?.toString(),
+            documentType = map["documentType"]?.toString() ?: "OTHER",
+            storageReference = map["storageReference"]?.toString() ?: "",
+            fileName = map["fileName"]?.toString() ?: "",
+            fileSizeBytes = (map["fileSizeBytes"] as? Number)?.toLong() ?: map["fileSizeBytes"]?.toString()?.toLongOrNull(),
+            mimeType = map["mimeType"]?.toString(),
+            expiresAt = (map["expiresAt"] as? Number)?.toLong() ?: map["expiresAt"]?.toString()?.toLongOrNull(),
+            idempotencyKey = map["idempotencyKey"]?.toString()
+        )
+    }
+}
+
+@Suppress("UNCHECKED_CAST")
+private fun parseReviewDocumentRequest(body: Any?): com.sucharu.sucharupro.data.api.model.affiliate.ReviewDocumentRequestDto = when (body) {
+    is com.sucharu.sucharupro.data.api.model.affiliate.ReviewDocumentRequestDto -> body
+    else -> {
+        val map = parseBodyMap(body)
+        com.sucharu.sucharupro.data.api.model.affiliate.ReviewDocumentRequestDto(
+            rejectionReason = map["rejectionReason"]?.toString() ?: map["reason"]?.toString(),
+            idempotencyKey = map["idempotencyKey"]?.toString()
+        )
+    }
+}
+
+@Suppress("UNCHECKED_CAST")
+private fun parseProfileLifecycleActionRequest(body: Any?): com.sucharu.sucharupro.data.api.model.affiliate.ProfileLifecycleActionRequestDto = when (body) {
+    is com.sucharu.sucharupro.data.api.model.affiliate.ProfileLifecycleActionRequestDto -> body
+    else -> {
+        val map = parseBodyMap(body)
+        com.sucharu.sucharupro.data.api.model.affiliate.ProfileLifecycleActionRequestDto(
+            reason = map["reason"]?.toString() ?: "",
+            idempotencyKey = map["idempotencyKey"]?.toString()
+        )
+    }
+}
+
+@Suppress("UNCHECKED_CAST")
+private fun parseResolveWorkItemRequest(body: Any?): com.sucharu.sucharupro.data.api.model.affiliate.ResolveWorkItemRequestDto = when (body) {
+    is com.sucharu.sucharupro.data.api.model.affiliate.ResolveWorkItemRequestDto -> body
+    else -> {
+        val map = parseBodyMap(body)
+        com.sucharu.sucharupro.data.api.model.affiliate.ResolveWorkItemRequestDto(
+            workItemId = map["workItemId"]?.toString() ?: "",
+            resolutionNotes = map["resolutionNotes"]?.toString() ?: map["notes"]?.toString() ?: "Resolved via Command Center",
+            status = map["status"]?.toString() ?: "RESOLVED"
+        )
+    }
+}
+
+@Suppress("UNCHECKED_CAST")
+private fun parseAdminLifecycleActionRequest(body: Any?): com.sucharu.sucharupro.data.api.model.affiliate.AdminLifecycleActionRequestDto = when (body) {
+    is com.sucharu.sucharupro.data.api.model.affiliate.AdminLifecycleActionRequestDto -> body
+    else -> {
+        val map = parseBodyMap(body)
+        com.sucharu.sucharupro.data.api.model.affiliate.AdminLifecycleActionRequestDto(
+            affiliateId = map["affiliateId"]?.toString() ?: "",
+            action = map["action"]?.toString() ?: "APPROVE",
+            reason = map["reason"]?.toString() ?: "Administrative Command Action"
         )
     }
 }

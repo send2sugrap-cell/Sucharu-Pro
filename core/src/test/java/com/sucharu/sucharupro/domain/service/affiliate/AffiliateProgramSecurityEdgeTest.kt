@@ -1,4 +1,4 @@
-package com.sucharu.sucharupro.domain.service.affiliate
+﻿package com.sucharu.sucharupro.domain.service.affiliate
 
 import com.sucharu.sucharupro.data.api.model.*
 import com.sucharu.sucharupro.data.api.model.affiliate.CreateAffiliateProgramRequestDto

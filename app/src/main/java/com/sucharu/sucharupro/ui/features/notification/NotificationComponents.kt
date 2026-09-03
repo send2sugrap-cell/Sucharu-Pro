@@ -200,6 +200,7 @@ private fun getCategoryColor(category: NotificationCategory): Color {
         NotificationCategory.INVENTORY -> Color(0xFF06B6D4)
         NotificationCategory.FINANCE -> Color(0xFF34D399)
         NotificationCategory.SYSTEM -> Color(0xFFF87171)
+        NotificationCategory.AFFILIATE -> Color(0xFF818CF8)
         NotificationCategory.GENERAL -> Color(0xFF94A3B8)
     }
 }
@@ -214,6 +215,7 @@ private fun getCategoryIcon(category: NotificationCategory): ImageVector {
         NotificationCategory.INVENTORY -> Icons.Default.Inventory
         NotificationCategory.FINANCE -> Icons.Default.AccountBalanceWallet
         NotificationCategory.SYSTEM -> Icons.Default.Warning
+        NotificationCategory.AFFILIATE -> Icons.Default.Handshake
         NotificationCategory.GENERAL -> Icons.Default.Notifications
     }
 }

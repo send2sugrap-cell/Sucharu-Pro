@@ -71,7 +71,7 @@ class FakeAffiliateDataSource : AffiliateDataSource {
 
     override suspend fun findLatestEligibility(tenantId: String, affiliateId: String): AffiliateEligibility? {
         val key = "$tenantId|$affiliateId"
-        return eligibilityMap[key]?.maxByOrNull { it.evaluatedAt }
+        return eligibilityMap[key]?.lastOrNull()
     }
 
     override suspend fun appendAuditRecord(record: AffiliateAuditRecord): AffiliateAuditRecord {

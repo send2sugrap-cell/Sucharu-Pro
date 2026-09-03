@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /**
- * ViewModel for Affiliate Management Command Center (Module 20 Steps 01 & 02).
+ * ViewModel for Affiliate Management Command Center (Module 20 Steps 01, 02 & 03).
  */
 class AffiliateManagementViewModel(
     private val useCases: BackendUseCases,
@@ -44,6 +44,23 @@ class AffiliateManagementViewModel(
                     val myEnrollments = useCases.listAffiliateEnrollments(principal, affiliateId = myProfile.affiliateId)
                     val availablePrograms = useCases.listAffiliatePrograms(principal, status = "ACTIVE")
 
+                    // Step 03 loads
+                    var opProfile: AffiliateOperationalProfileResponseDto? = null
+                    var completeness: ProfileCompletenessResponseDto? = null
+                    var verifs: List<AffiliateVerificationResponseDto> = emptyList()
+                    var docs: List<AffiliateDocumentResponseDto> = emptyList()
+                    var profileAudits: List<AffiliateProfileAuditResponseDto> = emptyList()
+                    var profileHandoff: com.sucharu.sucharupro.domain.model.affiliate.Module20Step03AffiliateProfileHandoffContract? = null
+
+                    try {
+                        opProfile = useCases.getAffiliateOperationalProfile(principal, myProfile.affiliateId)
+                        completeness = useCases.getAffiliateProfileCompleteness(principal, myProfile.affiliateId)
+                        verifs = useCases.listAffiliateVerifications(principal, myProfile.affiliateId)
+                        docs = useCases.listAffiliateDocuments(principal, myProfile.affiliateId)
+                        profileAudits = useCases.listAffiliateProfileAuditRecords(principal, myProfile.affiliateId)
+                        profileHandoff = useCases.getAffiliateProfileHandoffContract(principal, myProfile.affiliateId)
+                    } catch (_: Exception) {}
+
                     _uiState.update {
                         it.copy(
                             isLoading = false,
@@ -54,6 +71,12 @@ class AffiliateManagementViewModel(
                             selectedHandoffContract = handoff,
                             enrollmentsList = myEnrollments,
                             programsList = availablePrograms,
+                            selectedOperationalProfile = opProfile,
+                            selectedCompleteness = completeness,
+                            selectedVerifications = verifs,
+                            selectedDocuments = docs,
+                            selectedProfileAudits = profileAudits,
+                            selectedProfileHandoffContract = profileHandoff,
                             selectedTab = AffiliateCommandTab.PROFILE_ELIGIBILITY
                         )
                     }
@@ -65,12 +88,24 @@ class AffiliateManagementViewModel(
                     var eligibility: AffiliateEligibilityDto? = null
                     var audits: List<AffiliateAuditRecordDto> = emptyList()
                     var handoff: com.sucharu.sucharupro.domain.model.affiliate.Module20Step01AffiliateHandoffContract? = null
+                    var opProfile: AffiliateOperationalProfileResponseDto? = null
+                    var completeness: ProfileCompletenessResponseDto? = null
+                    var verifs: List<AffiliateVerificationResponseDto> = emptyList()
+                    var docs: List<AffiliateDocumentResponseDto> = emptyList()
+                    var profileAudits: List<AffiliateProfileAuditResponseDto> = emptyList()
+                    var profileHandoff: com.sucharu.sucharupro.domain.model.affiliate.Module20Step03AffiliateProfileHandoffContract? = null
 
                     if (firstSelected != null) {
                         try {
                             eligibility = useCases.evaluateAffiliateEligibility(principal, firstSelected.affiliateId)
                             audits = useCases.listAffiliateAuditRecords(principal, firstSelected.affiliateId)
                             handoff = useCases.getAffiliateHandoffContract(principal, firstSelected.affiliateId)
+                            opProfile = useCases.getAffiliateOperationalProfile(principal, firstSelected.affiliateId)
+                            completeness = useCases.getAffiliateProfileCompleteness(principal, firstSelected.affiliateId)
+                            verifs = useCases.listAffiliateVerifications(principal, firstSelected.affiliateId)
+                            docs = useCases.listAffiliateDocuments(principal, firstSelected.affiliateId)
+                            profileAudits = useCases.listAffiliateProfileAuditRecords(principal, firstSelected.affiliateId)
+                            profileHandoff = useCases.getAffiliateProfileHandoffContract(principal, firstSelected.affiliateId)
                         } catch (_: Exception) {}
                     }
 
@@ -82,6 +117,26 @@ class AffiliateManagementViewModel(
                         progSummary = useCases.getAffiliateProgramGovernanceSummary(principal)
                         progs = useCases.listAffiliatePrograms(principal)
                         enrolls = useCases.listAffiliateEnrollments(principal)
+                    } catch (_: Exception) {}
+
+                    // Step 03 Governance Summary
+                    var profSummary: AffiliateProfileGovernanceSummaryResponseDto? = null
+                    try {
+                        profSummary = useCases.getAffiliateProfileGovernanceSummary(principal)
+                    } catch (_: Exception) {}
+
+                    // Step 04 Governance Summary & Communications
+                    var commSummary: com.sucharu.sucharupro.data.api.model.affiliate.AffiliateNotificationGovernanceSummaryResponseDto? = null
+                    var commsList: List<com.sucharu.sucharupro.data.api.model.affiliate.AffiliateCommunicationResponseDto> = emptyList()
+                    var notifPrefs: List<com.sucharu.sucharupro.data.api.model.affiliate.AffiliateNotificationPreferenceResponseDto> = emptyList()
+                    var unreadCount: Long = 0L
+                    try {
+                        commSummary = useCases.getAffiliateCommunicationGovernanceSummary(principal)
+                        if (firstSelected != null) {
+                            commsList = useCases.listAffiliateNotifications(principal, firstSelected.affiliateId)
+                            notifPrefs = useCases.getAffiliateNotificationPreferences(principal, firstSelected.affiliateId)
+                            unreadCount = useCases.getAffiliateUnreadNotificationCount(principal, firstSelected.affiliateId).totalUnread
+                        }
                     } catch (_: Exception) {}
 
                     val firstProg = progs.firstOrNull()
@@ -100,7 +155,18 @@ class AffiliateManagementViewModel(
                             programsList = progs,
                             selectedProgram = firstProg,
                             enrollmentsList = enrolls,
-                            selectedEnrollment = firstEnroll
+                            selectedEnrollment = firstEnroll,
+                            profileSummary = profSummary,
+                            selectedOperationalProfile = opProfile,
+                            selectedCompleteness = completeness,
+                            selectedVerifications = verifs,
+                            selectedDocuments = docs,
+                            selectedProfileAudits = profileAudits,
+                            selectedProfileHandoffContract = profileHandoff,
+                            communicationSummary = commSummary,
+                            communicationsList = commsList,
+                            notificationPreferences = notifPrefs,
+                            unreadCommunicationCount = unreadCount
                         )
                     }
                 }
@@ -128,13 +194,35 @@ class AffiliateManagementViewModel(
                 val audits = useCases.listAffiliateAuditRecords(principal, affiliateId)
                 val handoff = useCases.getAffiliateHandoffContract(principal, affiliateId)
 
+                var opProfile: AffiliateOperationalProfileResponseDto? = null
+                var completeness: ProfileCompletenessResponseDto? = null
+                var verifs: List<AffiliateVerificationResponseDto> = emptyList()
+                var docs: List<AffiliateDocumentResponseDto> = emptyList()
+                var profileAudits: List<AffiliateProfileAuditResponseDto> = emptyList()
+                var profileHandoff: com.sucharu.sucharupro.domain.model.affiliate.Module20Step03AffiliateProfileHandoffContract? = null
+
+                try {
+                    opProfile = useCases.getAffiliateOperationalProfile(principal, affiliateId)
+                    completeness = useCases.getAffiliateProfileCompleteness(principal, affiliateId)
+                    verifs = useCases.listAffiliateVerifications(principal, affiliateId)
+                    docs = useCases.listAffiliateDocuments(principal, affiliateId)
+                    profileAudits = useCases.listAffiliateProfileAuditRecords(principal, affiliateId)
+                    profileHandoff = useCases.getAffiliateProfileHandoffContract(principal, affiliateId)
+                } catch (_: Exception) {}
+
                 _uiState.update {
                     it.copy(
                         isLoading = false,
                         selectedAffiliate = aff,
                         selectedEligibility = eligibility,
                         selectedAuditRecords = audits,
-                        selectedHandoffContract = handoff
+                        selectedHandoffContract = handoff,
+                        selectedOperationalProfile = opProfile,
+                        selectedCompleteness = completeness,
+                        selectedVerifications = verifs,
+                        selectedDocuments = docs,
+                        selectedProfileAudits = profileAudits,
+                        selectedProfileHandoffContract = profileHandoff
                     )
                 }
             } catch (e: Exception) {
@@ -175,22 +263,19 @@ class AffiliateManagementViewModel(
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        successMessage = "Affiliate '${created.displayName}' (${created.affiliateCode}) created successfully!"
+                        successMessage = "Affiliate '${created.displayName}' created with code '${created.affiliateCode}'."
                     )
                 }
                 loadData()
             } catch (e: Exception) {
                 _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        errorMessage = "Failed to create affiliate: ${e.message}"
-                    )
+                    it.copy(isLoading = false, errorMessage = "Failed to create affiliate: ${e.message}")
                 }
             }
         }
     }
 
-    fun activateAffiliate(affiliateId: String, reason: String = "Approved by Manager/Admin") {
+    fun activateAffiliate(affiliateId: String, reason: String = "Activated by Admin") {
         scope.launch {
             _uiState.update { it.copy(isLoading = true) }
             try {
@@ -198,7 +283,7 @@ class AffiliateManagementViewModel(
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        successMessage = "Affiliate '${activated.affiliateCode}' has been ACTIVATED."
+                        successMessage = "Affiliate '${activated.displayName}' ACTIVATED."
                     )
                 }
                 selectAffiliate(affiliateId)
@@ -219,7 +304,7 @@ class AffiliateManagementViewModel(
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        successMessage = "Affiliate '${suspended.affiliateCode}' has been SUSPENDED."
+                        successMessage = "Affiliate '${suspended.displayName}' SUSPENDED."
                     )
                 }
                 selectAffiliate(affiliateId)
@@ -240,7 +325,7 @@ class AffiliateManagementViewModel(
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        successMessage = "Affiliate '${reactivated.affiliateCode}' has been REACTIVATED."
+                        successMessage = "Affiliate '${reactivated.displayName}' REACTIVATED."
                     )
                 }
                 selectAffiliate(affiliateId)
@@ -261,7 +346,7 @@ class AffiliateManagementViewModel(
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        successMessage = "Affiliate application '${rejected.affiliateCode}' was REJECTED."
+                        successMessage = "Affiliate '${rejected.displayName}' REJECTED."
                     )
                 }
                 selectAffiliate(affiliateId)
@@ -274,40 +359,23 @@ class AffiliateManagementViewModel(
         }
     }
 
-    fun terminateAffiliate(affiliateId: String, reason: String) {
+    fun acceptAgreement(affiliateId: String, agreementReference: String, agreementVersion: String = "v1.0") {
         scope.launch {
             _uiState.update { it.copy(isLoading = true) }
             try {
-                val terminated = useCases.terminateAffiliate(principal, affiliateId, reason)
+                val req = AcceptAffiliateAgreementRequestDto(
+                    agreementReference = agreementReference,
+                    agreementVersion = agreementVersion
+                )
+                val accepted = useCases.acceptAffiliateAgreement(principal, affiliateId, req)
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        successMessage = "Affiliate '${terminated.affiliateCode}' has been TERMINATED."
+                        successMessage = "Agreement '${accepted.agreementReference}' accepted."
                     )
                 }
                 selectAffiliate(affiliateId)
                 loadData()
-            } catch (e: Exception) {
-                _uiState.update {
-                    it.copy(isLoading = false, errorMessage = "Failed to terminate affiliate: ${e.message}")
-                }
-            }
-        }
-    }
-
-    fun acceptAgreement(affiliateId: String, agreementRef: String, version: String = "v1.0") {
-        scope.launch {
-            _uiState.update { it.copy(isLoading = true) }
-            try {
-                val req = AcceptAffiliateAgreementRequestDto(agreementRef, version)
-                useCases.acceptAffiliateAgreement(principal, affiliateId, req)
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        successMessage = "Agreement accepted successfully."
-                    )
-                }
-                selectAffiliate(affiliateId)
             } catch (e: Exception) {
                 _uiState.update {
                     it.copy(isLoading = false, errorMessage = "Failed to accept agreement: ${e.message}")
@@ -316,9 +384,50 @@ class AffiliateManagementViewModel(
         }
     }
 
-    // =========================================================================
-    // STEP 02: PROGRAM & ENROLLMENT ACTIONS
-    // =========================================================================
+    // --- Step 02 Program & Enrollment Operations ---
+
+    fun createProgram(
+        programCode: String,
+        programName: String,
+        description: String?,
+        startDate: Long,
+        endDate: Long?,
+        eligibilityPolicy: String = "STANDARD",
+        termsReference: String? = null,
+        termsVersion: String? = null,
+        maxParticipants: Int? = null,
+        metadataJson: String? = null
+    ) {
+        scope.launch {
+            _uiState.update { it.copy(isLoading = true, errorMessage = null, successMessage = null) }
+            try {
+                val req = CreateAffiliateProgramRequestDto(
+                    programCode = programCode,
+                    programName = programName,
+                    description = description,
+                    startDate = startDate,
+                    endDate = endDate,
+                    eligibilityPolicy = eligibilityPolicy,
+                    termsReference = termsReference,
+                    termsVersion = termsVersion,
+                    maxParticipants = maxParticipants,
+                    metadataJson = metadataJson
+                )
+                val prog = useCases.createAffiliateProgram(principal, req)
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        successMessage = "Affiliate Program '${prog.programName}' created (${prog.programCode})."
+                    )
+                }
+                loadData()
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(isLoading = false, errorMessage = "Failed to create program: ${e.message}")
+                }
+            }
+        }
+    }
 
     fun selectProgram(programId: String) {
         scope.launch {
@@ -341,58 +450,15 @@ class AffiliateManagementViewModel(
         }
     }
 
-    fun createProgram(
-        programCode: String,
-        programName: String,
-        description: String?,
-        startDate: Long,
-        endDate: Long? = null,
-        eligibilityPolicy: String = "STANDARD",
-        termsReference: String? = null,
-        termsVersion: String? = null,
-        maxParticipants: Int? = null,
-        metadataJson: String? = null
-    ) {
-        scope.launch {
-            _uiState.update { it.copy(isLoading = true, errorMessage = null, successMessage = null) }
-            try {
-                val req = CreateAffiliateProgramRequestDto(
-                    programCode = programCode,
-                    programName = programName,
-                    description = description,
-                    startDate = startDate,
-                    endDate = endDate,
-                    eligibilityPolicy = eligibilityPolicy,
-                    termsReference = termsReference,
-                    termsVersion = termsVersion,
-                    maxParticipants = maxParticipants,
-                    metadataJson = metadataJson
-                )
-                val created = useCases.createAffiliateProgram(principal, req)
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        successMessage = "Program '${created.programName}' (${created.programCode}) created successfully!"
-                    )
-                }
-                loadData()
-            } catch (e: Exception) {
-                _uiState.update {
-                    it.copy(isLoading = false, errorMessage = "Failed to create program: ${e.message}")
-                }
-            }
-        }
-    }
-
-    fun activateProgram(programId: String, reason: String = "Program activated") {
+    fun activateProgram(programId: String, reason: String = "Launched") {
         scope.launch {
             _uiState.update { it.copy(isLoading = true) }
             try {
-                val activated = useCases.activateAffiliateProgram(principal, programId, reason)
+                val prog = useCases.activateAffiliateProgram(principal, programId, reason)
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        successMessage = "Program '${activated.programCode}' ACTIVATED."
+                        successMessage = "Program '${prog.programName}' ACTIVATED."
                     )
                 }
                 selectProgram(programId)
@@ -409,11 +475,11 @@ class AffiliateManagementViewModel(
         scope.launch {
             _uiState.update { it.copy(isLoading = true) }
             try {
-                val paused = useCases.pauseAffiliateProgram(principal, programId, reason)
+                val prog = useCases.pauseAffiliateProgram(principal, programId, reason)
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        successMessage = "Program '${paused.programCode}' PAUSED."
+                        successMessage = "Program '${prog.programName}' PAUSED."
                     )
                 }
                 selectProgram(programId)
@@ -430,11 +496,11 @@ class AffiliateManagementViewModel(
         scope.launch {
             _uiState.update { it.copy(isLoading = true) }
             try {
-                val closed = useCases.closeAffiliateProgram(principal, programId, reason)
+                val prog = useCases.closeAffiliateProgram(principal, programId, reason)
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        successMessage = "Program '${closed.programCode}' CLOSED."
+                        successMessage = "Program '${prog.programName}' CLOSED."
                     )
                 }
                 selectProgram(programId)
@@ -447,37 +513,13 @@ class AffiliateManagementViewModel(
         }
     }
 
-    fun archiveProgram(programId: String, reason: String) {
-        scope.launch {
-            _uiState.update { it.copy(isLoading = true) }
-            try {
-                val archived = useCases.archiveAffiliateProgram(principal, programId, reason)
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        successMessage = "Program '${archived.programCode}' ARCHIVED."
-                    )
-                }
-                selectProgram(programId)
-                loadData()
-            } catch (e: Exception) {
-                _uiState.update {
-                    it.copy(isLoading = false, errorMessage = "Failed to archive program: ${e.message}")
-                }
-            }
-        }
-    }
-
     fun selectEnrollment(enrollmentId: String) {
         scope.launch {
             _uiState.update { it.copy(isLoading = true) }
             try {
                 val enr = useCases.getAffiliateEnrollmentById(principal, enrollmentId)
                 val audits = useCases.listAffiliateEnrollmentAuditRecords(principal, enrollmentId)
-                val handoff = try {
-                    useCases.getAffiliateProgramHandoffContract(principal, enrollmentId)
-                } catch (_: Exception) { null }
-
+                val handoff = useCases.getAffiliateProgramHandoffContract(principal, enrollmentId)
                 _uiState.update {
                     it.copy(
                         isLoading = false,
@@ -655,6 +697,317 @@ class AffiliateManagementViewModel(
         }
     }
 
+    // --- Step 03 Profile, Verification & Governance Operations ---
+
+    fun upsertOperationalProfile(
+        affiliateId: String,
+        displayName: String,
+        legalName: String? = null,
+        businessType: String = "INDIVIDUAL",
+        businessDescription: String? = null,
+        contactEmail: String? = null,
+        contactPhone: String? = null,
+        website: String? = null,
+        addressLine1: String? = null,
+        addressLine2: String? = null,
+        city: String? = null,
+        region: String? = null,
+        country: String? = null,
+        postalCode: String? = null,
+        taxIdOrGst: String? = null,
+        taxInformationReference: String? = null,
+        metadataJson: String? = null
+    ) {
+        scope.launch {
+            _uiState.update { it.copy(isLoading = true, errorMessage = null, successMessage = null) }
+            try {
+                val req = UpsertAffiliateProfileRequestDto(
+                    displayName = displayName,
+                    legalName = legalName,
+                    businessType = businessType,
+                    businessDescription = businessDescription,
+                    contactEmail = contactEmail,
+                    contactPhone = contactPhone,
+                    website = website,
+                    addressLine1 = addressLine1,
+                    addressLine2 = addressLine2,
+                    city = city,
+                    region = region,
+                    country = country,
+                    postalCode = postalCode,
+                    taxIdOrGst = taxIdOrGst,
+                    taxInformationReference = taxInformationReference,
+                    metadataJson = metadataJson
+                )
+                val profile = useCases.upsertAffiliateOperationalProfile(principal, affiliateId, req)
+                val completeness = useCases.getAffiliateProfileCompleteness(principal, affiliateId)
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        selectedOperationalProfile = profile,
+                        selectedCompleteness = completeness,
+                        successMessage = "Operational profile updated (Completeness: ${profile.completenessScore}%)."
+                    )
+                }
+                loadData()
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(isLoading = false, errorMessage = "Failed to update profile: ${e.message}")
+                }
+            }
+        }
+    }
+
+    fun submitOperationalProfile(affiliateId: String) {
+        scope.launch {
+            _uiState.update { it.copy(isLoading = true, errorMessage = null, successMessage = null) }
+            try {
+                val profile = useCases.submitAffiliateOperationalProfile(principal, affiliateId)
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        selectedOperationalProfile = profile,
+                        successMessage = "Profile submitted for verification review."
+                    )
+                }
+                loadData()
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(isLoading = false, errorMessage = "Failed to submit profile: ${e.message}")
+                }
+            }
+        }
+    }
+
+    fun requestVerification(
+        affiliateId: String,
+        verificationType: String,
+        reason: String? = null,
+        metadataReference: String? = null
+    ) {
+        scope.launch {
+            _uiState.update { it.copy(isLoading = true, errorMessage = null, successMessage = null) }
+            try {
+                val req = RequestVerificationRequestDto(
+                    verificationType = verificationType,
+                    reason = reason,
+                    metadataReference = metadataReference
+                )
+                val verif = useCases.requestAffiliateVerification(principal, affiliateId, req)
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        successMessage = "Verification check requested (${verif.verificationType})."
+                    )
+                }
+                selectAffiliate(affiliateId)
+                loadData()
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(isLoading = false, errorMessage = "Failed to request verification: ${e.message}")
+                }
+            }
+        }
+    }
+
+    fun approveVerification(verificationId: String, reason: String = "Verified") {
+        scope.launch {
+            _uiState.update { it.copy(isLoading = true, errorMessage = null, successMessage = null) }
+            try {
+                val req = ReviewVerificationRequestDto(reason = reason)
+                val verif = useCases.approveAffiliateVerification(principal, verificationId, req)
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        successMessage = "Verification ${verif.verificationId} APPROVED."
+                    )
+                }
+                val affId = _uiState.value.selectedAffiliate?.affiliateId
+                if (affId != null) selectAffiliate(affId)
+                loadData()
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(isLoading = false, errorMessage = "Failed to approve verification: ${e.message}")
+                }
+            }
+        }
+    }
+
+    fun rejectVerification(verificationId: String, reason: String) {
+        scope.launch {
+            _uiState.update { it.copy(isLoading = true, errorMessage = null, successMessage = null) }
+            try {
+                val req = ReviewVerificationRequestDto(reason = reason)
+                val verif = useCases.rejectAffiliateVerification(principal, verificationId, req)
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        successMessage = "Verification ${verif.verificationId} REJECTED."
+                    )
+                }
+                val affId = _uiState.value.selectedAffiliate?.affiliateId
+                if (affId != null) selectAffiliate(affId)
+                loadData()
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(isLoading = false, errorMessage = "Failed to reject verification: ${e.message}")
+                }
+            }
+        }
+    }
+
+    fun requestVerificationChanges(verificationId: String, reason: String, changeRequestNotes: String) {
+        scope.launch {
+            _uiState.update { it.copy(isLoading = true, errorMessage = null, successMessage = null) }
+            try {
+                val req = ReviewVerificationRequestDto(
+                    reason = reason,
+                    changeRequestNotes = changeRequestNotes
+                )
+                val verif = useCases.requestAffiliateVerificationChanges(principal, verificationId, req)
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        successMessage = "Changes requested for verification ${verif.verificationId}."
+                    )
+                }
+                val affId = _uiState.value.selectedAffiliate?.affiliateId
+                if (affId != null) selectAffiliate(affId)
+                loadData()
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(isLoading = false, errorMessage = "Failed to request changes: ${e.message}")
+                }
+            }
+        }
+    }
+
+    fun addDocumentReference(
+        affiliateId: String,
+        documentType: String,
+        storageReference: String,
+        fileName: String,
+        verificationId: String? = null,
+        fileSizeBytes: Long? = null,
+        mimeType: String? = null
+    ) {
+        scope.launch {
+            _uiState.update { it.copy(isLoading = true, errorMessage = null, successMessage = null) }
+            try {
+                val req = AddDocumentReferenceRequestDto(
+                    verificationId = verificationId,
+                    documentType = documentType,
+                    storageReference = storageReference,
+                    fileName = fileName,
+                    fileSizeBytes = fileSizeBytes,
+                    mimeType = mimeType
+                )
+                val doc = useCases.addAffiliateDocumentReference(principal, affiliateId, req)
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        successMessage = "Document '${doc.fileName}' uploaded."
+                    )
+                }
+                selectAffiliate(affiliateId)
+                loadData()
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(isLoading = false, errorMessage = "Failed to upload document reference: ${e.message}")
+                }
+            }
+        }
+    }
+
+    fun verifyDocumentReference(documentId: String) {
+        scope.launch {
+            _uiState.update { it.copy(isLoading = true, errorMessage = null, successMessage = null) }
+            try {
+                val doc = useCases.verifyAffiliateDocument(principal, documentId)
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        successMessage = "Document '${doc.fileName}' VERIFIED."
+                    )
+                }
+                val affId = _uiState.value.selectedAffiliate?.affiliateId
+                if (affId != null) selectAffiliate(affId)
+                loadData()
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(isLoading = false, errorMessage = "Failed to verify document: ${e.message}")
+                }
+            }
+        }
+    }
+
+    fun rejectDocumentReference(documentId: String, reason: String) {
+        scope.launch {
+            _uiState.update { it.copy(isLoading = true, errorMessage = null, successMessage = null) }
+            try {
+                val req = ReviewDocumentRequestDto(rejectionReason = reason)
+                val doc = useCases.rejectAffiliateDocument(principal, documentId, req)
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        successMessage = "Document '${doc.fileName}' REJECTED."
+                    )
+                }
+                val affId = _uiState.value.selectedAffiliate?.affiliateId
+                if (affId != null) selectAffiliate(affId)
+                loadData()
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(isLoading = false, errorMessage = "Failed to reject document: ${e.message}")
+                }
+            }
+        }
+    }
+
+    fun suspendOperationalProfile(affiliateId: String, reason: String) {
+        scope.launch {
+            _uiState.update { it.copy(isLoading = true, errorMessage = null, successMessage = null) }
+            try {
+                val prof = useCases.suspendAffiliateProfile(principal, affiliateId, reason)
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        selectedOperationalProfile = prof,
+                        successMessage = "Profile SUSPENDED."
+                    )
+                }
+                selectAffiliate(affiliateId)
+                loadData()
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(isLoading = false, errorMessage = "Failed to suspend profile: ${e.message}")
+                }
+            }
+        }
+    }
+
+    fun reactivateOperationalProfile(affiliateId: String, reason: String = "Reactivated") {
+        scope.launch {
+            _uiState.update { it.copy(isLoading = true, errorMessage = null, successMessage = null) }
+            try {
+                val prof = useCases.reactivateAffiliateProfile(principal, affiliateId, reason)
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        selectedOperationalProfile = prof,
+                        successMessage = "Profile REACTIVATED."
+                    )
+                }
+                selectAffiliate(affiliateId)
+                loadData()
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(isLoading = false, errorMessage = "Failed to reactivate profile: ${e.message}")
+                }
+            }
+        }
+    }
+
     fun setSearchQuery(query: String) {
         _uiState.update { it.copy(searchQuery = query) }
     }
@@ -679,7 +1032,153 @@ class AffiliateManagementViewModel(
         _uiState.update { it.copy(enrollmentStatusFilter = status) }
     }
 
+    fun setVerificationStatusFilter(status: String?) {
+        _uiState.update { it.copy(verificationStatusFilter = status) }
+    }
+
+    fun sendAffiliateCommunication(
+        affiliateId: String,
+        communicationType: String,
+        title: String? = null,
+        message: String? = null
+    ) {
+        scope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            try {
+                val req = com.sucharu.sucharupro.data.api.model.affiliate.EmitAffiliateCommunicationRequestDto(
+                    affiliateId = affiliateId,
+                    communicationType = communicationType,
+                    title = title,
+                    message = message
+                )
+                useCases.emitAffiliateCommunication(principal, req)
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        successMessage = "Communication sent successfully."
+                    )
+                }
+                loadCommunicationsForAffiliate(affiliateId)
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(isLoading = false, errorMessage = "Failed to send communication: ${e.message}")
+                }
+            }
+        }
+    }
+
+    fun markCommunicationRead(communicationId: String) {
+        scope.launch {
+            val affId = _uiState.value.selectedAffiliate?.affiliateId 
+                ?: _uiState.value.affiliatesList.firstOrNull()?.affiliateId 
+                ?: return@launch
+            try {
+                useCases.markAffiliateNotificationRead(principal, affId, communicationId)
+                loadCommunicationsForAffiliate(affId)
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(errorMessage = "Failed to mark read: ${e.message}")
+                }
+            }
+        }
+    }
+
+    fun updateNotificationPreference(
+        affiliateId: String,
+        communicationType: String,
+        inAppEnabled: Boolean = true,
+        pushEnabled: Boolean = true,
+        emailEnabled: Boolean = false,
+        smsEnabled: Boolean = false
+    ) {
+        scope.launch {
+            try {
+                val req = com.sucharu.sucharupro.data.api.model.affiliate.UpdateAffiliateNotificationPreferenceRequestDto(
+                    communicationType = communicationType,
+                    inAppEnabled = inAppEnabled,
+                    pushEnabled = pushEnabled,
+                    emailEnabled = emailEnabled,
+                    smsEnabled = smsEnabled
+                )
+                useCases.updateAffiliateNotificationPreference(principal, affiliateId, req)
+                loadNotificationPreferences(affiliateId)
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(errorMessage = "Failed to update preference: ${e.message}")
+                }
+            }
+        }
+    }
+
+    fun loadCommunicationsForAffiliate(affiliateId: String) {
+        scope.launch {
+            try {
+                val list = useCases.listAffiliateNotifications(principal, affiliateId)
+                val prefs = useCases.getAffiliateNotificationPreferences(principal, affiliateId)
+                val unread = useCases.getAffiliateUnreadNotificationCount(principal, affiliateId)
+                _uiState.update {
+                    it.copy(
+                        communicationsList = list,
+                        notificationPreferences = prefs,
+                        unreadCommunicationCount = unread.totalUnread
+                    )
+                }
+            } catch (e: Exception) { }
+        }
+    }
+
+    fun loadNotificationPreferences(affiliateId: String) {
+        scope.launch {
+            try {
+                val prefs = useCases.getAffiliateNotificationPreferences(principal, affiliateId)
+                _uiState.update { it.copy(notificationPreferences = prefs) }
+            } catch (e: Exception) { }
+        }
+    }
+
     fun clearMessages() {
         _uiState.update { it.copy(errorMessage = null, successMessage = null) }
+    }
+
+    // --- Step 06: Final Governance Integrity & Cross-Module Readiness ---
+
+    /**
+     * Loads the Step 06 governance integrity state for the given affiliate.
+     *
+     * This is READ-ONLY. No mutations are dispatched.
+     * Populates:
+     *  - lifecycleIntegrityResult
+     *  - selectedIntegrationReadiness
+     *  - selectedFinalHandoffContract
+     *  - auditChainVerificationResult
+     */
+    fun loadGovernanceIntegrity(affiliateId: String) {
+        scope.launch {
+            _uiState.update { it.copy(isGovernanceIntegrityLoading = true) }
+            try {
+                val integrityResult = useCases.getAffiliateLifecycleIntegrityResult(principal, affiliateId)
+                val readiness = useCases.getAffiliateIntegrationReadiness(principal, affiliateId)
+                val finalHandoff = useCases.getAffiliateFinalGovernanceHandoffContract(principal, affiliateId)
+                val chainResult = useCases.verifyAffiliateAuditChain(principal, affiliateId)
+
+                _uiState.update {
+                    it.copy(
+                        isGovernanceIntegrityLoading = false,
+                        lifecycleIntegrityResult = integrityResult,
+                        selectedIntegrationReadiness = readiness,
+                        selectedFinalHandoffContract = finalHandoff,
+                        auditChainVerificationResult = chainResult,
+                        selectedTab = AffiliateCommandTab.GOVERNANCE_INTEGRITY
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        isGovernanceIntegrityLoading = false,
+                        errorMessage = "Failed to load governance integrity: ${e.message}"
+                    )
+                }
+            }
+        }
     }
 }

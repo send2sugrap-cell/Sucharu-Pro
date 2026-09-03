@@ -2237,7 +2237,123 @@ open class PostgresRepositoryFactory(
             affiliateRepository = affiliateRepo
         )
     }
+
+    // --- Module 20: Affiliate Profile, Verification & Governance Management (Step 03) ---
+
+    open fun createAffiliateProfileDataSource(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.data.datasource.affiliate.AffiliateProfileDataSource {
+        return PostgresAffiliateProfileDataSource(transactionManager)
+    }
+
+    open fun createAffiliateProfileRepository(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.domain.repository.affiliate.AffiliateProfileRepository {
+        val dataSource = createAffiliateProfileDataSource(tenantId)
+        return com.sucharu.sucharupro.data.repository.affiliate.AffiliateProfileRepositoryImpl(dataSource)
+    }
+
+    open fun createAffiliateProfileService(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.domain.service.affiliate.AffiliateProfileService {
+        val profileRepo = createAffiliateProfileRepository(tenantId)
+        val affiliateRepo = createAffiliateRepository(tenantId)
+        return com.sucharu.sucharupro.domain.service.affiliate.AffiliateProfileServiceImpl(
+            profileRepository = profileRepo,
+            affiliateRepository = affiliateRepo
+        )
+    }
+
+    // --- Module 20: Affiliate Communication, Notification & Lifecycle Governance (Step 04) ---
+
+    open fun createAffiliateCommunicationDataSource(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.data.datasource.affiliate.AffiliateCommunicationDataSource {
+        return com.sucharu.sucharupro.data.datasource.affiliate.FakeAffiliateCommunicationDataSource()
+    }
+
+    open fun createAffiliateCommunicationRepository(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.domain.repository.affiliate.AffiliateCommunicationRepository {
+        val dataSource = createAffiliateCommunicationDataSource(tenantId)
+        return com.sucharu.sucharupro.data.repository.affiliate.AffiliateCommunicationRepositoryImpl(dataSource)
+    }
+
+    open fun createAffiliateCommunicationService(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.domain.service.affiliate.AffiliateCommunicationService {
+        val communicationRepo = createAffiliateCommunicationRepository(tenantId)
+        val affiliateRepo = createAffiliateRepository(tenantId)
+        return com.sucharu.sucharupro.domain.service.affiliate.AffiliateCommunicationServiceImpl(
+            communicationRepository = communicationRepo,
+            affiliateRepository = affiliateRepo
+        )
+    }
+
+    open fun createAffiliateCommandCenterDataSource(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.data.datasource.affiliate.AffiliateCommandCenterDataSource {
+        return com.sucharu.sucharupro.data.datasource.affiliate.FakeAffiliateCommandCenterDataSource()
+    }
+
+    open fun createAffiliateCommandCenterRepository(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.domain.repository.affiliate.AffiliateCommandCenterRepository {
+        val dataSource = createAffiliateCommandCenterDataSource(tenantId)
+        return com.sucharu.sucharupro.data.repository.affiliate.AffiliateCommandCenterRepositoryImpl(dataSource)
+    }
+
+    open fun createAffiliateCommandCenterService(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.domain.service.affiliate.AffiliateCommandCenterService {
+        val commandCenterRepo = createAffiliateCommandCenterRepository(tenantId)
+        val affiliateSvc = createAffiliateService(tenantId)
+        val programSvc = createAffiliateProgramService(tenantId)
+        val profileSvc = createAffiliateProfileService(tenantId)
+        val communicationSvc = createAffiliateCommunicationService(tenantId)
+
+        return com.sucharu.sucharupro.domain.service.affiliate.AffiliateCommandCenterServiceImpl(
+            commandCenterRepository = commandCenterRepo,
+            affiliateService = affiliateSvc,
+            programService = programSvc,
+            profileService = profileSvc,
+            communicationService = communicationSvc
+        )
+    }
+
+    open fun createAffiliateGovernanceIntegrityDataSource(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.data.datasource.affiliate.FakeAffiliateGovernanceIntegrityDataSource {
+        return com.sucharu.sucharupro.data.datasource.affiliate.FakeAffiliateGovernanceIntegrityDataSource()
+    }
+
+    open fun createAffiliateGovernanceIntegrityRepository(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.domain.repository.affiliate.AffiliateGovernanceIntegrityRepository {
+        return createAffiliateGovernanceIntegrityDataSource(tenantId)
+    }
+
+    open fun createAffiliateGovernanceIntegrityService(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.domain.service.affiliate.AffiliateGovernanceIntegrityService {
+        val integrityRepo = createAffiliateGovernanceIntegrityRepository(tenantId)
+        val affiliateSvc = createAffiliateService(tenantId)
+        val profileSvc = createAffiliateProfileService(tenantId)
+        val programSvc = createAffiliateProgramService(tenantId)
+        val communicationSvc = createAffiliateCommunicationService(tenantId)
+        val commandCenterSvc = createAffiliateCommandCenterService(tenantId)
+
+        return com.sucharu.sucharupro.domain.service.affiliate.AffiliateGovernanceIntegrityServiceImpl(
+            affiliateService = affiliateSvc,
+            profileService = profileSvc,
+            programService = programSvc,
+            communicationService = communicationSvc,
+            commandCenterService = commandCenterSvc,
+            integrityRepository = integrityRepo
+        )
+    }
 }
+
 
 
 

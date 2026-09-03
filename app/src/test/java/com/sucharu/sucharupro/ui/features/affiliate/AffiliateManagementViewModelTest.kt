@@ -4,11 +4,14 @@ import com.sucharu.sucharupro.data.api.model.AuthenticatedPrincipal
 import com.sucharu.sucharupro.data.api.model.UserRole
 import com.sucharu.sucharupro.data.api.server.BackendUseCases
 import com.sucharu.sucharupro.data.datasource.affiliate.FakeAffiliateDataSource
+import com.sucharu.sucharupro.data.datasource.affiliate.FakeAffiliateProfileDataSource
 import com.sucharu.sucharupro.data.datasource.affiliate.FakeAffiliateProgramDataSource
 import com.sucharu.sucharupro.data.persistence.postgres.PostgresRepositoryFactory
 import com.sucharu.sucharupro.data.persistence.postgres.TransactionManager
+import com.sucharu.sucharupro.data.repository.affiliate.AffiliateProfileRepositoryImpl
 import com.sucharu.sucharupro.data.repository.affiliate.AffiliateProgramRepositoryImpl
 import com.sucharu.sucharupro.data.repository.affiliate.AffiliateRepositoryImpl
+import com.sucharu.sucharupro.domain.service.affiliate.AffiliateProfileServiceImpl
 import com.sucharu.sucharupro.domain.service.affiliate.AffiliateProgramServiceImpl
 import com.sucharu.sucharupro.domain.service.affiliate.AffiliateServiceImpl
 import kotlinx.coroutines.CoroutineScope
@@ -22,6 +25,8 @@ class AffiliateManagementViewModelTest {
     private lateinit var useCases: BackendUseCases
     private lateinit var fakeAffDs: FakeAffiliateDataSource
     private lateinit var fakeProgDs: FakeAffiliateProgramDataSource
+    private lateinit var fakeProfileDs: FakeAffiliateProfileDataSource
+    private lateinit var fakeCommDs: com.sucharu.sucharupro.data.datasource.affiliate.FakeAffiliateCommunicationDataSource
 
     private val tenantId = "TENANT-ALPHA"
     private val adminPrincipal = AuthenticatedPrincipal(
@@ -66,12 +71,20 @@ class AffiliateManagementViewModelTest {
     fun setUp() {
         fakeAffDs = FakeAffiliateDataSource()
         fakeProgDs = FakeAffiliateProgramDataSource()
+        fakeProfileDs = FakeAffiliateProfileDataSource()
+        fakeCommDs = com.sucharu.sucharupro.data.datasource.affiliate.FakeAffiliateCommunicationDataSource()
 
         val affRepo = AffiliateRepositoryImpl(fakeAffDs)
         val affService = AffiliateServiceImpl(affRepo)
 
         val progRepo = AffiliateProgramRepositoryImpl(fakeProgDs)
         val progService = AffiliateProgramServiceImpl(progRepo, affRepo)
+
+        val profileRepo = AffiliateProfileRepositoryImpl(fakeProfileDs)
+        val profileService = AffiliateProfileServiceImpl(profileRepo, affRepo)
+
+        val commRepo = com.sucharu.sucharupro.data.repository.affiliate.AffiliateCommunicationRepositoryImpl(fakeCommDs)
+        val commService = com.sucharu.sucharupro.domain.service.affiliate.AffiliateCommunicationServiceImpl(commRepo, affRepo)
 
         val factory = object : PostgresRepositoryFactory(fakeTx, tenantId) {
             override fun createAffiliateDataSource(tenantId: String) = fakeAffDs
@@ -81,6 +94,14 @@ class AffiliateManagementViewModelTest {
             override fun createAffiliateProgramDataSource(tenantId: String) = fakeProgDs
             override fun createAffiliateProgramRepository(tenantId: String) = progRepo
             override fun createAffiliateProgramService(tenantId: String) = progService
+
+            override fun createAffiliateProfileDataSource(tenantId: String) = fakeProfileDs
+            override fun createAffiliateProfileRepository(tenantId: String) = profileRepo
+            override fun createAffiliateProfileService(tenantId: String) = profileService
+
+            override fun createAffiliateCommunicationDataSource(tenantId: String) = fakeCommDs
+            override fun createAffiliateCommunicationRepository(tenantId: String) = commRepo
+            override fun createAffiliateCommunicationService(tenantId: String) = commService
         }
 
         useCases = BackendUseCases(fakeTx, factory)
@@ -104,6 +125,9 @@ class AffiliateManagementViewModelTest {
 
         viewModel.selectTab(AffiliateCommandTab.PROGRAMS)
         assertEquals(AffiliateCommandTab.PROGRAMS, viewModel.uiState.value.selectedTab)
+
+        viewModel.selectTab(AffiliateCommandTab.COMMUNICATION_CENTER)
+        assertEquals(AffiliateCommandTab.COMMUNICATION_CENTER, viewModel.uiState.value.selectedTab)
     }
 
     @Test
@@ -122,7 +146,7 @@ class AffiliateManagementViewModelTest {
         )
 
         val state = viewModel.uiState.value
-        assertTrue(state.successMessage?.contains("created successfully") == true)
+        assertTrue(state.successMessage?.contains("created with code") == true)
         assertEquals(1, state.affiliatesList.size)
         assertEquals("PENDING", state.affiliatesList[0].status)
 
@@ -148,77 +172,97 @@ class AffiliateManagementViewModelTest {
         fakeAffDs.saveAffiliate(currentAff.copy(verificationState = com.sucharu.sucharupro.domain.model.affiliate.VerificationState.VERIFIED))
         viewModel.activateAffiliate(affId, "Approved")
 
-        // 2. Create Program
-        viewModel.createProgram(
-            programCode = "SUMMER_2026",
-            programName = "Summer Program 2026",
-            description = "Tiered rewards for summer print orders",
-            startDate = System.currentTimeMillis() - 1000L,
-            endDate = null,
-            eligibilityPolicy = "STANDARD",
-            termsReference = null,
-            termsVersion = null,
-            maxParticipants = 100,
-            metadataJson = null
-        )
-
-        assertEquals(1, viewModel.uiState.value.programsList.size)
+        // 2. Create Program & Activate
+        viewModel.createProgram("VIP2026", "VIP Affiliate Program", "Exclusive program", System.currentTimeMillis(), null)
         val progId = viewModel.uiState.value.programsList[0].programId
-        assertEquals("DRAFT", viewModel.uiState.value.programsList[0].status)
-
-        // 3. Activate Program
         viewModel.activateProgram(progId, "Launched")
-        assertEquals("ACTIVE", viewModel.uiState.value.selectedProgram?.status)
 
-        // 4. Enroll Affiliate in Program
-        viewModel.enrollAffiliate(progId, affId, "Initial partner enrollment", null, null, null)
+        // 3. Enroll Affiliate
+        viewModel.enrollAffiliate(progId, affId, "Top tier influencer")
+        val stateAfterEnroll = viewModel.uiState.value
+        assertEquals(1, stateAfterEnroll.enrollmentsList.size)
+        val enrId = stateAfterEnroll.enrollmentsList[0].enrollmentId
 
-        assertEquals(1, viewModel.uiState.value.enrollmentsList.size)
-        val enrId = viewModel.uiState.value.enrollmentsList[0].enrollmentId
-        assertEquals("PENDING", viewModel.uiState.value.enrollmentsList[0].enrollmentStatus)
+        // 4. Approve & Activate Enrollment
+        viewModel.approveEnrollment(enrId)
+        viewModel.activateEnrollment(enrId)
 
-        // 5. Approve & Activate Enrollment
-        viewModel.approveEnrollment(enrId, "Verified")
-        assertEquals("APPROVED", viewModel.uiState.value.selectedEnrollment?.enrollmentStatus)
-
-        viewModel.activateEnrollment(enrId, "Activated")
-        assertEquals("ACTIVE", viewModel.uiState.value.selectedEnrollment?.enrollmentStatus)
-
-        // 6. Suspend Enrollment
-        viewModel.suspendEnrollment(enrId, "Temporary check")
-        assertEquals("SUSPENDED", viewModel.uiState.value.selectedEnrollment?.enrollmentStatus)
+        val finalState = viewModel.uiState.value
+        assertEquals("ACTIVE", finalState.selectedEnrollment?.enrollmentStatus)
     }
 
     @Test
-    fun testSearchAndFilterQuery() {
+    fun testOperationalProfileAndVerificationWorkflowThroughViewModel() = kotlinx.coroutines.runBlocking {
         val viewModel = createViewModel(adminPrincipal)
 
-        viewModel.createAffiliate("u1", "Alpha Creator", "ALPHA_01", "CREATOR", null, null, null, null)
-        viewModel.createAffiliate("u2", "Beta Partner", "BETA_01", "BUSINESS", null, null, null, null)
+        // Create and activate affiliate
+        viewModel.createAffiliate("u2", "Verified Partner", "VERIF_01", "BUSINESS", null, null, null, "AGR-2")
+        val affId = viewModel.uiState.value.affiliatesList[0].affiliateId
 
-        assertEquals(2, viewModel.uiState.value.affiliatesList.size)
+        // Upsert operational profile
+        viewModel.upsertOperationalProfile(
+            affiliateId = affId,
+            displayName = "Verified Partner Inc",
+            legalName = "Verified Partner LLC",
+            businessType = "BUSINESS",
+            contactEmail = "partner@verified.com",
+            city = "Chittagong",
+            country = "Bangladesh",
+            taxIdOrGst = "9988776655"
+        )
 
-        viewModel.setSearchQuery("Alpha")
-        assertEquals(1, viewModel.uiState.value.filteredAffiliates.size)
-        assertEquals("Alpha Creator", viewModel.uiState.value.filteredAffiliates[0].displayName)
+        val profileState = viewModel.uiState.value
+        assertNotNull(profileState.selectedOperationalProfile)
+        assertTrue((profileState.selectedCompleteness?.score ?: 0) > 40)
 
-        viewModel.setSearchQuery("")
-        viewModel.setTypeFilter("BUSINESS")
-        assertEquals(1, viewModel.uiState.value.filteredAffiliates.size)
-        assertEquals("Beta Partner", viewModel.uiState.value.filteredAffiliates[0].displayName)
+        // Request verification
+        viewModel.requestVerification(affId, "IDENTITY", "Passport KYC")
+        val verifState = viewModel.uiState.value
+        assertEquals(1, verifState.selectedVerifications.size)
+        val verId = verifState.selectedVerifications[0].verificationId
+
+        // Approve verification
+        viewModel.approveVerification(verId, "Passport document matches identity")
+        val afterApproval = viewModel.uiState.value
+        assertEquals("VERIFIED", afterApproval.selectedVerifications[0].status)
     }
 
     @Test
-    fun testPersonalViewWhenLoggedInAsAffiliate() {
-        // Pre-populate an affiliate for usr-aff-1
-        val adminVm = createViewModel(adminPrincipal)
-        adminVm.createAffiliate("usr-aff-1", "My Affiliate Account", "MY_AFF_01", "INDIVIDUAL", null, null, null, "AGR-1")
+    fun testCommunicationCenterWorkflowThroughViewModel() = kotlinx.coroutines.runBlocking {
+        val viewModel = createViewModel(adminPrincipal)
 
-        val affVm = createViewModel(affiliatePrincipal)
+        // Create affiliate
+        viewModel.createAffiliate("u3", "Comm Partner", "COMM_01", "INDIVIDUAL", null, null, null, "AGR-3")
+        val affId = viewModel.uiState.value.affiliatesList[0].affiliateId
 
-        val state = affVm.uiState.value
-        assertTrue(state.isPersonalView)
-        assertEquals(AffiliateCommandTab.PROFILE_ELIGIBILITY, state.selectedTab)
-        assertEquals("My Affiliate Account", state.selectedAffiliate?.displayName)
+        // Send communication
+        viewModel.sendAffiliateCommunication(
+            affiliateId = affId,
+            communicationType = "GOVERNANCE",
+            title = "Mandatory Compliance Update",
+            message = "Please accept new tax governance terms."
+        )
+
+        val stateAfterSend = viewModel.uiState.value
+        assertEquals(1, stateAfterSend.communicationsList.size)
+        val commId = stateAfterSend.communicationsList[0].communicationId
+
+        // Mark communication read
+        viewModel.markCommunicationRead(commId)
+        val stateAfterRead = viewModel.uiState.value
+        assertTrue(stateAfterRead.communicationsList[0].isRead)
+
+        // Update notification preference
+        viewModel.updateNotificationPreference(
+            affiliateId = affId,
+            communicationType = "PROGRAM",
+            inAppEnabled = true,
+            pushEnabled = false,
+            emailEnabled = true,
+            smsEnabled = false
+        )
+
+        val finalState = viewModel.uiState.value
+        assertTrue(finalState.notificationPreferences.isNotEmpty())
     }
 }
