@@ -4,9 +4,12 @@ import com.sucharu.sucharupro.data.api.model.AuthenticatedPrincipal
 import com.sucharu.sucharupro.data.api.model.UserRole
 import com.sucharu.sucharupro.data.api.server.BackendUseCases
 import com.sucharu.sucharupro.data.datasource.affiliate.FakeAffiliateDataSource
+import com.sucharu.sucharupro.data.datasource.affiliate.FakeAffiliateProgramDataSource
 import com.sucharu.sucharupro.data.persistence.postgres.PostgresRepositoryFactory
 import com.sucharu.sucharupro.data.persistence.postgres.TransactionManager
+import com.sucharu.sucharupro.data.repository.affiliate.AffiliateProgramRepositoryImpl
 import com.sucharu.sucharupro.data.repository.affiliate.AffiliateRepositoryImpl
+import com.sucharu.sucharupro.domain.service.affiliate.AffiliateProgramServiceImpl
 import com.sucharu.sucharupro.domain.service.affiliate.AffiliateServiceImpl
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -17,7 +20,8 @@ import org.junit.Test
 class AffiliateManagementViewModelTest {
 
     private lateinit var useCases: BackendUseCases
-    private lateinit var fakeDs: FakeAffiliateDataSource
+    private lateinit var fakeAffDs: FakeAffiliateDataSource
+    private lateinit var fakeProgDs: FakeAffiliateProgramDataSource
 
     private val tenantId = "TENANT-ALPHA"
     private val adminPrincipal = AuthenticatedPrincipal(
@@ -60,14 +64,23 @@ class AffiliateManagementViewModelTest {
 
     @Before
     fun setUp() {
-        fakeDs = FakeAffiliateDataSource()
-        val repo = AffiliateRepositoryImpl(fakeDs)
-        val service = AffiliateServiceImpl(repo)
+        fakeAffDs = FakeAffiliateDataSource()
+        fakeProgDs = FakeAffiliateProgramDataSource()
+
+        val affRepo = AffiliateRepositoryImpl(fakeAffDs)
+        val affService = AffiliateServiceImpl(affRepo)
+
+        val progRepo = AffiliateProgramRepositoryImpl(fakeProgDs)
+        val progService = AffiliateProgramServiceImpl(progRepo, affRepo)
 
         val factory = object : PostgresRepositoryFactory(fakeTx, tenantId) {
-            override fun createAffiliateDataSource(tenantId: String) = fakeDs
-            override fun createAffiliateRepository(tenantId: String) = repo
-            override fun createAffiliateService(tenantId: String) = service
+            override fun createAffiliateDataSource(tenantId: String) = fakeAffDs
+            override fun createAffiliateRepository(tenantId: String) = affRepo
+            override fun createAffiliateService(tenantId: String) = affService
+
+            override fun createAffiliateProgramDataSource(tenantId: String) = fakeProgDs
+            override fun createAffiliateProgramRepository(tenantId: String) = progRepo
+            override fun createAffiliateProgramService(tenantId: String) = progService
         }
 
         useCases = BackendUseCases(fakeTx, factory)
@@ -89,8 +102,8 @@ class AffiliateManagementViewModelTest {
         assertEquals(AffiliateCommandTab.OVERVIEW, state.selectedTab)
         assertFalse(state.isPersonalView)
 
-        viewModel.selectTab(AffiliateCommandTab.DIRECTORY)
-        assertEquals(AffiliateCommandTab.DIRECTORY, viewModel.uiState.value.selectedTab)
+        viewModel.selectTab(AffiliateCommandTab.PROGRAMS)
+        assertEquals(AffiliateCommandTab.PROGRAMS, viewModel.uiState.value.selectedTab)
     }
 
     @Test
@@ -121,6 +134,59 @@ class AffiliateManagementViewModelTest {
         val updatedState = viewModel.uiState.value
         assertTrue(updatedState.successMessage?.contains("ACTIVATED") == true)
         assertEquals("ACTIVE", updatedState.selectedAffiliate?.status)
+    }
+
+    @Test
+    fun testProgramAndEnrollmentLifecycleThroughViewModel() = kotlinx.coroutines.runBlocking {
+        val viewModel = createViewModel(adminPrincipal)
+
+        // 1. Create Affiliate & Activate
+        viewModel.createAffiliate("u1", "Alpha Creator", "ALPHA_01", "CREATOR", null, null, null, "AGR-1")
+        val affId = viewModel.uiState.value.affiliatesList[0].affiliateId
+        viewModel.acceptAgreement(affId, "AGR-1")
+        val currentAff = fakeAffDs.findById(tenantId, affId)!!
+        fakeAffDs.saveAffiliate(currentAff.copy(verificationState = com.sucharu.sucharupro.domain.model.affiliate.VerificationState.VERIFIED))
+        viewModel.activateAffiliate(affId, "Approved")
+
+        // 2. Create Program
+        viewModel.createProgram(
+            programCode = "SUMMER_2026",
+            programName = "Summer Program 2026",
+            description = "Tiered rewards for summer print orders",
+            startDate = System.currentTimeMillis() - 1000L,
+            endDate = null,
+            eligibilityPolicy = "STANDARD",
+            termsReference = null,
+            termsVersion = null,
+            maxParticipants = 100,
+            metadataJson = null
+        )
+
+        assertEquals(1, viewModel.uiState.value.programsList.size)
+        val progId = viewModel.uiState.value.programsList[0].programId
+        assertEquals("DRAFT", viewModel.uiState.value.programsList[0].status)
+
+        // 3. Activate Program
+        viewModel.activateProgram(progId, "Launched")
+        assertEquals("ACTIVE", viewModel.uiState.value.selectedProgram?.status)
+
+        // 4. Enroll Affiliate in Program
+        viewModel.enrollAffiliate(progId, affId, "Initial partner enrollment", null, null, null)
+
+        assertEquals(1, viewModel.uiState.value.enrollmentsList.size)
+        val enrId = viewModel.uiState.value.enrollmentsList[0].enrollmentId
+        assertEquals("PENDING", viewModel.uiState.value.enrollmentsList[0].enrollmentStatus)
+
+        // 5. Approve & Activate Enrollment
+        viewModel.approveEnrollment(enrId, "Verified")
+        assertEquals("APPROVED", viewModel.uiState.value.selectedEnrollment?.enrollmentStatus)
+
+        viewModel.activateEnrollment(enrId, "Activated")
+        assertEquals("ACTIVE", viewModel.uiState.value.selectedEnrollment?.enrollmentStatus)
+
+        // 6. Suspend Enrollment
+        viewModel.suspendEnrollment(enrId, "Temporary check")
+        assertEquals("SUSPENDED", viewModel.uiState.value.selectedEnrollment?.enrollmentStatus)
     }
 
     @Test

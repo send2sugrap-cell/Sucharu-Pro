@@ -31,8 +31,13 @@ fun AffiliateManagementCommandCenterScreen(
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    var showCreateDialog by remember { mutableStateOf(false) }
-    var actionDialogTarget by remember { mutableStateOf<Pair<String, String>?>(null) } // action to affiliateId
+    var showCreateAffiliateDialog by remember { mutableStateOf(false) }
+    var showCreateProgramDialog by remember { mutableStateOf(false) }
+    var showEnrollDialog by remember { mutableStateOf(false) }
+
+    var affiliateActionDialogTarget by remember { mutableStateOf<Pair<String, String>?>(null) } // action to affiliateId
+    var programActionDialogTarget by remember { mutableStateOf<Pair<String, String>?>(null) } // action to programId
+    var enrollmentActionDialogTarget by remember { mutableStateOf<Pair<String, String>?>(null) } // action to enrollmentId
     var actionReason by remember { mutableStateOf("") }
 
     val bgGradient = Brush.verticalGradient(
@@ -46,7 +51,7 @@ fun AffiliateManagementCommandCenterScreen(
                     Column {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
-                                "AFFILIATE MANAGEMENT FOUNDATION",
+                                "AFFILIATE & PROGRAM GOVERNANCE",
                                 fontWeight = FontWeight.Black,
                                 fontSize = 16.sp,
                                 color = Color(0xFF00E5FF),
@@ -59,7 +64,7 @@ fun AffiliateManagementCommandCenterScreen(
                                 border = BorderStroke(1.dp, Color(0xFF00E5FF).copy(alpha = 0.4f))
                             ) {
                                 Text(
-                                    "MODULE 20 STEP 01",
+                                    "MODULE 20 STEP 01-02",
                                     fontSize = 10.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color(0xFF00E5FF),
@@ -68,7 +73,7 @@ fun AffiliateManagementCommandCenterScreen(
                             }
                         }
                         Text(
-                            "Canonical Affiliate Profiles, Multi-Tenant RLS & Governance",
+                            "Affiliate Identity, Operational Programs & Relationship Lifecycle",
                             fontSize = 11.sp,
                             color = Color(0xFF94A3B8)
                         )
@@ -77,14 +82,27 @@ fun AffiliateManagementCommandCenterScreen(
                 actions = {
                     if (!uiState.isPersonalView) {
                         Button(
-                            onClick = { showCreateDialog = true },
+                            onClick = {
+                                if (uiState.selectedTab == AffiliateCommandTab.PROGRAMS) {
+                                    showCreateProgramDialog = true
+                                } else if (uiState.selectedTab == AffiliateCommandTab.ENROLLMENTS) {
+                                    showEnrollDialog = true
+                                } else {
+                                    showCreateAffiliateDialog = true
+                                }
+                            },
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00E5FF)),
                             shape = RoundedCornerShape(8.dp),
                             modifier = Modifier.padding(end = 8.dp)
                         ) {
-                            Icon(Icons.Default.PersonAdd, contentDescription = null, tint = Color(0xFF0A0E17), modifier = Modifier.size(16.dp))
+                            val (icon, label) = when (uiState.selectedTab) {
+                                AffiliateCommandTab.PROGRAMS -> Icons.Default.AddBusiness to "New Program"
+                                AffiliateCommandTab.ENROLLMENTS -> Icons.Default.HowToReg to "Enroll Affiliate"
+                                else -> Icons.Default.PersonAdd to "New Affiliate"
+                            }
+                            Icon(icon, contentDescription = null, tint = Color(0xFF0A0E17), modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("New Affiliate", color = Color(0xFF0A0E17), fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                            Text(label, color = Color(0xFF0A0E17), fontWeight = FontWeight.Bold, fontSize = 12.sp)
                         }
                     }
                     IconButton(onClick = { viewModel.loadData() }) {
@@ -186,73 +204,104 @@ fun AffiliateManagementCommandCenterScreen(
                 }
             }
 
-            if (uiState.isLoading) {
-                LinearProgressIndicator(modifier = Modifier.fillMaxWidth(), color = Color(0xFF00E5FF))
-            }
-
             // Tab Content
-            Box(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-                when (uiState.selectedTab) {
-                    AffiliateCommandTab.OVERVIEW -> AffiliateOverviewView(uiState)
-                    AffiliateCommandTab.DIRECTORY -> AffiliateDirectoryView(uiState, viewModel)
-                    AffiliateCommandTab.PENDING_APPROVAL -> AffiliatePendingApprovalView(uiState, onAction = { action, affId ->
-                        actionDialogTarget = action to affId
-                    })
-                    AffiliateCommandTab.ACTIVE_SUSPENDED -> AffiliateActiveSuspendedView(uiState, onAction = { action, affId ->
-                        actionDialogTarget = action to affId
-                    })
-                    AffiliateCommandTab.PROFILE_ELIGIBILITY -> AffiliateProfileAndEligibilityView(uiState, viewModel)
-                    AffiliateCommandTab.AI_HANDOFF -> AffiliateAiHandoffView(uiState)
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp)
+            ) {
+                if (uiState.isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.align(Alignment.Center),
+                        color = Color(0xFF00E5FF)
+                    )
+                } else {
+                    when (uiState.selectedTab) {
+                        AffiliateCommandTab.OVERVIEW -> AffiliateOverviewView(uiState)
+                        AffiliateCommandTab.DIRECTORY -> AffiliateDirectoryView(uiState, viewModel)
+                        AffiliateCommandTab.PROGRAMS -> AffiliateProgramsView(uiState, viewModel, onAction = { action, progId ->
+                            programActionDialogTarget = action to progId
+                        })
+                        AffiliateCommandTab.ENROLLMENTS -> AffiliateEnrollmentsView(uiState, viewModel, onAction = { action, enrId ->
+                            enrollmentActionDialogTarget = action to enrId
+                        })
+                        AffiliateCommandTab.PENDING_APPROVAL -> AffiliatePendingApprovalView(uiState, onAction = { action, affId ->
+                            affiliateActionDialogTarget = action to affId
+                        })
+                        AffiliateCommandTab.ACTIVE_SUSPENDED -> AffiliateActiveSuspendedView(uiState, onAction = { action, affId ->
+                            affiliateActionDialogTarget = action to affId
+                        })
+                        AffiliateCommandTab.PROFILE_ELIGIBILITY -> AffiliateProfileAndEligibilityView(uiState, viewModel)
+                        AffiliateCommandTab.AI_HANDOFF -> AffiliateAiHandoffView(uiState)
+                    }
                 }
             }
         }
     }
 
-    // Create Affiliate Dialog
-    if (showCreateDialog) {
+    // Modal Dialogs
+    if (showCreateAffiliateDialog) {
         CreateAffiliateModal(
-            onDismiss = { showCreateDialog = false },
-            onSubmit = { userId, name, code, type, phone, email, tax, agreement ->
-                viewModel.createAffiliate(userId, name, code, type, phone, email, tax, agreement)
-                showCreateDialog = false
+            onDismiss = { showCreateAffiliateDialog = false },
+            onSubmit = { uid, name, code, type, phone, email, taxId, agrRef ->
+                viewModel.createAffiliate(uid, name, code, type, phone, email, taxId, agrRef)
+                showCreateAffiliateDialog = false
             }
         )
     }
 
-    // Action Confirmation Dialog
-    if (actionDialogTarget != null) {
-        val (action, targetAffiliateId) = actionDialogTarget!!
+    if (showCreateProgramDialog) {
+        CreateProgramModal(
+            onDismiss = { showCreateProgramDialog = false },
+            onSubmit = { code, name, desc, start, end, policy, termsRef, termsVer, maxP ->
+                viewModel.createProgram(code, name, desc, start, end, policy, termsRef, termsVer, maxP)
+                showCreateProgramDialog = false
+            }
+        )
+    }
+
+    if (showEnrollDialog) {
+        EnrollAffiliateModal(
+            programs = uiState.programsList,
+            affiliates = uiState.affiliatesList,
+            onDismiss = { showEnrollDialog = false },
+            onSubmit = { progId, affId, reason, meta ->
+                viewModel.enrollAffiliate(progId, affId, reason, null, null, meta)
+                showEnrollDialog = false
+            }
+        )
+    }
+
+    // Action Confirmation Dialogs
+    affiliateActionDialogTarget?.let { (action, affId) ->
         AlertDialog(
-            onDismissRequest = { actionDialogTarget = null },
+            onDismissRequest = { affiliateActionDialogTarget = null },
             title = { Text("$action Affiliate", color = Color(0xFF00E5FF), fontWeight = FontWeight.Bold) },
             text = {
                 Column {
-                    Text("Provide a reason or justification for this governance action ($action):", color = Color(0xFFCBD5E1), fontSize = 13.sp)
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Text("Enter operational reason for '$action' action on affiliate:", color = Color(0xFFCBD5E1), fontSize = 13.sp)
+                    Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
                         value = actionReason,
                         onValueChange = { actionReason = it },
-                        label = { Text("Reason / Audit Note") },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Color(0xFF00E5FF),
-                            unfocusedBorderColor = Color(0xFF475569)
-                        )
+                        label = { Text("Reason") },
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
             },
             confirmButton = {
                 Button(
                     onClick = {
+                        val reason = actionReason.ifBlank { "Operational transition $action" }
                         when (action) {
-                            "ACTIVATE" -> viewModel.activateAffiliate(targetAffiliateId, actionReason)
-                            "SUSPEND" -> viewModel.suspendAffiliate(targetAffiliateId, actionReason)
-                            "REACTIVATE" -> viewModel.reactivateAffiliate(targetAffiliateId, actionReason)
-                            "REJECT" -> viewModel.rejectAffiliate(targetAffiliateId, actionReason)
-                            "TERMINATE" -> viewModel.terminateAffiliate(targetAffiliateId, actionReason)
+                            "ACTIVATE" -> viewModel.activateAffiliate(affId, reason)
+                            "SUSPEND" -> viewModel.suspendAffiliate(affId, reason)
+                            "REACTIVATE" -> viewModel.reactivateAffiliate(affId, reason)
+                            "REJECT" -> viewModel.rejectAffiliate(affId, reason)
+                            "TERMINATE" -> viewModel.terminateAffiliate(affId, reason)
                         }
+                        affiliateActionDialogTarget = null
                         actionReason = ""
-                        actionDialogTarget = null
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00E5FF))
                 ) {
@@ -260,7 +309,95 @@ fun AffiliateManagementCommandCenterScreen(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { actionDialogTarget = null }) {
+                TextButton(onClick = { affiliateActionDialogTarget = null }) {
+                    Text("Cancel", color = Color(0xFF94A3B8))
+                }
+            },
+            containerColor = Color(0xFF1E293B)
+        )
+    }
+
+    programActionDialogTarget?.let { (action, progId) ->
+        AlertDialog(
+            onDismissRequest = { programActionDialogTarget = null },
+            title = { Text("$action Program", color = Color(0xFF00E5FF), fontWeight = FontWeight.Bold) },
+            text = {
+                Column {
+                    Text("Enter operational reason for '$action' action on program:", color = Color(0xFFCBD5E1), fontSize = 13.sp)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = actionReason,
+                        onValueChange = { actionReason = it },
+                        label = { Text("Reason") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val reason = actionReason.ifBlank { "Operational program transition $action" }
+                        when (action) {
+                            "ACTIVATE" -> viewModel.activateProgram(progId, reason)
+                            "PAUSE" -> viewModel.pauseProgram(progId, reason)
+                            "CLOSE" -> viewModel.closeProgram(progId, reason)
+                            "ARCHIVE" -> viewModel.archiveProgram(progId, reason)
+                        }
+                        programActionDialogTarget = null
+                        actionReason = ""
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00E5FF))
+                ) {
+                    Text("Confirm", color = Color.Black, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { programActionDialogTarget = null }) {
+                    Text("Cancel", color = Color(0xFF94A3B8))
+                }
+            },
+            containerColor = Color(0xFF1E293B)
+        )
+    }
+
+    enrollmentActionDialogTarget?.let { (action, enrId) ->
+        AlertDialog(
+            onDismissRequest = { enrollmentActionDialogTarget = null },
+            title = { Text("$action Enrollment", color = Color(0xFF00E5FF), fontWeight = FontWeight.Bold) },
+            text = {
+                Column {
+                    Text("Enter operational reason for '$action' action on enrollment:", color = Color(0xFFCBD5E1), fontSize = 13.sp)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = actionReason,
+                        onValueChange = { actionReason = it },
+                        label = { Text("Reason") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val reason = actionReason.ifBlank { "Operational enrollment transition $action" }
+                        when (action) {
+                            "APPROVE" -> viewModel.approveEnrollment(enrId, reason)
+                            "REJECT" -> viewModel.rejectEnrollment(enrId, reason)
+                            "ACTIVATE" -> viewModel.activateEnrollment(enrId, reason)
+                            "SUSPEND" -> viewModel.suspendEnrollment(enrId, reason)
+                            "RESUME" -> viewModel.resumeEnrollment(enrId, reason)
+                            "TERMINATE" -> viewModel.terminateEnrollment(enrId, reason)
+                        }
+                        enrollmentActionDialogTarget = null
+                        actionReason = ""
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00E5FF))
+                ) {
+                    Text("Confirm", color = Color.Black, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { enrollmentActionDialogTarget = null }) {
                     Text("Cancel", color = Color(0xFF94A3B8))
                 }
             },
@@ -272,6 +409,7 @@ fun AffiliateManagementCommandCenterScreen(
 @Composable
 fun AffiliateOverviewView(uiState: AffiliateManagementUiState) {
     val summary = uiState.summary
+    val progSummary = uiState.programSummary
     LazyColumn(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         item {
             Text("TENANT AFFILIATE GOVERNANCE OVERVIEW", fontWeight = FontWeight.Black, color = Color.White, fontSize = 14.sp)
@@ -285,9 +423,9 @@ fun AffiliateOverviewView(uiState: AffiliateManagementUiState) {
         }
         item {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                KpiCard("SUSPENDED", "${summary?.suspendedAffiliates ?: uiState.suspendedCount}", Color(0xFFEF4444), modifier = Modifier.weight(1f))
-                KpiCard("VERIFIED COMPLIANT", "${summary?.verifiedCount ?: 0}", Color(0xFF3B82F6), modifier = Modifier.weight(1f))
-                KpiCard("COMMISSION ELIGIBLE", "${summary?.eligibleCount ?: 0}", Color(0xFF8B5CF6), modifier = Modifier.weight(1f))
+                KpiCard("TOTAL PROGRAMS", "${progSummary?.totalPrograms ?: uiState.programsList.size}", Color(0xFF38BDF8), modifier = Modifier.weight(1f))
+                KpiCard("ACTIVE PROGRAMS", "${progSummary?.activePrograms ?: uiState.activeProgramsCount}", Color(0xFF10B981), modifier = Modifier.weight(1f))
+                KpiCard("ACTIVE ENROLLMENTS", "${progSummary?.activeEnrollments ?: uiState.activeEnrollmentsCount}", Color(0xFF8B5CF6), modifier = Modifier.weight(1f))
             }
         }
         item {
@@ -304,6 +442,153 @@ fun AffiliateOverviewView(uiState: AffiliateManagementUiState) {
                     CategoryRow("Strategic Partners", summary?.partnerCount ?: 0)
                     CategoryRow("Content Creators / Influencers", summary?.creatorCount ?: 0)
                     CategoryRow("Referral Partners", summary?.referralPartnerCount ?: 0)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun AffiliateProgramsView(
+    uiState: AffiliateManagementUiState,
+    viewModel: AffiliateManagementViewModel,
+    onAction: (String, String) -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        OutlinedTextField(
+            value = uiState.programSearchQuery,
+            onValueChange = { viewModel.setProgramSearchQuery(it) },
+            placeholder = { Text("Search programs by name or code...", fontSize = 12.sp) },
+            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = Color(0xFF00E5FF)) },
+            modifier = Modifier.fillMaxWidth(),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Color(0xFF00E5FF),
+                unfocusedBorderColor = Color(0xFF334155),
+                focusedContainerColor = Color(0xFF0F172A),
+                unfocusedContainerColor = Color(0xFF0F172A)
+            ),
+            shape = RoundedCornerShape(8.dp)
+        )
+
+        LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            items(uiState.filteredPrograms) { prog ->
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B)),
+                    shape = RoundedCornerShape(10.dp),
+                    border = BorderStroke(1.dp, if (prog.programId == uiState.selectedProgram?.programId) Color(0xFF00E5FF) else Color(0xFF334155)),
+                    modifier = Modifier.fillMaxWidth().clickable { viewModel.selectProgram(prog.programId) }
+                ) {
+                    Column(modifier = Modifier.padding(14.dp)) {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Column {
+                                Text(prog.programName, fontWeight = FontWeight.Bold, color = Color.White, fontSize = 15.sp)
+                                Text("Code: ${prog.programCode} | Policy: ${prog.eligibilityPolicy}", color = Color(0xFF00E5FF), fontSize = 12.sp)
+                            }
+                            StatusBadge(prog.status)
+                        }
+                        val desc = prog.description
+                        if (!desc.isNullOrBlank()) {
+                            Text(desc, color = Color(0xFFCBD5E1), fontSize = 12.sp, modifier = Modifier.padding(vertical = 4.dp))
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("Max: ${prog.maxParticipants?.let { "$it participants" } ?: "Unlimited"}", color = Color(0xFF94A3B8), fontSize = 11.sp)
+                            Text("Starts: ${formatDate(prog.startDate)}", color = Color(0xFF94A3B8), fontSize = 11.sp)
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            when (prog.status) {
+                                "DRAFT" -> {
+                                    Button(onClick = { onAction("ACTIVATE", prog.programId) }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)), shape = RoundedCornerShape(6.dp)) {
+                                        Text("Activate", color = Color.Black, fontSize = 11.sp)
+                                    }
+                                }
+                                "ACTIVE" -> {
+                                    Button(onClick = { onAction("PAUSE", prog.programId) }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF59E0B)), shape = RoundedCornerShape(6.dp)) {
+                                        Text("Pause", color = Color.Black, fontSize = 11.sp)
+                                    }
+                                    OutlinedButton(onClick = { onAction("CLOSE", prog.programId) }, shape = RoundedCornerShape(6.dp)) {
+                                        Text("Close", color = Color(0xFFEF4444), fontSize = 11.sp)
+                                    }
+                                }
+                                "PAUSED" -> {
+                                    Button(onClick = { onAction("ACTIVATE", prog.programId) }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)), shape = RoundedCornerShape(6.dp)) {
+                                        Text("Resume", color = Color.Black, fontSize = 11.sp)
+                                    }
+                                }
+                                "CLOSED" -> {
+                                    Button(onClick = { onAction("ARCHIVE", prog.programId) }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF64748B)), shape = RoundedCornerShape(6.dp)) {
+                                        Text("Archive", color = Color.White, fontSize = 11.sp)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun AffiliateEnrollmentsView(
+    uiState: AffiliateManagementUiState,
+    viewModel: AffiliateManagementViewModel,
+    onAction: (String, String) -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            items(uiState.filteredEnrollments) { enr ->
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B)),
+                    shape = RoundedCornerShape(10.dp),
+                    border = BorderStroke(1.dp, if (enr.enrollmentId == uiState.selectedEnrollment?.enrollmentId) Color(0xFF00E5FF) else Color(0xFF334155)),
+                    modifier = Modifier.fillMaxWidth().clickable { viewModel.selectEnrollment(enr.enrollmentId) }
+                ) {
+                    Column(modifier = Modifier.padding(14.dp)) {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Column {
+                                Text("Enrollment: ${enr.enrollmentId.take(8)}...", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 14.sp)
+                                Text("Affiliate: ${enr.affiliateId} | Program: ${enr.programId}", color = Color(0xFF94A3B8), fontSize = 11.sp)
+                            }
+                            StatusBadge(enr.enrollmentStatus)
+                        }
+                        if (enr.enrollmentReason != null) {
+                            Text("Reason: ${enr.enrollmentReason}", color = Color(0xFF00E5FF), fontSize = 11.sp, modifier = Modifier.padding(vertical = 2.dp))
+                        }
+                        Text("Requested: ${formatDate(enr.requestedAt)}", color = Color(0xFF64748B), fontSize = 10.sp)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            when (enr.enrollmentStatus) {
+                                "PENDING" -> {
+                                    Button(onClick = { onAction("APPROVE", enr.enrollmentId) }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)), shape = RoundedCornerShape(6.dp)) {
+                                        Text("Approve", color = Color.Black, fontSize = 11.sp)
+                                    }
+                                    OutlinedButton(onClick = { onAction("REJECT", enr.enrollmentId) }, shape = RoundedCornerShape(6.dp)) {
+                                        Text("Reject", color = Color(0xFFEF4444), fontSize = 11.sp)
+                                    }
+                                }
+                                "APPROVED" -> {
+                                    Button(onClick = { onAction("ACTIVATE", enr.enrollmentId) }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)), shape = RoundedCornerShape(6.dp)) {
+                                        Text("Activate", color = Color.Black, fontSize = 11.sp)
+                                    }
+                                }
+                                "ACTIVE" -> {
+                                    Button(onClick = { onAction("SUSPEND", enr.enrollmentId) }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF59E0B)), shape = RoundedCornerShape(6.dp)) {
+                                        Text("Suspend", color = Color.Black, fontSize = 11.sp)
+                                    }
+                                    OutlinedButton(onClick = { onAction("TERMINATE", enr.enrollmentId) }, shape = RoundedCornerShape(6.dp)) {
+                                        Text("Terminate", color = Color(0xFFEF4444), fontSize = 11.sp)
+                                    }
+                                }
+                                "SUSPENDED" -> {
+                                    Button(onClick = { onAction("RESUME", enr.enrollmentId) }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)), shape = RoundedCornerShape(6.dp)) {
+                                        Text("Resume", color = Color.Black, fontSize = 11.sp)
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -567,65 +852,63 @@ fun AffiliateProfileAndEligibilityView(
 @Composable
 fun AffiliateAiHandoffView(uiState: AffiliateManagementUiState) {
     val handoff = uiState.selectedHandoffContract
-    if (handoff == null) {
+    val progHandoff = uiState.selectedProgramHandoffContract
+
+    if (handoff == null && progHandoff == null) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("No affiliate selected for AI Handoff Contract inspection.", color = Color(0xFF94A3B8))
+            Text("No affiliate or enrollment selected for AI Handoff Contract inspection.", color = Color(0xFF94A3B8))
         }
         return
     }
 
     LazyColumn(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        item {
-            Card(
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B)),
-                shape = RoundedCornerShape(12.dp),
-                border = BorderStroke(1.dp, Color(0xFF00E5FF))
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("MODULE 20 STEP 01 AI HANDOFF CONTRACT", fontWeight = FontWeight.Black, color = Color(0xFF00E5FF), fontSize = 13.sp)
-                        Surface(color = Color(0xFF00E5FF).copy(alpha = 0.2f), shape = RoundedCornerShape(4.dp)) {
-                            Text(handoff.contractVersion, color = Color(0xFF00E5FF), fontWeight = FontWeight.Bold, fontSize = 10.sp, modifier = Modifier.padding(4.dp))
+        if (progHandoff != null) {
+            item {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B)),
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, Color(0xFF00E5FF))
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("MODULE 20 STEP 02 PROGRAM HANDOFF CONTRACT", fontWeight = FontWeight.Black, color = Color(0xFF00E5FF), fontSize = 13.sp)
+                            Surface(color = Color(0xFF00E5FF).copy(alpha = 0.2f), shape = RoundedCornerShape(4.dp)) {
+                                Text(progHandoff.contractVersion, color = Color(0xFF00E5FF), fontWeight = FontWeight.Bold, fontSize = 10.sp, modifier = Modifier.padding(4.dp))
+                            }
                         }
-                    }
-                    Divider(color = Color(0xFF334155), modifier = Modifier.padding(vertical = 8.dp))
-                    DetailRow("Read-Only Enforced", "${handoff.isReadOnly}")
-                    DetailRow("Affiliate ID", handoff.affiliateId)
-                    DetailRow("Affiliate Code", handoff.affiliateCode)
-                    DetailRow("Attribution Eligible", "${handoff.isEligibleForAttribution}")
-                    DetailRow("Commission Eligible", "${handoff.isEligibleForCommission}")
-                    DetailRow("Integrity Seal", handoff.integritySealHash.take(24) + "...")
-                }
-            }
-        }
-
-        item {
-            Card(
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B)),
-                shape = RoundedCornerShape(12.dp),
-                border = BorderStroke(1.dp, Color(0xFF10B981))
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text("ALLOWED AI CAPABILITIES", fontWeight = FontWeight.Bold, color = Color(0xFF10B981), fontSize = 12.sp)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    handoff.allowedAiActions.forEach { action ->
-                        Text("✓ $action", color = Color(0xFFCBD5E1), fontSize = 11.sp)
+                        Divider(color = Color(0xFF334155), modifier = Modifier.padding(vertical = 8.dp))
+                        DetailRow("Read-Only Enforced", "${progHandoff.isReadOnly}")
+                        DetailRow("Enrollment ID", progHandoff.enrollmentId)
+                        DetailRow("Program Code", progHandoff.programCode)
+                        DetailRow("Affiliate Code", progHandoff.affiliateCode)
+                        DetailRow("Commission Eligible", "${progHandoff.isEligibleForCommission}")
+                        DetailRow("Attribution Eligible", "${progHandoff.isEligibleForAttribution}")
+                        DetailRow("Effective Range", "${progHandoff.effectiveFrom?.let { formatDate(it) } ?: "Now"} - ${progHandoff.effectiveTo?.let { formatDate(it) } ?: "Open-ended"}")
+                        DetailRow("Integrity Seal", progHandoff.integritySealHash.take(24) + "...")
                     }
                 }
             }
         }
 
-        item {
-            Card(
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B)),
-                shape = RoundedCornerShape(12.dp),
-                border = BorderStroke(1.dp, Color(0xFFEF4444))
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text("STRICTLY FORBIDDEN AI MUTATIONS", fontWeight = FontWeight.Bold, color = Color(0xFFEF4444), fontSize = 12.sp)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    handoff.forbiddenAiActions.forEach { action ->
-                        Text("✕ $action", color = Color(0xFFFCA5A5), fontSize = 11.sp)
+        if (handoff != null) {
+            item {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B)),
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, Color(0xFF00E5FF).copy(alpha = 0.7f))
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("MODULE 20 STEP 01 AFFILIATE IDENTITY CONTRACT", fontWeight = FontWeight.Black, color = Color(0xFF00E5FF), fontSize = 13.sp)
+                            Surface(color = Color(0xFF00E5FF).copy(alpha = 0.2f), shape = RoundedCornerShape(4.dp)) {
+                                Text(handoff.contractVersion, color = Color(0xFF00E5FF), fontWeight = FontWeight.Bold, fontSize = 10.sp, modifier = Modifier.padding(4.dp))
+                            }
+                        }
+                        Divider(color = Color(0xFF334155), modifier = Modifier.padding(vertical = 8.dp))
+                        DetailRow("Affiliate ID", handoff.affiliateId)
+                        DetailRow("Affiliate Code", handoff.affiliateCode)
+                        DetailRow("Attribution Eligible", "${handoff.isEligibleForAttribution}")
+                        DetailRow("Commission Eligible", "${handoff.isEligibleForCommission}")
                     }
                 }
             }
@@ -697,9 +980,12 @@ fun StatusBadge(status: String) {
     val (bg, fg) = when (status.uppercase()) {
         "ACTIVE" -> Color(0xFF10B981).copy(alpha = 0.2f) to Color(0xFF10B981)
         "PENDING" -> Color(0xFFF59E0B).copy(alpha = 0.2f) to Color(0xFFF59E0B)
+        "APPROVED" -> Color(0xFF3B82F6).copy(alpha = 0.2f) to Color(0xFF3B82F6)
+        "PAUSED" -> Color(0xFFF59E0B).copy(alpha = 0.2f) to Color(0xFFF59E0B)
         "SUSPENDED" -> Color(0xFFEF4444).copy(alpha = 0.2f) to Color(0xFFEF4444)
         "REJECTED" -> Color(0xFFDC2626).copy(alpha = 0.2f) to Color(0xFFDC2626)
         "TERMINATED" -> Color(0xFF6B7280).copy(alpha = 0.2f) to Color(0xFF9CA3AF)
+        "CLOSED", "ARCHIVED" -> Color(0xFF475569).copy(alpha = 0.2f) to Color(0xFF94A3B8)
         else -> Color(0xFF64748B).copy(alpha = 0.2f) to Color(0xFF94A3B8)
     }
     Surface(color = bg, shape = RoundedCornerShape(4.dp)) {
@@ -778,6 +1064,119 @@ fun CreateAffiliateModal(
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00E5FF))
             ) {
                 Text("Create", color = Color.Black, fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel", color = Color(0xFF94A3B8)) }
+        },
+        containerColor = Color(0xFF1E293B)
+    )
+}
+
+@Composable
+fun CreateProgramModal(
+    onDismiss: () -> Unit,
+    onSubmit: (String, String, String?, Long, Long?, String, String?, String?, Int?) -> Unit
+) {
+    var code by remember { mutableStateOf("") }
+    var name by remember { mutableStateOf("") }
+    var desc by remember { mutableStateOf("") }
+    var policy by remember { mutableStateOf("STANDARD") }
+    var termsRef by remember { mutableStateOf("") }
+    var maxParticipantsStr by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Create Affiliate Program", color = Color(0xFF00E5FF), fontWeight = FontWeight.Bold) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(value = code, onValueChange = { code = it }, label = { Text("Program Code (e.g. VIP_PRINT_2026) *") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Program Name *") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = desc, onValueChange = { desc = it }, label = { Text("Description") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = policy, onValueChange = { policy = it }, label = { Text("Eligibility Policy (e.g. STANDARD)") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = termsRef, onValueChange = { termsRef = it }, label = { Text("Terms Reference") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = maxParticipantsStr, onValueChange = { maxParticipantsStr = it }, label = { Text("Max Participants (Optional)") }, modifier = Modifier.fillMaxWidth())
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    if (code.isNotBlank() && name.isNotBlank()) {
+                        onSubmit(
+                            code.trim().uppercase(),
+                            name.trim(),
+                            desc.ifBlank { null },
+                            System.currentTimeMillis(),
+                            null,
+                            policy.ifBlank { "STANDARD" },
+                            termsRef.ifBlank { null },
+                            if (termsRef.isNotBlank()) "v1.0" else null,
+                            maxParticipantsStr.toIntOrNull()
+                        )
+                    }
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00E5FF))
+            ) {
+                Text("Create Program", color = Color.Black, fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel", color = Color(0xFF94A3B8)) }
+        },
+        containerColor = Color(0xFF1E293B)
+    )
+}
+
+@Composable
+fun EnrollAffiliateModal(
+    programs: List<AffiliateProgramDto>,
+    affiliates: List<AffiliateProfileDto>,
+    onDismiss: () -> Unit,
+    onSubmit: (String, String, String?, String?) -> Unit
+) {
+    var selectedProgId by remember { mutableStateOf(programs.firstOrNull()?.programId ?: "") }
+    var selectedAffId by remember { mutableStateOf(affiliates.firstOrNull()?.affiliateId ?: "") }
+    var reason by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Enroll Affiliate in Program", color = Color(0xFF00E5FF), fontWeight = FontWeight.Bold) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Select Program:", color = Color(0xFF94A3B8), fontSize = 12.sp)
+                programs.forEach { p ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth().clickable { selectedProgId = p.programId }.padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(selected = selectedProgId == p.programId, onClick = { selectedProgId = p.programId })
+                        Text("${p.programName} (${p.programCode})", color = Color.White, fontSize = 12.sp)
+                    }
+                }
+                Spacer(modifier = Modifier.height(6.dp))
+                Text("Select Affiliate:", color = Color(0xFF94A3B8), fontSize = 12.sp)
+                affiliates.take(5).forEach { a ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth().clickable { selectedAffId = a.affiliateId }.padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(selected = selectedAffId == a.affiliateId, onClick = { selectedAffId = a.affiliateId })
+                        Text("${a.displayName} (${a.affiliateCode})", color = Color.White, fontSize = 12.sp)
+                    }
+                }
+                OutlinedTextField(value = reason, onValueChange = { reason = it }, label = { Text("Enrollment Reason (Optional)") }, modifier = Modifier.fillMaxWidth())
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    if (selectedProgId.isNotBlank() && selectedAffId.isNotBlank()) {
+                        onSubmit(selectedProgId, selectedAffId, reason.ifBlank { null }, null)
+                    }
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00E5FF))
+            ) {
+                Text("Enroll", color = Color.Black, fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {

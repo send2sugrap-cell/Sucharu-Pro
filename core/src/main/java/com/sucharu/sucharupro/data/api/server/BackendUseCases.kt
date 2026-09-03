@@ -19144,6 +19144,328 @@ class BackendUseCases(
         val service = repositoryFactory.createAffiliateService(principal.projectId)
         return service.getHandoffContract(principal.projectId, affiliateId, principal)
     }
+
+    // =========================================================================
+    // SECTION 82: AFFILIATE PROGRAM & RELATIONSHIP MANAGEMENT (MODULE 20 STEP 02)
+    // =========================================================================
+
+    suspend fun createAffiliateProgram(
+        principal: AuthenticatedPrincipal,
+        request: com.sucharu.sucharupro.data.api.model.affiliate.CreateAffiliateProgramRequestDto
+    ): com.sucharu.sucharupro.data.api.model.affiliate.AffiliateProgramDto {
+        BackendAuthorizationPolicy.requireRole(
+            principal,
+            UserRole.ADMIN, UserRole.MANAGER
+        )
+        val service = repositoryFactory.createAffiliateProgramService(principal.projectId)
+        val program = service.createProgram(
+            tenantId = principal.projectId,
+            programCode = request.programCode,
+            programName = request.programName,
+            description = request.description,
+            startDate = request.startDate,
+            endDate = request.endDate,
+            eligibilityPolicy = request.eligibilityPolicy,
+            termsReference = request.termsReference,
+            termsVersion = request.termsVersion,
+            maxParticipants = request.maxParticipants,
+            actorId = principal.userId,
+            actorRole = principal.role.name,
+            metadataJson = request.metadataJson
+        )
+        return program.toDto()
+    }
+
+    suspend fun getAffiliateProgramById(
+        principal: AuthenticatedPrincipal,
+        programId: String
+    ): com.sucharu.sucharupro.data.api.model.affiliate.AffiliateProgramDto {
+        BackendAuthorizationPolicy.requireRole(
+            principal,
+            UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.AFFILIATE, UserRole.AI_AGENT
+        )
+        val service = repositoryFactory.createAffiliateProgramService(principal.projectId)
+        val program = service.getProgramById(principal.projectId, programId)
+            ?: throw NotFoundException("Affiliate program '$programId' not found.")
+        return program.toDto()
+    }
+
+    suspend fun getAffiliateProgramByCode(
+        principal: AuthenticatedPrincipal,
+        code: String
+    ): com.sucharu.sucharupro.data.api.model.affiliate.AffiliateProgramDto {
+        BackendAuthorizationPolicy.requireRole(
+            principal,
+            UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.AFFILIATE, UserRole.AI_AGENT
+        )
+        val service = repositoryFactory.createAffiliateProgramService(principal.projectId)
+        val program = service.getProgramByCode(principal.projectId, code)
+            ?: throw NotFoundException("Affiliate program with code '$code' not found.")
+        return program.toDto()
+    }
+
+    suspend fun updateAffiliateProgram(
+        principal: AuthenticatedPrincipal,
+        programId: String,
+        request: com.sucharu.sucharupro.data.api.model.affiliate.UpdateAffiliateProgramRequestDto
+    ): com.sucharu.sucharupro.data.api.model.affiliate.AffiliateProgramDto {
+        BackendAuthorizationPolicy.requireRole(
+            principal,
+            UserRole.ADMIN, UserRole.MANAGER
+        )
+        val service = repositoryFactory.createAffiliateProgramService(principal.projectId)
+        val updated = service.updateProgram(
+            tenantId = principal.projectId,
+            programId = programId,
+            programName = request.programName,
+            description = request.description,
+            startDate = request.startDate,
+            endDate = request.endDate,
+            eligibilityPolicy = request.eligibilityPolicy,
+            termsReference = request.termsReference,
+            termsVersion = request.termsVersion,
+            maxParticipants = request.maxParticipants,
+            actorId = principal.userId,
+            actorRole = principal.role.name,
+            metadataJson = request.metadataJson
+        )
+        return updated.toDto()
+    }
+
+    suspend fun activateAffiliateProgram(
+        principal: AuthenticatedPrincipal,
+        programId: String,
+        reason: String
+    ): com.sucharu.sucharupro.data.api.model.affiliate.AffiliateProgramDto {
+        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER)
+        val service = repositoryFactory.createAffiliateProgramService(principal.projectId)
+        val activated = service.activateProgram(principal.projectId, programId, principal.userId, principal.role.name, reason)
+        return activated.toDto()
+    }
+
+    suspend fun pauseAffiliateProgram(
+        principal: AuthenticatedPrincipal,
+        programId: String,
+        reason: String
+    ): com.sucharu.sucharupro.data.api.model.affiliate.AffiliateProgramDto {
+        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER)
+        val service = repositoryFactory.createAffiliateProgramService(principal.projectId)
+        val paused = service.pauseProgram(principal.projectId, programId, principal.userId, principal.role.name, reason)
+        return paused.toDto()
+    }
+
+    suspend fun closeAffiliateProgram(
+        principal: AuthenticatedPrincipal,
+        programId: String,
+        reason: String
+    ): com.sucharu.sucharupro.data.api.model.affiliate.AffiliateProgramDto {
+        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER)
+        val service = repositoryFactory.createAffiliateProgramService(principal.projectId)
+        val closed = service.closeProgram(principal.projectId, programId, principal.userId, principal.role.name, reason)
+        return closed.toDto()
+    }
+
+    suspend fun archiveAffiliateProgram(
+        principal: AuthenticatedPrincipal,
+        programId: String,
+        reason: String
+    ): com.sucharu.sucharupro.data.api.model.affiliate.AffiliateProgramDto {
+        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN)
+        val service = repositoryFactory.createAffiliateProgramService(principal.projectId)
+        val archived = service.archiveProgram(principal.projectId, programId, principal.userId, principal.role.name, reason)
+        return archived.toDto()
+    }
+
+    suspend fun listAffiliatePrograms(
+        principal: AuthenticatedPrincipal,
+        status: String? = null
+    ): List<com.sucharu.sucharupro.data.api.model.affiliate.AffiliateProgramDto> {
+        BackendAuthorizationPolicy.requireRole(
+            principal,
+            UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.AFFILIATE, UserRole.CUSTOMER, UserRole.AI_AGENT
+        )
+        val service = repositoryFactory.createAffiliateProgramService(principal.projectId)
+        val stat = status?.let {
+            try { com.sucharu.sucharupro.domain.model.affiliate.AffiliateProgramStatus.valueOf(it.uppercase()) } catch (_: Exception) { null }
+        }
+        val list = service.listPrograms(principal.projectId, stat)
+        return list.map { it.toDto() }
+    }
+
+    suspend fun enrollAffiliateInProgram(
+        principal: AuthenticatedPrincipal,
+        request: com.sucharu.sucharupro.data.api.model.affiliate.EnrollAffiliateRequestDto
+    ): com.sucharu.sucharupro.data.api.model.affiliate.AffiliateEnrollmentDto {
+        BackendAuthorizationPolicy.requireRole(
+            principal,
+            UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.AFFILIATE
+        )
+        val service = repositoryFactory.createAffiliateProgramService(principal.projectId)
+        val enrollment = service.enrollAffiliate(
+            tenantId = principal.projectId,
+            affiliateId = request.affiliateId,
+            programId = request.programId,
+            enrollmentReason = request.enrollmentReason,
+            effectiveFrom = request.effectiveFrom,
+            effectiveTo = request.effectiveTo,
+            actorId = principal.userId,
+            actorRole = principal.role.name,
+            metadataJson = request.metadataJson
+        )
+        return enrollment.toDto()
+    }
+
+    suspend fun getAffiliateEnrollmentById(
+        principal: AuthenticatedPrincipal,
+        enrollmentId: String
+    ): com.sucharu.sucharupro.data.api.model.affiliate.AffiliateEnrollmentDto {
+        BackendAuthorizationPolicy.requireRole(
+            principal,
+            UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.AFFILIATE, UserRole.AI_AGENT
+        )
+        val service = repositoryFactory.createAffiliateProgramService(principal.projectId)
+        val enrollment = service.getEnrollmentById(principal.projectId, enrollmentId)
+            ?: throw NotFoundException("Affiliate enrollment '$enrollmentId' not found.")
+        return enrollment.toDto()
+    }
+
+    suspend fun listAffiliateEnrollments(
+        principal: AuthenticatedPrincipal,
+        programId: String? = null,
+        affiliateId: String? = null,
+        status: String? = null
+    ): List<com.sucharu.sucharupro.data.api.model.affiliate.AffiliateEnrollmentDto> {
+        BackendAuthorizationPolicy.requireRole(
+            principal,
+            UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.AFFILIATE, UserRole.AI_AGENT
+        )
+        val service = repositoryFactory.createAffiliateProgramService(principal.projectId)
+        val stat = status?.let {
+            try { com.sucharu.sucharupro.domain.model.affiliate.AffiliateEnrollmentStatus.valueOf(it.uppercase()) } catch (_: Exception) { null }
+        }
+        val list = when {
+            programId != null -> service.findEnrollmentsByProgram(principal.projectId, programId, stat)
+            affiliateId != null -> service.findEnrollmentsByAffiliate(principal.projectId, affiliateId)
+            else -> service.listEnrollments(principal.projectId, stat)
+        }
+        return list.map { it.toDto() }
+    }
+
+    suspend fun approveAffiliateEnrollment(
+        principal: AuthenticatedPrincipal,
+        enrollmentId: String,
+        reason: String
+    ): com.sucharu.sucharupro.data.api.model.affiliate.AffiliateEnrollmentDto {
+        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER)
+        val service = repositoryFactory.createAffiliateProgramService(principal.projectId)
+        val approved = service.approveEnrollment(principal.projectId, enrollmentId, principal.userId, principal.role.name, reason)
+        return approved.toDto()
+    }
+
+    suspend fun rejectAffiliateEnrollment(
+        principal: AuthenticatedPrincipal,
+        enrollmentId: String,
+        reason: String
+    ): com.sucharu.sucharupro.data.api.model.affiliate.AffiliateEnrollmentDto {
+        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER)
+        val service = repositoryFactory.createAffiliateProgramService(principal.projectId)
+        val rejected = service.rejectEnrollment(principal.projectId, enrollmentId, principal.userId, principal.role.name, reason)
+        return rejected.toDto()
+    }
+
+    suspend fun activateAffiliateEnrollment(
+        principal: AuthenticatedPrincipal,
+        enrollmentId: String,
+        reason: String
+    ): com.sucharu.sucharupro.data.api.model.affiliate.AffiliateEnrollmentDto {
+        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER)
+        val service = repositoryFactory.createAffiliateProgramService(principal.projectId)
+        val activated = service.activateEnrollment(principal.projectId, enrollmentId, principal.userId, principal.role.name, reason)
+        return activated.toDto()
+    }
+
+    suspend fun suspendAffiliateEnrollment(
+        principal: AuthenticatedPrincipal,
+        enrollmentId: String,
+        reason: String
+    ): com.sucharu.sucharupro.data.api.model.affiliate.AffiliateEnrollmentDto {
+        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER)
+        val service = repositoryFactory.createAffiliateProgramService(principal.projectId)
+        val suspended = service.suspendEnrollment(principal.projectId, enrollmentId, principal.userId, principal.role.name, reason)
+        return suspended.toDto()
+    }
+
+    suspend fun resumeAffiliateEnrollment(
+        principal: AuthenticatedPrincipal,
+        enrollmentId: String,
+        reason: String
+    ): com.sucharu.sucharupro.data.api.model.affiliate.AffiliateEnrollmentDto {
+        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER)
+        val service = repositoryFactory.createAffiliateProgramService(principal.projectId)
+        val resumed = service.resumeEnrollment(principal.projectId, enrollmentId, principal.userId, principal.role.name, reason)
+        return resumed.toDto()
+    }
+
+    suspend fun terminateAffiliateEnrollment(
+        principal: AuthenticatedPrincipal,
+        enrollmentId: String,
+        reason: String
+    ): com.sucharu.sucharupro.data.api.model.affiliate.AffiliateEnrollmentDto {
+        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER)
+        val service = repositoryFactory.createAffiliateProgramService(principal.projectId)
+        val terminated = service.terminateEnrollment(principal.projectId, enrollmentId, principal.userId, principal.role.name, reason)
+        return terminated.toDto()
+    }
+
+    suspend fun listAffiliateProgramAuditRecords(
+        principal: AuthenticatedPrincipal,
+        programId: String
+    ): List<com.sucharu.sucharupro.data.api.model.affiliate.AffiliateProgramAuditRecordDto> {
+        BackendAuthorizationPolicy.requireRole(
+            principal,
+            UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.AI_AGENT
+        )
+        val service = repositoryFactory.createAffiliateProgramService(principal.projectId)
+        val list = service.listProgramAuditRecords(principal.projectId, programId)
+        return list.map { it.toDto() }
+    }
+
+    suspend fun listAffiliateEnrollmentAuditRecords(
+        principal: AuthenticatedPrincipal,
+        enrollmentId: String
+    ): List<com.sucharu.sucharupro.data.api.model.affiliate.AffiliateProgramAuditRecordDto> {
+        BackendAuthorizationPolicy.requireRole(
+            principal,
+            UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.AFFILIATE, UserRole.AI_AGENT
+        )
+        val service = repositoryFactory.createAffiliateProgramService(principal.projectId)
+        val list = service.listEnrollmentAuditRecords(principal.projectId, enrollmentId)
+        return list.map { it.toDto() }
+    }
+
+    suspend fun getAffiliateProgramGovernanceSummary(
+        principal: AuthenticatedPrincipal
+    ): com.sucharu.sucharupro.data.api.model.affiliate.AffiliateProgramGovernanceSummaryDto {
+        BackendAuthorizationPolicy.requireRole(
+            principal,
+            UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.AI_AGENT
+        )
+        val service = repositoryFactory.createAffiliateProgramService(principal.projectId)
+        val summary = service.getGovernanceSummary(principal.projectId)
+        return summary.toDto()
+    }
+
+    suspend fun getAffiliateProgramHandoffContract(
+        principal: AuthenticatedPrincipal,
+        enrollmentId: String
+    ): com.sucharu.sucharupro.domain.model.affiliate.Module20Step02ProgramHandoffContract {
+        BackendAuthorizationPolicy.requireRole(
+            principal,
+            UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.AFFILIATE, UserRole.AI_AGENT
+        )
+        val service = repositoryFactory.createAffiliateProgramService(principal.projectId)
+        return service.getHandoffContract(principal.projectId, enrollmentId)
+    }
 }
 
 

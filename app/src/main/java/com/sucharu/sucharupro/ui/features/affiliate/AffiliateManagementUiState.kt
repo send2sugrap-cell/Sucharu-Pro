@@ -2,10 +2,13 @@ package com.sucharu.sucharupro.ui.features.affiliate
 
 import com.sucharu.sucharupro.data.api.model.affiliate.*
 import com.sucharu.sucharupro.domain.model.affiliate.Module20Step01AffiliateHandoffContract
+import com.sucharu.sucharupro.domain.model.affiliate.Module20Step02ProgramHandoffContract
 
 enum class AffiliateCommandTab(val title: String) {
     OVERVIEW("Overview"),
-    DIRECTORY("Directory"),
+    DIRECTORY("Affiliates"),
+    PROGRAMS("Programs"),
+    ENROLLMENTS("Enrollments"),
     PENDING_APPROVAL("Pending"),
     ACTIVE_SUSPENDED("Active & Suspended"),
     PROFILE_ELIGIBILITY("Profile & Eligibility"),
@@ -17,6 +20,7 @@ data class AffiliateManagementUiState(
     val errorMessage: String? = null,
     val successMessage: String? = null,
     val selectedTab: AffiliateCommandTab = AffiliateCommandTab.OVERVIEW,
+    // Step 01 State
     val summary: AffiliateGovernanceSummaryDto? = null,
     val affiliatesList: List<AffiliateProfileDto> = emptyList(),
     val selectedAffiliate: AffiliateProfileDto? = null,
@@ -27,7 +31,19 @@ data class AffiliateManagementUiState(
     val typeFilter: String? = null,
     val searchQuery: String = "",
     val isCreatingAffiliate: Boolean = false,
-    val isPersonalView: Boolean = false
+    val isPersonalView: Boolean = false,
+    // Step 02 State: Programs & Enrollments
+    val programSummary: AffiliateProgramGovernanceSummaryDto? = null,
+    val programsList: List<AffiliateProgramDto> = emptyList(),
+    val selectedProgram: AffiliateProgramDto? = null,
+    val selectedProgramAudits: List<AffiliateProgramAuditRecordDto> = emptyList(),
+    val enrollmentsList: List<AffiliateEnrollmentDto> = emptyList(),
+    val selectedEnrollment: AffiliateEnrollmentDto? = null,
+    val selectedEnrollmentAudits: List<AffiliateProgramAuditRecordDto> = emptyList(),
+    val selectedProgramHandoffContract: Module20Step02ProgramHandoffContract? = null,
+    val programStatusFilter: String? = null,
+    val enrollmentStatusFilter: String? = null,
+    val programSearchQuery: String = ""
 ) {
     val filteredAffiliates: List<AffiliateProfileDto>
         get() = affiliatesList.filter { aff ->
@@ -40,7 +56,25 @@ data class AffiliateManagementUiState(
             matchesQuery && matchesStatus && matchesType
         }
 
+    val filteredPrograms: List<AffiliateProgramDto>
+        get() = programsList.filter { prog ->
+            val matchesQuery = programSearchQuery.isBlank() ||
+                    prog.programName.contains(programSearchQuery, ignoreCase = true) ||
+                    prog.programCode.contains(programSearchQuery, ignoreCase = true)
+            val matchesStatus = programStatusFilter == null || prog.status.equals(programStatusFilter, ignoreCase = true)
+            matchesQuery && matchesStatus
+        }
+
+    val filteredEnrollments: List<AffiliateEnrollmentDto>
+        get() = enrollmentsList.filter { enr ->
+            enrollmentStatusFilter == null || enr.enrollmentStatus.equals(enrollmentStatusFilter, ignoreCase = true)
+        }
+
     val pendingCount: Int get() = affiliatesList.count { it.status == "PENDING" }
     val activeCount: Int get() = affiliatesList.count { it.status == "ACTIVE" }
     val suspendedCount: Int get() = affiliatesList.count { it.status == "SUSPENDED" }
+
+    val activeProgramsCount: Int get() = programsList.count { it.status == "ACTIVE" }
+    val activeEnrollmentsCount: Int get() = enrollmentsList.count { it.enrollmentStatus == "ACTIVE" }
+    val pendingEnrollmentsCount: Int get() = enrollmentsList.count { it.enrollmentStatus == "PENDING" }
 }

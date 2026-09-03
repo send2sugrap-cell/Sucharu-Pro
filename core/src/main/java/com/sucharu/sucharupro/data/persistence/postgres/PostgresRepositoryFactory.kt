@@ -2211,6 +2211,32 @@ open class PostgresRepositoryFactory(
         val repository = createAffiliateRepository(tenantId)
         return com.sucharu.sucharupro.domain.service.affiliate.AffiliateServiceImpl(repository)
     }
+
+    // --- Module 20: Affiliate Program & Relationship Management (Step 02) ---
+
+    open fun createAffiliateProgramDataSource(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.data.datasource.affiliate.AffiliateProgramDataSource {
+        return PostgresAffiliateProgramDataSource(transactionManager)
+    }
+
+    open fun createAffiliateProgramRepository(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.domain.repository.affiliate.AffiliateProgramRepository {
+        val dataSource = createAffiliateProgramDataSource(tenantId)
+        return com.sucharu.sucharupro.data.repository.affiliate.AffiliateProgramRepositoryImpl(dataSource)
+    }
+
+    open fun createAffiliateProgramService(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.domain.service.affiliate.AffiliateProgramService {
+        val programRepo = createAffiliateProgramRepository(tenantId)
+        val affiliateRepo = createAffiliateRepository(tenantId)
+        return com.sucharu.sucharupro.domain.service.affiliate.AffiliateProgramServiceImpl(
+            programRepository = programRepo,
+            affiliateRepository = affiliateRepo
+        )
+    }
 }
 
 

@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /**
- * ViewModel for Affiliate Management Command Center (Module 20 Step 01).
+ * ViewModel for Affiliate Management Command Center (Module 20 Steps 01 & 02).
  */
 class AffiliateManagementViewModel(
     private val useCases: BackendUseCases,
@@ -41,6 +41,8 @@ class AffiliateManagementViewModel(
                     val eligibility = useCases.evaluateAffiliateEligibility(principal, myProfile.affiliateId)
                     val audits = useCases.listAffiliateAuditRecords(principal, myProfile.affiliateId)
                     val handoff = useCases.getAffiliateHandoffContract(principal, myProfile.affiliateId)
+                    val myEnrollments = useCases.listAffiliateEnrollments(principal, affiliateId = myProfile.affiliateId)
+                    val availablePrograms = useCases.listAffiliatePrograms(principal, status = "ACTIVE")
 
                     _uiState.update {
                         it.copy(
@@ -50,6 +52,8 @@ class AffiliateManagementViewModel(
                             selectedEligibility = eligibility,
                             selectedAuditRecords = audits,
                             selectedHandoffContract = handoff,
+                            enrollmentsList = myEnrollments,
+                            programsList = availablePrograms,
                             selectedTab = AffiliateCommandTab.PROFILE_ELIGIBILITY
                         )
                     }
@@ -70,6 +74,19 @@ class AffiliateManagementViewModel(
                         } catch (_: Exception) {}
                     }
 
+                    // Step 02 loads
+                    var progSummary: AffiliateProgramGovernanceSummaryDto? = null
+                    var progs: List<AffiliateProgramDto> = emptyList()
+                    var enrolls: List<AffiliateEnrollmentDto> = emptyList()
+                    try {
+                        progSummary = useCases.getAffiliateProgramGovernanceSummary(principal)
+                        progs = useCases.listAffiliatePrograms(principal)
+                        enrolls = useCases.listAffiliateEnrollments(principal)
+                    } catch (_: Exception) {}
+
+                    val firstProg = progs.firstOrNull()
+                    val firstEnroll = enrolls.firstOrNull()
+
                     _uiState.update {
                         it.copy(
                             isLoading = false,
@@ -78,7 +95,12 @@ class AffiliateManagementViewModel(
                             selectedAffiliate = firstSelected,
                             selectedEligibility = eligibility,
                             selectedAuditRecords = audits,
-                            selectedHandoffContract = handoff
+                            selectedHandoffContract = handoff,
+                            programSummary = progSummary,
+                            programsList = progs,
+                            selectedProgram = firstProg,
+                            enrollmentsList = enrolls,
+                            selectedEnrollment = firstEnroll
                         )
                     }
                 }
@@ -294,6 +316,345 @@ class AffiliateManagementViewModel(
         }
     }
 
+    // =========================================================================
+    // STEP 02: PROGRAM & ENROLLMENT ACTIONS
+    // =========================================================================
+
+    fun selectProgram(programId: String) {
+        scope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            try {
+                val prog = useCases.getAffiliateProgramById(principal, programId)
+                val audits = useCases.listAffiliateProgramAuditRecords(principal, programId)
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        selectedProgram = prog,
+                        selectedProgramAudits = audits
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(isLoading = false, errorMessage = "Failed to select program: ${e.message}")
+                }
+            }
+        }
+    }
+
+    fun createProgram(
+        programCode: String,
+        programName: String,
+        description: String?,
+        startDate: Long,
+        endDate: Long? = null,
+        eligibilityPolicy: String = "STANDARD",
+        termsReference: String? = null,
+        termsVersion: String? = null,
+        maxParticipants: Int? = null,
+        metadataJson: String? = null
+    ) {
+        scope.launch {
+            _uiState.update { it.copy(isLoading = true, errorMessage = null, successMessage = null) }
+            try {
+                val req = CreateAffiliateProgramRequestDto(
+                    programCode = programCode,
+                    programName = programName,
+                    description = description,
+                    startDate = startDate,
+                    endDate = endDate,
+                    eligibilityPolicy = eligibilityPolicy,
+                    termsReference = termsReference,
+                    termsVersion = termsVersion,
+                    maxParticipants = maxParticipants,
+                    metadataJson = metadataJson
+                )
+                val created = useCases.createAffiliateProgram(principal, req)
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        successMessage = "Program '${created.programName}' (${created.programCode}) created successfully!"
+                    )
+                }
+                loadData()
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(isLoading = false, errorMessage = "Failed to create program: ${e.message}")
+                }
+            }
+        }
+    }
+
+    fun activateProgram(programId: String, reason: String = "Program activated") {
+        scope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            try {
+                val activated = useCases.activateAffiliateProgram(principal, programId, reason)
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        successMessage = "Program '${activated.programCode}' ACTIVATED."
+                    )
+                }
+                selectProgram(programId)
+                loadData()
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(isLoading = false, errorMessage = "Failed to activate program: ${e.message}")
+                }
+            }
+        }
+    }
+
+    fun pauseProgram(programId: String, reason: String) {
+        scope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            try {
+                val paused = useCases.pauseAffiliateProgram(principal, programId, reason)
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        successMessage = "Program '${paused.programCode}' PAUSED."
+                    )
+                }
+                selectProgram(programId)
+                loadData()
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(isLoading = false, errorMessage = "Failed to pause program: ${e.message}")
+                }
+            }
+        }
+    }
+
+    fun closeProgram(programId: String, reason: String) {
+        scope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            try {
+                val closed = useCases.closeAffiliateProgram(principal, programId, reason)
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        successMessage = "Program '${closed.programCode}' CLOSED."
+                    )
+                }
+                selectProgram(programId)
+                loadData()
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(isLoading = false, errorMessage = "Failed to close program: ${e.message}")
+                }
+            }
+        }
+    }
+
+    fun archiveProgram(programId: String, reason: String) {
+        scope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            try {
+                val archived = useCases.archiveAffiliateProgram(principal, programId, reason)
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        successMessage = "Program '${archived.programCode}' ARCHIVED."
+                    )
+                }
+                selectProgram(programId)
+                loadData()
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(isLoading = false, errorMessage = "Failed to archive program: ${e.message}")
+                }
+            }
+        }
+    }
+
+    fun selectEnrollment(enrollmentId: String) {
+        scope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            try {
+                val enr = useCases.getAffiliateEnrollmentById(principal, enrollmentId)
+                val audits = useCases.listAffiliateEnrollmentAuditRecords(principal, enrollmentId)
+                val handoff = try {
+                    useCases.getAffiliateProgramHandoffContract(principal, enrollmentId)
+                } catch (_: Exception) { null }
+
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        selectedEnrollment = enr,
+                        selectedEnrollmentAudits = audits,
+                        selectedProgramHandoffContract = handoff
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(isLoading = false, errorMessage = "Failed to select enrollment: ${e.message}")
+                }
+            }
+        }
+    }
+
+    fun enrollAffiliate(
+        programId: String,
+        affiliateId: String,
+        enrollmentReason: String? = null,
+        effectiveFrom: Long? = null,
+        effectiveTo: Long? = null,
+        metadataJson: String? = null
+    ) {
+        scope.launch {
+            _uiState.update { it.copy(isLoading = true, errorMessage = null, successMessage = null) }
+            try {
+                val req = EnrollAffiliateRequestDto(
+                    affiliateId = affiliateId,
+                    programId = programId,
+                    enrollmentReason = enrollmentReason,
+                    effectiveFrom = effectiveFrom,
+                    effectiveTo = effectiveTo,
+                    metadataJson = metadataJson
+                )
+                val enrollment = useCases.enrollAffiliateInProgram(principal, req)
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        successMessage = "Enrollment created in status '${enrollment.enrollmentStatus}'."
+                    )
+                }
+                loadData()
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(isLoading = false, errorMessage = "Failed to enroll affiliate: ${e.message}")
+                }
+            }
+        }
+    }
+
+    fun approveEnrollment(enrollmentId: String, reason: String = "Approved") {
+        scope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            try {
+                val approved = useCases.approveAffiliateEnrollment(principal, enrollmentId, reason)
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        successMessage = "Enrollment ${approved.enrollmentId} APPROVED."
+                    )
+                }
+                selectEnrollment(enrollmentId)
+                loadData()
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(isLoading = false, errorMessage = "Failed to approve enrollment: ${e.message}")
+                }
+            }
+        }
+    }
+
+    fun rejectEnrollment(enrollmentId: String, reason: String) {
+        scope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            try {
+                val rejected = useCases.rejectAffiliateEnrollment(principal, enrollmentId, reason)
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        successMessage = "Enrollment ${rejected.enrollmentId} REJECTED."
+                    )
+                }
+                selectEnrollment(enrollmentId)
+                loadData()
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(isLoading = false, errorMessage = "Failed to reject enrollment: ${e.message}")
+                }
+            }
+        }
+    }
+
+    fun activateEnrollment(enrollmentId: String, reason: String = "Activated") {
+        scope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            try {
+                val activated = useCases.activateAffiliateEnrollment(principal, enrollmentId, reason)
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        successMessage = "Enrollment ${activated.enrollmentId} ACTIVATED."
+                    )
+                }
+                selectEnrollment(enrollmentId)
+                loadData()
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(isLoading = false, errorMessage = "Failed to activate enrollment: ${e.message}")
+                }
+            }
+        }
+    }
+
+    fun suspendEnrollment(enrollmentId: String, reason: String) {
+        scope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            try {
+                val suspended = useCases.suspendAffiliateEnrollment(principal, enrollmentId, reason)
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        successMessage = "Enrollment ${suspended.enrollmentId} SUSPENDED."
+                    )
+                }
+                selectEnrollment(enrollmentId)
+                loadData()
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(isLoading = false, errorMessage = "Failed to suspend enrollment: ${e.message}")
+                }
+            }
+        }
+    }
+
+    fun resumeEnrollment(enrollmentId: String, reason: String = "Resumed") {
+        scope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            try {
+                val resumed = useCases.resumeAffiliateEnrollment(principal, enrollmentId, reason)
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        successMessage = "Enrollment ${resumed.enrollmentId} RESUMED."
+                    )
+                }
+                selectEnrollment(enrollmentId)
+                loadData()
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(isLoading = false, errorMessage = "Failed to resume enrollment: ${e.message}")
+                }
+            }
+        }
+    }
+
+    fun terminateEnrollment(enrollmentId: String, reason: String) {
+        scope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            try {
+                val terminated = useCases.terminateAffiliateEnrollment(principal, enrollmentId, reason)
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        successMessage = "Enrollment ${terminated.enrollmentId} TERMINATED."
+                    )
+                }
+                selectEnrollment(enrollmentId)
+                loadData()
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(isLoading = false, errorMessage = "Failed to terminate enrollment: ${e.message}")
+                }
+            }
+        }
+    }
+
     fun setSearchQuery(query: String) {
         _uiState.update { it.copy(searchQuery = query) }
     }
@@ -304,6 +665,18 @@ class AffiliateManagementViewModel(
 
     fun setTypeFilter(type: String?) {
         _uiState.update { it.copy(typeFilter = type) }
+    }
+
+    fun setProgramSearchQuery(query: String) {
+        _uiState.update { it.copy(programSearchQuery = query) }
+    }
+
+    fun setProgramStatusFilter(status: String?) {
+        _uiState.update { it.copy(programStatusFilter = status) }
+    }
+
+    fun setEnrollmentStatusFilter(status: String?) {
+        _uiState.update { it.copy(enrollmentStatusFilter = status) }
     }
 
     fun clearMessages() {
