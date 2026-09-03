@@ -18045,6 +18045,138 @@ class BackendUseCases(
     }
 
     // ========================================================================
+    // SECTION 74-E: ENTERPRISE RESERVATION AUDIT, RLS & AI HANDOFF (Module 19 Step 06)
+    // ========================================================================
+
+    suspend fun recordSubstrateEnterpriseAuditEvent(
+        principal: AuthenticatedPrincipal,
+        request: com.sucharu.sucharupro.data.api.model.substratereservation.RecordAuditEventRequestDto
+    ): com.sucharu.sucharupro.data.api.model.substratereservation.SubstrateEnterpriseAuditRecordDto {
+        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF)
+        val service = repositoryFactory.createSubstrateEnterpriseAuditService(principal.projectId)
+        val eventType = try {
+            com.sucharu.sucharupro.domain.model.substratereservation.ReservationAuditEventType.valueOf(request.eventType)
+        } catch (e: Exception) {
+            com.sucharu.sucharupro.domain.model.substratereservation.ReservationAuditEventType.GOVERNANCE_OVERRIDE_RECORDED
+        }
+        val record = service.recordAuditEvent(
+            tenantId = principal.projectId,
+            reservationId = request.reservationId,
+            orderId = request.orderId,
+            orderItemId = request.orderItemId,
+            jobId = request.jobId,
+            eventType = eventType,
+            previousState = request.previousState,
+            newState = request.newState,
+            actorType = com.sucharu.sucharupro.domain.model.substratereservation.AuditActorType.USER,
+            actorId = principal.userId,
+            role = principal.role.name,
+            permissionContext = "MANUAL_AUDIT_ENTRY",
+            reason = request.reason,
+            correlationId = java.util.UUID.randomUUID().toString(),
+            sourceOperation = request.sourceOperation
+        )
+        return record.toDto()
+    }
+
+    suspend fun getSubstrateEnterpriseAuditHistory(
+        principal: AuthenticatedPrincipal,
+        reservationId: String
+    ): List<com.sucharu.sucharupro.data.api.model.substratereservation.SubstrateEnterpriseAuditRecordDto> {
+        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.AI_AGENT)
+        val service = repositoryFactory.createSubstrateEnterpriseAuditService(principal.projectId)
+        return service.getAuditHistory(principal.projectId, reservationId).map { it.toDto() }
+    }
+
+    suspend fun listSubstrateEnterpriseAuditEvents(
+        principal: AuthenticatedPrincipal,
+        orderId: String? = null,
+        jobId: String? = null,
+        eventType: String? = null,
+        limit: Int = 100
+    ): List<com.sucharu.sucharupro.data.api.model.substratereservation.SubstrateEnterpriseAuditRecordDto> {
+        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.AI_AGENT)
+        val service = repositoryFactory.createSubstrateEnterpriseAuditService(principal.projectId)
+        val parsedEventType = eventType?.let {
+            try {
+                com.sucharu.sucharupro.domain.model.substratereservation.ReservationAuditEventType.valueOf(it)
+            } catch (e: Exception) {
+                null
+            }
+        }
+        return service.listAuditEvents(principal.projectId, orderId, jobId, parsedEventType, limit).map { it.toDto() }
+    }
+
+    suspend fun reconcileSubstrateReservation(
+        principal: AuthenticatedPrincipal,
+        request: com.sucharu.sucharupro.data.api.model.substratereservation.ReconcileReservationRequestDto
+    ): com.sucharu.sucharupro.data.api.model.substratereservation.SubstrateReservationReconciliationDto {
+        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF)
+        val service = repositoryFactory.createSubstrateEnterpriseAuditService(principal.projectId)
+        val reconciliation = service.reconcileReservation(
+            tenantId = principal.projectId,
+            reservationId = request.reservationId,
+            actor = principal.userId,
+            notes = request.notes
+        )
+        return reconciliation.toDto()
+    }
+
+    suspend fun getSubstrateReservationReconciliation(
+        principal: AuthenticatedPrincipal,
+        reconciliationId: String
+    ): com.sucharu.sucharupro.data.api.model.substratereservation.SubstrateReservationReconciliationDto? {
+        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.AI_AGENT)
+        val service = repositoryFactory.createSubstrateEnterpriseAuditService(principal.projectId)
+        return service.getReconciliation(principal.projectId, reconciliationId)?.toDto()
+    }
+
+    suspend fun getLatestSubstrateReservationReconciliation(
+        principal: AuthenticatedPrincipal,
+        reservationId: String
+    ): com.sucharu.sucharupro.data.api.model.substratereservation.SubstrateReservationReconciliationDto? {
+        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.AI_AGENT)
+        val service = repositoryFactory.createSubstrateEnterpriseAuditService(principal.projectId)
+        return service.getLatestReconciliation(principal.projectId, reservationId)?.toDto()
+    }
+
+    suspend fun verifySubstrateReservationIntegrity(
+        principal: AuthenticatedPrincipal,
+        request: com.sucharu.sucharupro.data.api.model.substratereservation.VerifyIntegrityRequestDto
+    ): com.sucharu.sucharupro.data.api.model.substratereservation.SubstrateIntegrityVerificationResultDto {
+        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF)
+        val service = repositoryFactory.createSubstrateEnterpriseAuditService(principal.projectId)
+        val result = service.verifyReservationIntegrity(
+            tenantId = principal.projectId,
+            reservationId = request.reservationId,
+            actor = principal.userId
+        )
+        return result.toDto()
+    }
+
+    suspend fun exportSubstrateEnterpriseHandoffContract(
+        principal: AuthenticatedPrincipal,
+        reservationId: String
+    ): com.sucharu.sucharupro.data.api.model.substratereservation.Module19Step06EnterpriseReservationHandoffContractDto {
+        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.AI_AGENT)
+        val service = repositoryFactory.createSubstrateEnterpriseAuditService(principal.projectId)
+        val contract = service.generateAiHandoffContract(
+            tenantId = principal.projectId,
+            reservationId = reservationId,
+            actor = principal.userId
+        )
+        return contract.toDto()
+    }
+
+    suspend fun getSubstrateEnterpriseGovernanceSummary(
+        principal: AuthenticatedPrincipal
+    ): com.sucharu.sucharupro.data.api.model.substratereservation.EnterpriseReservationGovernanceSummaryDto {
+        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.AI_AGENT)
+        val service = repositoryFactory.createSubstrateEnterpriseAuditService(principal.projectId)
+        return service.getGovernanceSummary(principal.projectId).toDto()
+    }
+
+    // ========================================================================
     // SECTION 75: DYNAMIC IMPOSITION & SHEET LAYOUT (Module 18 Step 01)
     // ========================================================================
 

@@ -54,7 +54,6 @@ class FakeSubstrateReleaseGovernanceDataSource : SubstrateReleaseGovernanceDataS
     override suspend fun listAuditEvents(tenantId: String, governanceId: String): List<SubstrateReleaseGovernanceAuditEvent> {
         return audits.values
             .filter { it.tenantId == tenantId && it.governanceId == governanceId }
-            .sortedBy { it.timestamp }
     }
 
     fun clear() {

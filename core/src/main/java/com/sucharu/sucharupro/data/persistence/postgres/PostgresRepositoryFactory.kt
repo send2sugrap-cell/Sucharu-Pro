@@ -2012,6 +2012,36 @@ open class PostgresRepositoryFactory(
         )
     }
 
+    open fun createSubstrateEnterpriseAuditDataSource(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.data.datasource.substratereservation.SubstrateEnterpriseAuditDataSource {
+        return PostgresSubstrateEnterpriseAuditDataSource(transactionManager)
+    }
+
+    open fun createSubstrateEnterpriseAuditRepository(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.domain.repository.substratereservation.SubstrateEnterpriseAuditRepository {
+        val dataSource = createSubstrateEnterpriseAuditDataSource(tenantId)
+        return com.sucharu.sucharupro.data.repository.substratereservation.SubstrateEnterpriseAuditRepositoryImpl(dataSource)
+    }
+
+    open fun createSubstrateEnterpriseAuditService(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.domain.service.substratereservation.SubstrateEnterpriseAuditService {
+        val auditRepo = createSubstrateEnterpriseAuditRepository(tenantId)
+        val resRepo = createSubstrateReservationRepository(tenantId)
+        val batchRepo = createSubstrateBatchSelectionRepository(tenantId)
+        val replRepo = createSubstrateReplenishmentRepository(tenantId)
+        val relRepo = createSubstrateReleaseGovernanceRepository(tenantId)
+        return com.sucharu.sucharupro.domain.service.substratereservation.SubstrateEnterpriseAuditServiceImpl(
+            auditRepository = auditRepo,
+            reservationRepository = resRepo,
+            batchSelectionRepository = batchRepo,
+            replenishmentRepository = replRepo,
+            releaseGovernanceRepository = relRepo
+        )
+    }
+
     // --- Module 18: Advanced Dynamic Imposition & Gang-Run Optimizer Engine ---
 
     open fun createImpositionDataSource(

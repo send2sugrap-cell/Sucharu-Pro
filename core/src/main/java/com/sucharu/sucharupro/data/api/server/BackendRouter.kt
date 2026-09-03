@@ -2824,7 +2824,77 @@ class BackendRouter(
             HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
         }
 
-        request.path.startsWith("/api/v1/substrate-reservations") && request.method == "GET" && !request.path.contains("/jobs/") && !request.path.contains("/ai-handoff") && !request.path.contains("/step02-handoff") && !request.path.startsWith("/api/v1/substrate-reservations/real-time-availability") && !request.path.startsWith("/api/v1/substrate-reservations/batch-selection") && !request.path.startsWith("/api/v1/substrate-reservations/replenishment") && !request.path.startsWith("/api/v1/substrate-reservations/governance") && (request.path == "/api/v1/substrate-reservations" || request.path.startsWith("/api/v1/substrate-reservations?")) -> {
+        // ========================================================================
+        // MODULE 19 STEP 06: ENTERPRISE RESERVATION AUDIT, RLS & AI HANDOFF
+        // ========================================================================
+
+        request.path == "/api/v1/substrate-reservations/enterprise/audit" && request.method == "POST" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val dto = parseRecordAuditEventRequest(request.body)
+            val res = useCases.recordSubstrateEnterpriseAuditEvent(principal, dto)
+            HttpResponse(201, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/substrate-reservations/enterprise/audit/[^/]+$")) && request.method == "GET" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val reservationId = request.path.removePrefix("/api/v1/substrate-reservations/enterprise/audit/")
+            val res = useCases.getSubstrateEnterpriseAuditHistory(principal, reservationId)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.startsWith("/api/v1/substrate-reservations/enterprise/audit") && request.method == "GET" && (request.path == "/api/v1/substrate-reservations/enterprise/audit" || request.path.startsWith("/api/v1/substrate-reservations/enterprise/audit?")) -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val queryParams = parseQueryParams(request.path)
+            val orderId = queryParams["orderId"]
+            val jobId = queryParams["jobId"]
+            val eventType = queryParams["eventType"]
+            val limit = queryParams["limit"]?.toIntOrNull() ?: 100
+            val res = useCases.listSubstrateEnterpriseAuditEvents(principal, orderId, jobId, eventType, limit)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path == "/api/v1/substrate-reservations/enterprise/reconcile" && request.method == "POST" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val dto = parseReconcileReservationRequest(request.body)
+            val res = useCases.reconcileSubstrateReservation(principal, dto)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/substrate-reservations/enterprise/reconciliations/latest/[^/]+$")) && request.method == "GET" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val reservationId = request.path.removePrefix("/api/v1/substrate-reservations/enterprise/reconciliations/latest/")
+            val res = useCases.getLatestSubstrateReservationReconciliation(principal, reservationId)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/substrate-reservations/enterprise/reconciliations/[^/]+$")) && request.method == "GET" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val reconciliationId = request.path.removePrefix("/api/v1/substrate-reservations/enterprise/reconciliations/")
+            val res = useCases.getSubstrateReservationReconciliation(principal, reconciliationId)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path == "/api/v1/substrate-reservations/enterprise/integrity/verify" && request.method == "POST" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val dto = parseVerifyIntegrityRequest(request.body)
+            val res = useCases.verifySubstrateReservationIntegrity(principal, dto)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/substrate-reservations/enterprise/handoff/[^/]+$")) && request.method == "GET" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val reservationId = request.path.removePrefix("/api/v1/substrate-reservations/enterprise/handoff/")
+            val res = useCases.exportSubstrateEnterpriseHandoffContract(principal, reservationId)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path == "/api/v1/substrate-reservations/enterprise/overview" && request.method == "GET" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val res = useCases.getSubstrateEnterpriseGovernanceSummary(principal)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.startsWith("/api/v1/substrate-reservations") && request.method == "GET" && !request.path.contains("/jobs/") && !request.path.contains("/ai-handoff") && !request.path.contains("/step02-handoff") && !request.path.startsWith("/api/v1/substrate-reservations/real-time-availability") && !request.path.startsWith("/api/v1/substrate-reservations/batch-selection") && !request.path.startsWith("/api/v1/substrate-reservations/replenishment") && !request.path.startsWith("/api/v1/substrate-reservations/governance") && !request.path.startsWith("/api/v1/substrate-reservations/enterprise") && (request.path == "/api/v1/substrate-reservations" || request.path.startsWith("/api/v1/substrate-reservations?")) -> {
             val principal = securityContext.authenticate(request.authorizationHeader)
             val queryParams = parseQueryParams(request.path)
             val limit = queryParams["limit"]?.toIntOrNull() ?: 50
@@ -15735,12 +15805,44 @@ private fun parseEvaluateRevisionGovernanceRequest(body: Any?): com.sucharu.such
     }
 }
 
+@Suppress("UNCHECKED_CAST")
+private fun parseRecordAuditEventRequest(body: Any?): com.sucharu.sucharupro.data.api.model.substratereservation.RecordAuditEventRequestDto = when (body) {
+    is com.sucharu.sucharupro.data.api.model.substratereservation.RecordAuditEventRequestDto -> body
+    else -> {
+        val map = parseBodyMap(body)
+        com.sucharu.sucharupro.data.api.model.substratereservation.RecordAuditEventRequestDto(
+            reservationId = map["reservationId"]?.toString() ?: "",
+            orderId = map["orderId"]?.toString() ?: "",
+            orderItemId = map["orderItemId"]?.toString() ?: "",
+            jobId = map["jobId"]?.toString(),
+            eventType = map["eventType"]?.toString() ?: "GOVERNANCE_OVERRIDE_RECORDED",
+            newState = map["newState"]?.toString() ?: "",
+            previousState = map["previousState"]?.toString(),
+            reason = map["reason"]?.toString() ?: "",
+            sourceOperation = map["sourceOperation"]?.toString() ?: "MANUAL_AUDIT"
+        )
+    }
+}
 
+@Suppress("UNCHECKED_CAST")
+private fun parseReconcileReservationRequest(body: Any?): com.sucharu.sucharupro.data.api.model.substratereservation.ReconcileReservationRequestDto = when (body) {
+    is com.sucharu.sucharupro.data.api.model.substratereservation.ReconcileReservationRequestDto -> body
+    else -> {
+        val map = parseBodyMap(body)
+        com.sucharu.sucharupro.data.api.model.substratereservation.ReconcileReservationRequestDto(
+            reservationId = map["reservationId"]?.toString() ?: "",
+            notes = map["notes"]?.toString()
+        )
+    }
+}
 
-
-
-
-
-
-
-
+@Suppress("UNCHECKED_CAST")
+private fun parseVerifyIntegrityRequest(body: Any?): com.sucharu.sucharupro.data.api.model.substratereservation.VerifyIntegrityRequestDto = when (body) {
+    is com.sucharu.sucharupro.data.api.model.substratereservation.VerifyIntegrityRequestDto -> body
+    else -> {
+        val map = parseBodyMap(body)
+        com.sucharu.sucharupro.data.api.model.substratereservation.VerifyIntegrityRequestDto(
+            reservationId = map["reservationId"]?.toString() ?: ""
+        )
+    }
+}
