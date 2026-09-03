@@ -2761,7 +2761,70 @@ class BackendRouter(
             HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
         }
 
-        request.path.startsWith("/api/v1/substrate-reservations") && request.method == "GET" && !request.path.contains("/jobs/") && !request.path.contains("/ai-handoff") && !request.path.contains("/step02-handoff") && !request.path.startsWith("/api/v1/substrate-reservations/real-time-availability") && !request.path.startsWith("/api/v1/substrate-reservations/batch-selection") && !request.path.startsWith("/api/v1/substrate-reservations/replenishment") && (request.path == "/api/v1/substrate-reservations" || request.path.startsWith("/api/v1/substrate-reservations?")) -> {
+        // --- Module 19 Step 05: Job Cancellation, Revision & Substrate Release Governance ---
+
+        request.path == "/api/v1/substrate-reservations/governance/cancellation/evaluate" && request.method == "POST" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val reqDto = parseEvaluateCancellationGovernanceRequest(request.body)
+            val res = useCases.evaluateCancellationGovernance(principal, reqDto)
+            HttpResponse(201, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path == "/api/v1/substrate-reservations/governance/revision/evaluate" && request.method == "POST" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val reqDto = parseEvaluateRevisionGovernanceRequest(request.body)
+            val res = useCases.evaluateRevisionGovernance(principal, reqDto)
+            HttpResponse(201, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/substrate-reservations/governance/[^/]+/approve$")) && request.method == "POST" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val governanceId = request.path.removePrefix("/api/v1/substrate-reservations/governance/").removeSuffix("/approve")
+            val map = parseBodyMap(request.body)
+            val notes = map["notes"]?.toString()
+            val res = useCases.approveSubstrateRelease(principal, governanceId, notes)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/substrate-reservations/governance/[^/]+/execute$")) && request.method == "POST" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val governanceId = request.path.removePrefix("/api/v1/substrate-reservations/governance/").removeSuffix("/execute")
+            val res = useCases.executeSubstrateRelease(principal, governanceId)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/substrate-reservations/governance/[^/]+/reject$")) && request.method == "POST" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val governanceId = request.path.removePrefix("/api/v1/substrate-reservations/governance/").removeSuffix("/reject")
+            val map = parseBodyMap(request.body)
+            val reason = map["reason"]?.toString() ?: "Rejected by supervisor"
+            val res = useCases.rejectSubstrateRelease(principal, governanceId, reason)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/substrate-reservations/governance/[^/]+/handoff$")) && request.method == "GET" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val governanceId = request.path.removePrefix("/api/v1/substrate-reservations/governance/").removeSuffix("/handoff")
+            val res = useCases.exportSubstrateReleaseGovernanceHandoff(principal, governanceId)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.startsWith("/api/v1/substrate-reservations/governance") && request.method == "GET" && (request.path == "/api/v1/substrate-reservations/governance" || request.path.startsWith("/api/v1/substrate-reservations/governance?")) -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val queryParams = parseQueryParams(request.path)
+            val limit = queryParams["limit"]?.toIntOrNull() ?: 50
+            val res = useCases.listSubstrateReleaseGovernanceRecords(principal, limit)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/substrate-reservations/governance/[^/]+$")) && request.method == "GET" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val governanceId = request.path.removePrefix("/api/v1/substrate-reservations/governance/")
+            val res = useCases.getSubstrateReleaseGovernanceRecord(principal, governanceId)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.startsWith("/api/v1/substrate-reservations") && request.method == "GET" && !request.path.contains("/jobs/") && !request.path.contains("/ai-handoff") && !request.path.contains("/step02-handoff") && !request.path.startsWith("/api/v1/substrate-reservations/real-time-availability") && !request.path.startsWith("/api/v1/substrate-reservations/batch-selection") && !request.path.startsWith("/api/v1/substrate-reservations/replenishment") && !request.path.startsWith("/api/v1/substrate-reservations/governance") && (request.path == "/api/v1/substrate-reservations" || request.path.startsWith("/api/v1/substrate-reservations?")) -> {
             val principal = securityContext.authenticate(request.authorizationHeader)
             val queryParams = parseQueryParams(request.path)
             val limit = queryParams["limit"]?.toIntOrNull() ?: 50
@@ -15621,6 +15684,53 @@ private fun parseEvaluateSubstrateReplenishmentRequest(body: Any?): com.sucharu.
             leadTimeDays = (map["leadTimeDays"] as? Number)?.toInt() ?: map["leadTimeDays"]?.toString()?.toIntOrNull() ?: 5,
             policyVersion = map["policyVersion"]?.toString() ?: "1.0.0",
             notes = map["notes"]?.toString()
+        )
+    }
+}
+
+@Suppress("UNCHECKED_CAST")
+private fun parseEvaluateCancellationGovernanceRequest(body: Any?): com.sucharu.sucharupro.data.api.model.substratereservation.EvaluateCancellationGovernanceRequestDto = when (body) {
+    is com.sucharu.sucharupro.data.api.model.substratereservation.EvaluateCancellationGovernanceRequestDto -> body
+    else -> {
+        val map = parseBodyMap(body)
+        com.sucharu.sucharupro.data.api.model.substratereservation.EvaluateCancellationGovernanceRequestDto(
+            reservationId = map["reservationId"]?.toString() ?: "",
+            orderId = map["orderId"]?.toString() ?: "",
+            orderItemId = map["orderItemId"]?.toString() ?: "",
+            executionJobId = map["executionJobId"]?.toString(),
+            upstreamEventId = map["upstreamEventId"]?.toString(),
+            sku = map["sku"]?.toString() ?: "",
+            materialName = map["materialName"]?.toString() ?: "",
+            warehouseId = map["warehouseId"]?.toString() ?: "WH-MAIN-01",
+            allocatedSheets = (map["allocatedSheets"] as? Number)?.toLong() ?: map["allocatedSheets"]?.toString()?.toLongOrNull() ?: 0L,
+            consumedSheets = (map["consumedSheets"] as? Number)?.toLong() ?: map["consumedSheets"]?.toString()?.toLongOrNull() ?: 0L,
+            committedSheets = (map["committedSheets"] as? Number)?.toLong() ?: map["committedSheets"]?.toString()?.toLongOrNull() ?: 0L,
+            productionStatus = map["productionStatus"]?.toString()
+        )
+    }
+}
+
+@Suppress("UNCHECKED_CAST")
+private fun parseEvaluateRevisionGovernanceRequest(body: Any?): com.sucharu.sucharupro.data.api.model.substratereservation.EvaluateRevisionGovernanceRequestDto = when (body) {
+    is com.sucharu.sucharupro.data.api.model.substratereservation.EvaluateRevisionGovernanceRequestDto -> body
+    else -> {
+        val map = parseBodyMap(body)
+        com.sucharu.sucharupro.data.api.model.substratereservation.EvaluateRevisionGovernanceRequestDto(
+            reservationId = map["reservationId"]?.toString() ?: "",
+            orderId = map["orderId"]?.toString() ?: "",
+            orderItemId = map["orderItemId"]?.toString() ?: "",
+            executionJobId = map["executionJobId"]?.toString(),
+            upstreamEventId = map["upstreamEventId"]?.toString(),
+            sku = map["sku"]?.toString() ?: "",
+            materialName = map["materialName"]?.toString() ?: "",
+            warehouseId = map["warehouseId"]?.toString() ?: "WH-MAIN-01",
+            previousRequiredSheets = (map["previousRequiredSheets"] as? Number)?.toLong() ?: map["previousRequiredSheets"]?.toString()?.toLongOrNull() ?: 0L,
+            newRequiredSheets = (map["newRequiredSheets"] as? Number)?.toLong() ?: map["newRequiredSheets"]?.toString()?.toLongOrNull() ?: 0L,
+            allocatedSheets = (map["allocatedSheets"] as? Number)?.toLong() ?: map["allocatedSheets"]?.toString()?.toLongOrNull() ?: 0L,
+            consumedSheets = (map["consumedSheets"] as? Number)?.toLong() ?: map["consumedSheets"]?.toString()?.toLongOrNull() ?: 0L,
+            committedSheets = (map["committedSheets"] as? Number)?.toLong() ?: map["committedSheets"]?.toString()?.toLongOrNull() ?: 0L,
+            productionStatus = map["productionStatus"]?.toString(),
+            isSkuChanged = (map["isSkuChanged"] as? Boolean) ?: map["isSkuChanged"]?.toString()?.toBoolean() ?: false
         )
     }
 }

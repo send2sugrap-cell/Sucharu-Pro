@@ -1986,6 +1986,32 @@ open class PostgresRepositoryFactory(
         )
     }
 
+    open fun createSubstrateReleaseGovernanceDataSource(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.data.datasource.substratereservation.SubstrateReleaseGovernanceDataSource {
+        return PostgresSubstrateReleaseGovernanceDataSource(transactionManager)
+    }
+
+    open fun createSubstrateReleaseGovernanceRepository(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.domain.repository.substratereservation.SubstrateReleaseGovernanceRepository {
+        val dataSource = createSubstrateReleaseGovernanceDataSource(tenantId)
+        return com.sucharu.sucharupro.data.repository.substratereservation.SubstrateReleaseGovernanceRepositoryImpl(dataSource)
+    }
+
+    open fun createSubstrateReleaseGovernanceService(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.domain.service.substratereservation.SubstrateReleaseGovernanceService {
+        val repo = createSubstrateReleaseGovernanceRepository(tenantId)
+        val reservationRepo = createSubstrateReservationRepository(tenantId)
+        val reservationService = createSubstrateReservationService(tenantId)
+        return com.sucharu.sucharupro.domain.service.substratereservation.SubstrateReleaseGovernanceServiceImpl(
+            repository = repo,
+            reservationRepository = reservationRepo,
+            reservationService = reservationService
+        )
+    }
+
     // --- Module 18: Advanced Dynamic Imposition & Gang-Run Optimizer Engine ---
 
     open fun createImpositionDataSource(

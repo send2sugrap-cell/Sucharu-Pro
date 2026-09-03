@@ -17912,6 +17912,138 @@ class BackendUseCases(
         return service.exportHandoffContract(principal.projectId, evaluationId)
     }
 
+    // --- Module 19 Step 05: Job Cancellation, Revision & Substrate Release Governance ---
+
+    suspend fun evaluateCancellationGovernance(
+        principal: AuthenticatedPrincipal,
+        request: com.sucharu.sucharupro.data.api.model.substratereservation.EvaluateCancellationGovernanceRequestDto
+    ): com.sucharu.sucharupro.data.api.model.substratereservation.SubstrateReleaseGovernanceResponseDto {
+        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.AI_AGENT)
+        val service = repositoryFactory.createSubstrateReleaseGovernanceService(principal.projectId)
+
+        val input = com.sucharu.sucharupro.domain.service.substratereservation.SubstrateReleaseGovernanceEngine.EvaluationInput(
+            tenantId = principal.projectId,
+            reservationId = request.reservationId,
+            orderId = request.orderId,
+            orderItemId = request.orderItemId,
+            executionJobId = request.executionJobId,
+            triggerType = com.sucharu.sucharupro.domain.model.substratereservation.GovernanceTriggerType.JOB_CANCELLATION,
+            upstreamEventId = request.upstreamEventId,
+            sku = request.sku,
+            materialName = request.materialName,
+            warehouseId = request.warehouseId,
+            previousRequiredSheets = request.allocatedSheets,
+            newRequiredSheets = 0L,
+            allocatedSheets = request.allocatedSheets,
+            consumedSheets = request.consumedSheets,
+            committedSheets = request.committedSheets,
+            productionStatus = request.productionStatus,
+            evaluator = principal.username
+        )
+
+        val res = service.evaluateCancellation(principal.projectId, input)
+        return res.toDto()
+    }
+
+    suspend fun evaluateRevisionGovernance(
+        principal: AuthenticatedPrincipal,
+        request: com.sucharu.sucharupro.data.api.model.substratereservation.EvaluateRevisionGovernanceRequestDto
+    ): com.sucharu.sucharupro.data.api.model.substratereservation.SubstrateReleaseGovernanceResponseDto {
+        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.AI_AGENT)
+        val service = repositoryFactory.createSubstrateReleaseGovernanceService(principal.projectId)
+
+        val triggerType = if (request.isSkuChanged) {
+            com.sucharu.sucharupro.domain.model.substratereservation.GovernanceTriggerType.SPECIFICATION_REVISION
+        } else if (request.newRequiredSheets < request.previousRequiredSheets) {
+            com.sucharu.sucharupro.domain.model.substratereservation.GovernanceTriggerType.QUANTITY_REDUCTION
+        } else {
+            com.sucharu.sucharupro.domain.model.substratereservation.GovernanceTriggerType.QUANTITY_INCREASE
+        }
+
+        val input = com.sucharu.sucharupro.domain.service.substratereservation.SubstrateReleaseGovernanceEngine.EvaluationInput(
+            tenantId = principal.projectId,
+            reservationId = request.reservationId,
+            orderId = request.orderId,
+            orderItemId = request.orderItemId,
+            executionJobId = request.executionJobId,
+            triggerType = triggerType,
+            upstreamEventId = request.upstreamEventId,
+            sku = request.sku,
+            materialName = request.materialName,
+            warehouseId = request.warehouseId,
+            previousRequiredSheets = request.previousRequiredSheets,
+            newRequiredSheets = request.newRequiredSheets,
+            allocatedSheets = request.allocatedSheets,
+            consumedSheets = request.consumedSheets,
+            committedSheets = request.committedSheets,
+            productionStatus = request.productionStatus,
+            isSkuChanged = request.isSkuChanged,
+            evaluator = principal.username
+        )
+
+        val res = service.evaluateRevision(principal.projectId, input)
+        return res.toDto()
+    }
+
+    suspend fun approveSubstrateRelease(
+        principal: AuthenticatedPrincipal,
+        governanceId: String,
+        notes: String? = null
+    ): com.sucharu.sucharupro.data.api.model.substratereservation.SubstrateReleaseGovernanceResponseDto {
+        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF)
+        val service = repositoryFactory.createSubstrateReleaseGovernanceService(principal.projectId)
+        val res = service.approveRelease(principal.projectId, governanceId, principal.username, notes)
+        return res.toDto()
+    }
+
+    suspend fun executeSubstrateRelease(
+        principal: AuthenticatedPrincipal,
+        governanceId: String
+    ): com.sucharu.sucharupro.data.api.model.substratereservation.SubstrateReleaseGovernanceResponseDto {
+        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF)
+        val service = repositoryFactory.createSubstrateReleaseGovernanceService(principal.projectId)
+        val res = service.executeRelease(principal.projectId, governanceId, principal.username)
+        return res.toDto()
+    }
+
+    suspend fun rejectSubstrateRelease(
+        principal: AuthenticatedPrincipal,
+        governanceId: String,
+        reason: String
+    ): com.sucharu.sucharupro.data.api.model.substratereservation.SubstrateReleaseGovernanceResponseDto {
+        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF)
+        val service = repositoryFactory.createSubstrateReleaseGovernanceService(principal.projectId)
+        val res = service.rejectRelease(principal.projectId, governanceId, principal.username, reason)
+        return res.toDto()
+    }
+
+    suspend fun getSubstrateReleaseGovernanceRecord(
+        principal: AuthenticatedPrincipal,
+        governanceId: String
+    ): com.sucharu.sucharupro.data.api.model.substratereservation.SubstrateReleaseGovernanceResponseDto? {
+        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.AI_AGENT)
+        val service = repositoryFactory.createSubstrateReleaseGovernanceService(principal.projectId)
+        return service.getGovernanceRecord(principal.projectId, governanceId)?.toDto()
+    }
+
+    suspend fun listSubstrateReleaseGovernanceRecords(
+        principal: AuthenticatedPrincipal,
+        limit: Int = 50
+    ): List<com.sucharu.sucharupro.data.api.model.substratereservation.SubstrateReleaseGovernanceResponseDto> {
+        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.AI_AGENT)
+        val service = repositoryFactory.createSubstrateReleaseGovernanceService(principal.projectId)
+        return service.listGovernanceRecords(principal.projectId, limit).map { it.toDto() }
+    }
+
+    suspend fun exportSubstrateReleaseGovernanceHandoff(
+        principal: AuthenticatedPrincipal,
+        governanceId: String
+    ): com.sucharu.sucharupro.domain.model.substratereservation.Module19Step05SubstrateReleaseGovernanceHandoffContract {
+        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.AI_AGENT)
+        val service = repositoryFactory.createSubstrateReleaseGovernanceService(principal.projectId)
+        return service.exportHandoffContract(principal.projectId, governanceId)
+    }
+
     // ========================================================================
     // SECTION 75: DYNAMIC IMPOSITION & SHEET LAYOUT (Module 18 Step 01)
     // ========================================================================

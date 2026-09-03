@@ -290,6 +290,14 @@ fun InternalWorkspaceShell(
                 viewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
                 onNavigateBack = {}
             )
+        } else if (currentDestination == AppDestination.Staff.SubstrateReleaseGovernance ||
+            currentDestination == AppDestination.Manager.SubstrateReleaseGovernance ||
+            currentDestination == AppDestination.Admin.SubstrateReleaseGovernance
+        ) {
+            com.sucharu.sucharupro.ui.features.substratereservation.SubstrateReleaseGovernanceCommandCenterScreen(
+                viewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
+                onNavigateBack = {}
+            )
         } else {
             Surface(
                 color = Color(0xFF1C2541),
