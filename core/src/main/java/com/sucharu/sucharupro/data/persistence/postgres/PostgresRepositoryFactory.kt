@@ -2189,7 +2189,30 @@ open class PostgresRepositoryFactory(
             ctpOutputRepository = ctpRepo
         )
     }
+
+    // --- Module 20: Affiliate Management Foundation (Step 01) ---
+
+    open fun createAffiliateDataSource(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.data.datasource.affiliate.AffiliateDataSource {
+        return PostgresAffiliateDataSource(transactionManager)
+    }
+
+    open fun createAffiliateRepository(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.domain.repository.affiliate.AffiliateRepository {
+        val dataSource = createAffiliateDataSource(tenantId)
+        return com.sucharu.sucharupro.data.repository.affiliate.AffiliateRepositoryImpl(dataSource)
+    }
+
+    open fun createAffiliateService(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.domain.service.affiliate.AffiliateService {
+        val repository = createAffiliateRepository(tenantId)
+        return com.sucharu.sucharupro.domain.service.affiliate.AffiliateServiceImpl(repository)
+    }
 }
+
 
 
 

@@ -38,7 +38,7 @@ class LogoutBackStackSecurityTest {
             override suspend fun getCustomerOrders(): ApiResult<List<CustomerOrderSummaryDto>> = ApiResult.Success(emptyList())
             override suspend fun getCustomerOrderDetail(orderId: String): ApiResult<CustomerOrderDetailDto> = err
             override suspend fun createCustomerOrder(request: CreateOrderRequestDto, idempotencyKey: String?): ApiResult<CustomerOrderDetailDto> = err
-            override suspend fun getAffiliateProfile(): ApiResult<AffiliateProfileDto> = err
+            override suspend fun getAffiliateProfile(): ApiResult<LegacyAffiliateProfileDto> = err
             override suspend fun getAffiliateCommission(): ApiResult<AffiliateCommissionDto> = err
             override suspend fun checkHealthLive(): ApiResult<Map<String, String>> = ApiResult.Success(mapOf("status" to "UP"))
             override suspend fun checkHealthReady(): ApiResult<DatabaseHealthStatus> = ApiResult.Success(DatabaseHealthStatus(isLive = true, isReady = true))

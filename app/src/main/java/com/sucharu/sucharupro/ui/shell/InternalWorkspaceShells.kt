@@ -306,6 +306,14 @@ fun InternalWorkspaceShell(
                 viewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
                 onNavigateBack = {}
             )
+        } else if (currentDestination == AppDestination.Staff.AffiliateManagement ||
+            currentDestination == AppDestination.Manager.AffiliateManagement ||
+            currentDestination == AppDestination.Admin.AffiliateManagement
+        ) {
+            com.sucharu.sucharupro.ui.features.affiliate.AffiliateManagementCommandCenterScreen(
+                viewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
+                modifier = modifier
+            )
         } else {
             Surface(
                 color = Color(0xFF1C2541),

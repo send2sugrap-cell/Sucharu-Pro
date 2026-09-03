@@ -14591,6 +14591,129 @@ class BackendRouter(
             HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
         }
 
+        // =========================================================================
+        // MODULE 20 STEP 01: AFFILIATE MANAGEMENT FOUNDATION ROUTES
+        // =========================================================================
+
+        request.path == "/api/v1/affiliates" && request.method == "POST" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val reqDto = parseCreateAffiliateRequest(request.body)
+            val res = useCases.createAffiliate(principal, reqDto)
+            HttpResponse(201, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path == "/api/v1/affiliates/me" && request.method == "GET" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val res = useCases.getMyAffiliateProfile(principal)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path == "/api/v1/affiliates/overview" && request.method == "GET" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val res = useCases.getAffiliateGovernanceSummary(principal)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/affiliates/code/[^/]+$")) && request.method == "GET" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val code = request.path.removePrefix("/api/v1/affiliates/code/")
+            val res = useCases.getAffiliateByCode(principal, code)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/affiliates/[^/]+/activate$")) && request.method == "POST" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val affiliateId = request.path.removePrefix("/api/v1/affiliates/").removeSuffix("/activate")
+            val reqDto = parseAffiliateLifecycleActionRequest(request.body)
+            val res = useCases.activateAffiliate(principal, affiliateId, reqDto.reason)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/affiliates/[^/]+/suspend$")) && request.method == "POST" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val affiliateId = request.path.removePrefix("/api/v1/affiliates/").removeSuffix("/suspend")
+            val reqDto = parseAffiliateLifecycleActionRequest(request.body)
+            val res = useCases.suspendAffiliate(principal, affiliateId, reqDto.reason)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/affiliates/[^/]+/reactivate$")) && request.method == "POST" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val affiliateId = request.path.removePrefix("/api/v1/affiliates/").removeSuffix("/reactivate")
+            val reqDto = parseAffiliateLifecycleActionRequest(request.body)
+            val res = useCases.reactivateAffiliate(principal, affiliateId, reqDto.reason)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/affiliates/[^/]+/reject$")) && request.method == "POST" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val affiliateId = request.path.removePrefix("/api/v1/affiliates/").removeSuffix("/reject")
+            val reqDto = parseAffiliateLifecycleActionRequest(request.body)
+            val res = useCases.rejectAffiliate(principal, affiliateId, reqDto.reason)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/affiliates/[^/]+/terminate$")) && request.method == "POST" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val affiliateId = request.path.removePrefix("/api/v1/affiliates/").removeSuffix("/terminate")
+            val reqDto = parseAffiliateLifecycleActionRequest(request.body)
+            val res = useCases.terminateAffiliate(principal, affiliateId, reqDto.reason)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/affiliates/[^/]+/agreement$")) && request.method == "POST" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val affiliateId = request.path.removePrefix("/api/v1/affiliates/").removeSuffix("/agreement")
+            val reqDto = parseAcceptAffiliateAgreementRequest(request.body)
+            val res = useCases.acceptAffiliateAgreement(principal, affiliateId, reqDto)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/affiliates/[^/]+/eligibility$")) && request.method == "GET" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val affiliateId = request.path.removePrefix("/api/v1/affiliates/").removeSuffix("/eligibility")
+            val res = useCases.evaluateAffiliateEligibility(principal, affiliateId)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/affiliates/[^/]+/audit$")) && request.method == "GET" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val affiliateId = request.path.removePrefix("/api/v1/affiliates/").removeSuffix("/audit")
+            val res = useCases.listAffiliateAuditRecords(principal, affiliateId)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/affiliates/[^/]+/handoff$")) && request.method == "GET" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val affiliateId = request.path.removePrefix("/api/v1/affiliates/").removeSuffix("/handoff")
+            val res = useCases.getAffiliateHandoffContract(principal, affiliateId)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/affiliates/[^/]+$")) && request.method == "GET" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val affiliateId = request.path.removePrefix("/api/v1/affiliates/")
+            val res = useCases.getAffiliateById(principal, affiliateId)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/affiliates/[^/]+$")) && request.method == "PATCH" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val affiliateId = request.path.removePrefix("/api/v1/affiliates/")
+            val reqDto = parseUpdateAffiliateProfileRequest(request.body)
+            val res = useCases.updateAffiliateProfile(principal, affiliateId, reqDto)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        (request.path == "/api/v1/affiliates" || request.path.startsWith("/api/v1/affiliates?")) && request.method == "GET" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val queryParams = parseQueryParams(request.path)
+            val status = queryParams["status"]
+            val affiliateType = queryParams["affiliateType"]
+            val res = useCases.listAffiliates(principal, status, affiliateType)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
         else -> null
     }
 }
@@ -15846,3 +15969,65 @@ private fun parseVerifyIntegrityRequest(body: Any?): com.sucharu.sucharupro.data
         )
     }
 }
+
+@Suppress("UNCHECKED_CAST")
+private fun parseCreateAffiliateRequest(body: Any?): com.sucharu.sucharupro.data.api.model.affiliate.CreateAffiliateRequestDto = when (body) {
+    is com.sucharu.sucharupro.data.api.model.affiliate.CreateAffiliateRequestDto -> body
+    else -> {
+        val map = parseBodyMap(body)
+        com.sucharu.sucharupro.data.api.model.affiliate.CreateAffiliateRequestDto(
+            userId = map["userId"]?.toString() ?: "",
+            customerId = map["customerId"]?.toString(),
+            displayName = map["displayName"]?.toString() ?: "",
+            affiliateCode = map["affiliateCode"]?.toString(),
+            affiliateType = map["affiliateType"]?.toString() ?: "INDIVIDUAL",
+            contactPhone = map["contactPhone"]?.toString(),
+            contactEmail = map["contactEmail"]?.toString(),
+            taxIdOrGst = map["taxIdOrGst"]?.toString(),
+            agreementReference = map["agreementReference"]?.toString(),
+            agreementVersion = map["agreementVersion"]?.toString(),
+            metadataJson = map["metadataJson"]?.toString()
+        )
+    }
+}
+
+@Suppress("UNCHECKED_CAST")
+private fun parseUpdateAffiliateProfileRequest(body: Any?): com.sucharu.sucharupro.data.api.model.affiliate.UpdateAffiliateProfileRequestDto = when (body) {
+    is com.sucharu.sucharupro.data.api.model.affiliate.UpdateAffiliateProfileRequestDto -> body
+    else -> {
+        val map = parseBodyMap(body)
+        com.sucharu.sucharupro.data.api.model.affiliate.UpdateAffiliateProfileRequestDto(
+            displayName = map["displayName"]?.toString(),
+            contactPhone = map["contactPhone"]?.toString(),
+            contactEmail = map["contactEmail"]?.toString(),
+            taxIdOrGst = map["taxIdOrGst"]?.toString(),
+            affiliateType = map["affiliateType"]?.toString(),
+            verificationState = map["verificationState"]?.toString(),
+            metadataJson = map["metadataJson"]?.toString()
+        )
+    }
+}
+
+@Suppress("UNCHECKED_CAST")
+private fun parseAffiliateLifecycleActionRequest(body: Any?): com.sucharu.sucharupro.data.api.model.affiliate.AffiliateLifecycleActionRequestDto = when (body) {
+    is com.sucharu.sucharupro.data.api.model.affiliate.AffiliateLifecycleActionRequestDto -> body
+    else -> {
+        val map = parseBodyMap(body)
+        com.sucharu.sucharupro.data.api.model.affiliate.AffiliateLifecycleActionRequestDto(
+            reason = map["reason"]?.toString() ?: ""
+        )
+    }
+}
+
+@Suppress("UNCHECKED_CAST")
+private fun parseAcceptAffiliateAgreementRequest(body: Any?): com.sucharu.sucharupro.data.api.model.affiliate.AcceptAffiliateAgreementRequestDto = when (body) {
+    is com.sucharu.sucharupro.data.api.model.affiliate.AcceptAffiliateAgreementRequestDto -> body
+    else -> {
+        val map = parseBodyMap(body)
+        com.sucharu.sucharupro.data.api.model.affiliate.AcceptAffiliateAgreementRequestDto(
+            agreementReference = map["agreementReference"]?.toString() ?: "",
+            agreementVersion = map["agreementVersion"]?.toString() ?: "v1.0"
+        )
+    }
+}
+

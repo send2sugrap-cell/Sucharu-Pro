@@ -3,9 +3,9 @@ package com.sucharu.sucharupro.data.api.model
 import java.math.BigDecimal
 
 /**
- * Affiliate profile presentation DTO (INFRA-02 Step 04).
+ * Legacy Affiliate profile presentation DTO (INFRA-02 Step 04).
  */
-data class AffiliateProfileDto(
+data class LegacyAffiliateProfileDto(
     val affiliateId: String,
     val affiliateCode: String,
     val name: String,

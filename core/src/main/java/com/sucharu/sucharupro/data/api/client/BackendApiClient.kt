@@ -32,7 +32,7 @@ interface BackendApiClient {
     suspend fun getCustomerOrders(): ApiResult<List<CustomerOrderSummaryDto>>
     suspend fun getCustomerOrderDetail(orderId: String): ApiResult<CustomerOrderDetailDto>
     suspend fun createCustomerOrder(request: CreateOrderRequestDto, idempotencyKey: String? = null): ApiResult<CustomerOrderDetailDto>
-    suspend fun getAffiliateProfile(): ApiResult<AffiliateProfileDto>
+    suspend fun getAffiliateProfile(): ApiResult<LegacyAffiliateProfileDto>
     suspend fun getAffiliateCommission(): ApiResult<AffiliateCommissionDto>
     suspend fun checkHealthLive(): ApiResult<Map<String, String>>
     suspend fun checkHealthReady(): ApiResult<DatabaseHealthStatus>
@@ -284,12 +284,12 @@ class DirectBackendApiClient(
         }
     }
 
-    override suspend fun getAffiliateProfile(): ApiResult<AffiliateProfileDto> {
+    override suspend fun getAffiliateProfile(): ApiResult<LegacyAffiliateProfileDto> {
         val res = server.handle(HttpRequest(method = "GET", path = "/api/v1/affiliate/profile", headers = buildHeaders()))
         return if (res.statusCode == 200) {
             val success = res.body as ApiSuccessResponse<*>
             @Suppress("UNCHECKED_CAST")
-            ApiResult.Success(success.data as AffiliateProfileDto, res.correlationId)
+            ApiResult.Success(success.data as LegacyAffiliateProfileDto, res.correlationId)
         } else {
             ApiResult.Error(res.body as ApiErrorResponse)
         }

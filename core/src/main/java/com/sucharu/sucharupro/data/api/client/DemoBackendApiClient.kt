@@ -281,9 +281,9 @@ class DemoBackendApiClient(
         )
     }
 
-    override suspend fun getAffiliateProfile(): ApiResult<AffiliateProfileDto> {
+    override suspend fun getAffiliateProfile(): ApiResult<LegacyAffiliateProfileDto> {
         return ApiResult.Success(
-            AffiliateProfileDto(
+            LegacyAffiliateProfileDto(
                 affiliateId = DemoRole.AFFILIATE.demoUserId,
                 affiliateCode = "DEMO-AFF-2026",
                 name = "Sucharu Demo Affiliate Partner",
