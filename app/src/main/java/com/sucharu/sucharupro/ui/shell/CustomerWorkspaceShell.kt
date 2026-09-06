@@ -24,18 +24,21 @@ import com.sucharu.sucharupro.ui.features.orders.order.details.OrderDetailsScree
 import com.sucharu.sucharupro.ui.features.orders.order.details.OrderDetailsViewModel
 import com.sucharu.sucharupro.ui.navigation.AppDestination
 
+import com.sucharu.sucharupro.data.composition.AppRuntimeComposition
+
 /**
- * Mobile-First Customer Workspace Navigation Shell (INFRA-03 Step 06).
+ * Mobile-First Customer Workspace Navigation Shell (INFRA-03 Step 06 & INFRA-05 Step 03).
  */
 @Composable
 fun CustomerWorkspaceShell(
     principal: AuthenticatedPrincipal,
     currentDestination: AppDestination,
     onNavigate: (AppDestination) -> Unit,
+    composition: AppRuntimeComposition? = null,
     modifier: Modifier = Modifier
 ) {
-    val demoOrderRepo = remember {
-        OrderRepositoryImpl(FakeOrderDataSource(DemoOrderFixtures.demoOrders()))
+    val orderRepo = remember(composition) {
+        composition?.orderRepository ?: OrderRepositoryImpl(FakeOrderDataSource(DemoOrderFixtures.demoOrders()))
     }
 
     Column(
@@ -114,7 +117,7 @@ fun CustomerWorkspaceShell(
                 when (currentDestination) {
                     is AppDestination.Customer.Orders -> {
                         OrderListScreen(
-                            viewModel = viewModel { OrderListViewModel(demoOrderRepo) },
+                            viewModel = viewModel { OrderListViewModel(orderRepo) },
                             onOrderClick = { orderId -> onNavigate(AppDestination.Customer.OrderDetails(orderId)) },
                             modifier = Modifier.fillMaxSize()
                         )
@@ -124,7 +127,7 @@ fun CustomerWorkspaceShell(
                             viewModel = viewModel(key = currentDestination.orderId) {
                                 OrderDetailsViewModel(
                                     orderId = currentDestination.orderId,
-                                    repository = demoOrderRepo
+                                    repository = orderRepo
                                 )
                             },
                             onBackClick = { onNavigate(AppDestination.Customer.Orders) },

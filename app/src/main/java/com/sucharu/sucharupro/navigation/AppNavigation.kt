@@ -19,7 +19,9 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -50,7 +52,8 @@ import com.sucharu.sucharupro.ui.theme.statusColors
 fun AppNavHost(
     navController: NavHostController,
     modifier: Modifier = Modifier,
-    startDestination: String = Screen.Dashboard.route
+    startDestination: String = Screen.Dashboard.route,
+    composition: com.sucharu.sucharupro.data.composition.AppRuntimeComposition? = null
 ) {
     NavHost(
         navController = navController,
@@ -78,8 +81,11 @@ fun AppNavHost(
             val quotationViewModel = remember {
                 com.sucharu.sucharupro.ui.features.orders.quotation.QuotationListViewModel()
             }
-            val orderViewModel = remember {
-                com.sucharu.sucharupro.ui.features.orders.order.OrderListViewModel()
+            val orderViewModel = remember(composition) {
+                val repo = composition?.orderRepository ?: com.sucharu.sucharupro.data.repository.OrderRepositoryImpl(
+                    com.sucharu.sucharupro.data.datasource.FakeOrderDataSource()
+                )
+                com.sucharu.sucharupro.ui.features.orders.order.OrderListViewModel(repository = repo)
             }
             com.sucharu.sucharupro.ui.features.orders.QuotationOrderManagementScreen(
                 inquiryViewModel = inquiryViewModel,
@@ -99,6 +105,9 @@ fun AppNavHost(
                 },
                 onAddQuotationClick = {
                     navController.navigate(Screen.QuotationCreate.createRoute())
+                },
+                onAddOrderClick = {
+                    navController.navigate(Screen.OrderCreate.route)
                 }
             )
         }
@@ -239,8 +248,14 @@ fun AppNavHost(
             )
         ) { backStackEntry ->
             val orderId = backStackEntry.arguments?.getString(Screen.OrderDetails.ARG_ORDER_ID).orEmpty()
-            val detailsViewModel = remember(orderId) {
-                com.sucharu.sucharupro.ui.features.orders.order.details.OrderDetailsViewModel(orderId = orderId)
+            val repo = composition?.orderRepository ?: com.sucharu.sucharupro.data.repository.OrderRepositoryImpl(
+                com.sucharu.sucharupro.data.datasource.FakeOrderDataSource()
+            )
+            val detailsViewModel = remember(orderId, composition) {
+                com.sucharu.sucharupro.ui.features.orders.order.details.OrderDetailsViewModel(
+                    orderId = orderId,
+                    repository = repo
+                )
             }
             com.sucharu.sucharupro.ui.features.orders.order.details.OrderDetailsScreen(
                 viewModel = detailsViewModel,
@@ -253,13 +268,47 @@ fun AppNavHost(
                 }
             )
         }
+        composable(route = Screen.OrderCreate.route) {
+            val repo = composition?.orderRepository ?: com.sucharu.sucharupro.data.repository.OrderRepositoryImpl(
+                com.sucharu.sucharupro.data.datasource.FakeOrderDataSource()
+            )
+            val wizardViewModel = remember(composition) {
+                com.sucharu.sucharupro.ui.features.orders.order.wizard.OrderPlacementWizardViewModel(orderRepository = repo)
+            }
+            com.sucharu.sucharupro.ui.features.orders.order.wizard.OrderPlacementWizardScreen(
+                viewModel = wizardViewModel,
+                onBackClick = { navController.popBackStack() },
+                onOrderCreated = { createdOrder ->
+                    navController.navigate(Screen.OrderDetails.createRoute(createdOrder.orderId)) {
+                        popUpTo(Screen.OrderCreate.route) { inclusive = true }
+                    }
+                }
+            )
+        }
         composable(route = Screen.Printing.route) {
             com.sucharu.sucharupro.ui.features.printing.quotation.PrintingQuotationWorkspaceScreen(
                 onNavigateBack = { navController.navigateToTopLevelDestination(Screen.Dashboard) }
             )
         }
         composable(route = Screen.PrintingCalculatorWorkspace.route) {
-            com.sucharu.sucharupro.ui.features.printing.calculator.PrintingCalculatorScreen()
+            val calcService = composition?.printingCalculatorService ?: com.sucharu.sucharupro.domain.service.printingcalculator.PrintingCalculatorServiceImpl(
+                com.sucharu.sucharupro.data.repository.printingcalculator.PrintingCalculatorRepositoryImpl(
+                    com.sucharu.sucharupro.data.datasource.printingcalculator.FakePrintingCalculatorDataSource()
+                )
+            )
+            val calcViewModel = remember(calcService) {
+                com.sucharu.sucharupro.ui.features.printing.calculator.PrintingCalculatorViewModel(
+                    calculatorService = calcService
+                )
+            }
+            val calcUiState by calcViewModel.uiState.collectAsStateWithLifecycle()
+            com.sucharu.sucharupro.ui.features.printing.calculator.PrintingCalculatorScreen(
+                onCalculate = { calcViewModel.calculate(it) },
+                calculationResult = calcUiState.calculationResult,
+                validationResult = calcUiState.validationResult,
+                isLoading = calcUiState.isLoading,
+                errorMessage = calcUiState.errorMessage
+            )
         }
         composable(route = Screen.PrintingQuotationWorkspace.route) {
             com.sucharu.sucharupro.ui.features.printing.quotation.PrintingQuotationWorkspaceScreen(
@@ -267,8 +316,9 @@ fun AppNavHost(
             )
         }
         composable(route = Screen.Customers.route) {
-            val customerViewModel = remember {
-                com.sucharu.sucharupro.ui.features.customer.CustomerListViewModel()
+            val customerRepo = composition?.customerRepository ?: com.sucharu.sucharupro.data.repository.FakeCustomerRepository()
+            val customerViewModel = remember(customerRepo) {
+                com.sucharu.sucharupro.ui.features.customer.CustomerListViewModel(repository = customerRepo)
             }
             com.sucharu.sucharupro.ui.features.customer.CustomerListScreen(
                 viewModel = customerViewModel,
@@ -289,8 +339,12 @@ fun AppNavHost(
             )
         ) { backStackEntry ->
             val customerId = backStackEntry.arguments?.getString(Screen.CustomerDetails.ARG_CUSTOMER_ID).orEmpty()
-            val detailsViewModel = remember(customerId) {
-                com.sucharu.sucharupro.ui.features.customer.details.CustomerDetailsViewModel(customerId = customerId)
+            val customerRepo = composition?.customerRepository ?: com.sucharu.sucharupro.data.repository.FakeCustomerRepository()
+            val detailsViewModel = remember(customerId, customerRepo) {
+                com.sucharu.sucharupro.ui.features.customer.details.CustomerDetailsViewModel(
+                    customerId = customerId,
+                    repository = customerRepo
+                )
             }
             com.sucharu.sucharupro.ui.features.customer.details.CustomerDetailsScreen(
                 viewModel = detailsViewModel,
@@ -301,8 +355,11 @@ fun AppNavHost(
             )
         }
         composable(route = Screen.CustomerCreate.route) {
-            val formViewModel = remember {
-                com.sucharu.sucharupro.ui.features.customer.form.CustomerFormViewModel()
+            val customerRepo = composition?.customerRepository ?: com.sucharu.sucharupro.data.repository.FakeCustomerRepository()
+            val formViewModel = remember(customerRepo) {
+                com.sucharu.sucharupro.ui.features.customer.form.CustomerFormViewModel(
+                    repository = customerRepo
+                )
             }
             com.sucharu.sucharupro.ui.features.customer.form.CustomerFormScreen(
                 viewModel = formViewModel,
@@ -321,8 +378,12 @@ fun AppNavHost(
             )
         ) { backStackEntry ->
             val customerId = backStackEntry.arguments?.getString(Screen.CustomerEdit.ARG_CUSTOMER_ID).orEmpty()
-            val formViewModel = remember(customerId) {
-                com.sucharu.sucharupro.ui.features.customer.form.CustomerFormViewModel(customerId = customerId)
+            val customerRepo = composition?.customerRepository ?: com.sucharu.sucharupro.data.repository.FakeCustomerRepository()
+            val formViewModel = remember(customerId, customerRepo) {
+                com.sucharu.sucharupro.ui.features.customer.form.CustomerFormViewModel(
+                    customerId = customerId,
+                    repository = customerRepo
+                )
             }
             com.sucharu.sucharupro.ui.features.customer.form.CustomerFormScreen(
                 viewModel = formViewModel,

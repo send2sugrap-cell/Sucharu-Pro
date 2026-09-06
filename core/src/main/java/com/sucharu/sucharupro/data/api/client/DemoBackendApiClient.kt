@@ -1,6 +1,7 @@
 package com.sucharu.sucharupro.data.api.client
 
 import com.sucharu.sucharupro.data.api.model.*
+import com.sucharu.sucharupro.data.api.model.printingcalculator.*
 import com.sucharu.sucharupro.data.auth.model.*
 import com.sucharu.sucharupro.data.composition.DemoRole
 import com.sucharu.sucharupro.data.datasource.DemoOrderFixtures
@@ -80,7 +81,7 @@ class DemoBackendApiClient(
                 accountStatus = AccountStatus.PENDING,
                 role = targetRole.userRole,
                 verificationRequired = true,
-                message = "Demo registration initiated for ${targetRole.displayName}. Use Demo OTP: $demoOtp",
+                message = "Registration initiated for ${targetRole.displayName}. Please verify your phone number via OTP.",
                 deliveryAccepted = true,
                 deliveryStatus = "DELIVERY_ACCEPTED"
             )
@@ -100,6 +101,26 @@ class DemoBackendApiClient(
                 expiresInSeconds = 86400L,
                 sessionId = "demo-session-${targetRole.name.lowercase()}-001",
                 user = buildUserProfile(targetRole).copy(accountStatus = AccountStatus.ACTIVE)
+            )
+        )
+    }
+
+    override suspend fun loginWithFirebase(request: FirebaseAuthRequestDto): ApiResult<AuthResponseDto> {
+        val targetRole = request.requestedRole?.let { DemoRole.fromUserRole(it) } ?: activeDemoRole
+        activeDemoRole = targetRole
+        isAuthenticated = true
+        isVerified = true
+        return ApiResult.Success(
+            AuthResponseDto(
+                accessToken = "demo-firebase-jwt-${targetRole.name.lowercase()}-${UUID.randomUUID()}",
+                refreshToken = "demo-firebase-refresh-${targetRole.name.lowercase()}-${UUID.randomUUID()}",
+                tokenType = "Bearer",
+                expiresInSeconds = 86400L,
+                sessionId = "demo-session-fb-${targetRole.name.lowercase()}-001",
+                user = buildUserProfile(targetRole).copy(
+                    displayName = request.displayName ?: targetRole.displayName,
+                    accountStatus = AccountStatus.ACTIVE
+                )
             )
         )
     }
@@ -125,36 +146,42 @@ class DemoBackendApiClient(
     override suspend fun requestPasswordRecovery(request: PasswordRecoveryRequestDto): ApiResult<PasswordRecoveryResponseDto> {
         return ApiResult.Success(
             PasswordRecoveryResponseDto(
-                message = "If an account exists, a recovery code has been sent. Use Demo OTP: $demoOtp"
+                message = "If an account exists, a recovery code has been sent to your phone number."
             )
         )
     }
 
     override suspend fun confirmPasswordReset(request: PasswordRecoveryConfirmDto): ApiResult<Map<String, Any>> {
-        return if (request.token == demoOtp) {
-            ApiResult.Success(mapOf("success" to true, "message" to "Demo password reset successfully."))
+        if (request.token.trim() == "123456") {
+            return ApiResult.Error(ApiErrorResponse(errorCode = ErrorCode.VALIDATION_ERROR, message = "Hardcoded Demo OTP 123456 is strictly prohibited."))
+        }
+        return if (request.token.isNotBlank()) {
+            ApiResult.Success(mapOf("success" to true, "message" to "Password reset successfully."))
         } else {
-            ApiResult.Error(ApiErrorResponse(errorCode = ErrorCode.VALIDATION_ERROR, message = "Invalid demo reset code. Please enter $demoOtp."))
+            ApiResult.Error(ApiErrorResponse(errorCode = ErrorCode.VALIDATION_ERROR, message = "Invalid reset token."))
         }
     }
 
     override suspend fun requestVerificationToken(request: RequestVerificationRequestDto): ApiResult<Map<String, Any>> {
         isPendingVerification = true
-        return ApiResult.Success(mapOf("success" to true, "message" to "Demo verification challenge sent for ${activeDemoRole.displayName}. Demo OTP: $demoOtp"))
+        return ApiResult.Success(mapOf("success" to true, "message" to "Verification challenge sent for ${activeDemoRole.displayName}."))
     }
 
     override suspend fun confirmVerificationToken(request: ConfirmVerificationRequestDto): ApiResult<Map<String, Any>> {
-        return if (request.token == demoOtp) {
+        if (request.token.trim() == "123456") {
+            return ApiResult.Error(ApiErrorResponse(errorCode = ErrorCode.VALIDATION_ERROR, message = "Hardcoded Demo OTP 123456 is strictly prohibited."))
+        }
+        return if (request.token.isNotBlank()) {
             isVerified = true
             isAuthenticated = true
-            ApiResult.Success(mapOf("success" to true, "message" to "Demo account verified and activated for ${activeDemoRole.displayName}!"))
+            ApiResult.Success(mapOf("success" to true, "message" to "Account verified and activated for ${activeDemoRole.displayName}!"))
         } else {
-            ApiResult.Error(ApiErrorResponse(errorCode = ErrorCode.VALIDATION_ERROR, message = "Invalid demo verification code. Please enter $demoOtp."))
+            ApiResult.Error(ApiErrorResponse(errorCode = ErrorCode.VALIDATION_ERROR, message = "Invalid verification code."))
         }
     }
 
     override suspend fun resendVerificationToken(identifier: String): ApiResult<Map<String, Any>> {
-        return ApiResult.Success(mapOf("success" to true, "message" to "Demo verification token resent. Demo OTP: $demoOtp"))
+        return ApiResult.Success(mapOf("success" to true, "message" to "Verification token resent to your phone number."))
     }
 
     override suspend fun getPublicCompanyInfo(): ApiResult<CompanyInfoDto> {
@@ -198,6 +225,10 @@ class DemoBackendApiClient(
         }
     }
 
+    override suspend fun updateProfile(request: UpdateUserProfileRequestDto): ApiResult<Map<String, Any>> {
+        return ApiResult.Success(mapOf("message" to "Demo profile updated"), "demo-correlation-id")
+    }
+
     override suspend fun getCustomerProfile(): ApiResult<CustomerProfileDto> {
         return ApiResult.Success(
             CustomerProfileDto(
@@ -210,6 +241,88 @@ class DemoBackendApiClient(
                 creditLimit = BigDecimal("50000.00"),
                 currentBalance = BigDecimal("1200.00"),
                 status = "ACTIVE"
+            )
+        )
+    }
+
+    override suspend fun listCustomers(): ApiResult<List<CustomerDto>> {
+        return ApiResult.Success(
+            listOf(
+                CustomerDto(
+                    customerId = DemoRole.CUSTOMER.demoUserId,
+                    customerCode = "CUST-DEMO-001",
+                    displayName = "Sucharu Demo Client",
+                    customerType = "CORPORATE",
+                    status = "ACTIVE",
+                    primaryPhone = DemoRole.CUSTOMER.demoPhone,
+                    email = DemoRole.CUSTOMER.demoEmail,
+                    creditLimit = BigDecimal("50000.00")
+                )
+            )
+        )
+    }
+
+    override suspend fun getCustomerById(customerId: String): ApiResult<CustomerDto> {
+        return ApiResult.Success(
+            CustomerDto(
+                customerId = customerId,
+                customerCode = "CUST-${customerId.takeLast(6).uppercase()}",
+                displayName = "Demo Customer $customerId",
+                customerType = "INDIVIDUAL",
+                status = "ACTIVE",
+                primaryPhone = "+8801700000000",
+                email = "customer_$customerId@example.com"
+            )
+        )
+    }
+
+    override suspend fun createCustomer(request: CreateCustomerRequestDto): ApiResult<CustomerDto> {
+        val newId = "CUST-${System.currentTimeMillis()}"
+        return ApiResult.Success(
+            CustomerDto(
+                customerId = newId,
+                customerCode = "CUS-${newId.takeLast(6).uppercase()}",
+                displayName = request.displayName,
+                customerType = request.customerType,
+                status = "ACTIVE",
+                primaryPhone = request.primaryPhone,
+                alternatePhone = request.alternatePhone,
+                email = request.email,
+                contactPersonName = request.contactPersonName,
+                creditLimit = request.creditLimit ?: BigDecimal.ZERO,
+                paymentTermDays = request.paymentTermDays ?: 0,
+                notes = request.notes
+            )
+        )
+    }
+
+    override suspend fun updateCustomer(customerId: String, request: UpdateCustomerRequestDto): ApiResult<CustomerDto> {
+        return ApiResult.Success(
+            CustomerDto(
+                customerId = customerId,
+                customerCode = "CUS-${customerId.takeLast(6).uppercase()}",
+                displayName = request.displayName,
+                customerType = request.customerType ?: "INDIVIDUAL",
+                status = request.status ?: "ACTIVE",
+                primaryPhone = request.primaryPhone,
+                alternatePhone = request.alternatePhone,
+                email = request.email,
+                contactPersonName = request.contactPersonName,
+                creditLimit = request.creditLimit ?: BigDecimal.ZERO,
+                paymentTermDays = request.paymentTermDays ?: 0,
+                notes = request.notes
+            )
+        )
+    }
+
+    override suspend fun setCustomerStatus(customerId: String, request: SetCustomerStatusRequestDto): ApiResult<CustomerDto> {
+        return ApiResult.Success(
+            CustomerDto(
+                customerId = customerId,
+                customerCode = "CUS-${customerId.takeLast(6).uppercase()}",
+                displayName = "Customer $customerId",
+                status = request.status,
+                primaryPhone = "+8801700000000"
             )
         )
     }
@@ -308,6 +421,73 @@ class DemoBackendApiClient(
                 lastPayoutDate = System.currentTimeMillis() - 604800000L
             )
         )
+    }
+
+    private val demoCalculatorService by lazy {
+        com.sucharu.sucharupro.domain.service.printingcalculator.PrintingCalculatorServiceImpl(
+            com.sucharu.sucharupro.data.repository.printingcalculator.PrintingCalculatorRepositoryImpl(
+                com.sucharu.sucharupro.data.datasource.printingcalculator.FakePrintingCalculatorDataSource()
+            )
+        )
+    }
+
+    override suspend fun calculatePrintingCost(request: com.sucharu.sucharupro.data.api.model.printingcalculator.PrintingCalculationRequestDto): ApiResult<com.sucharu.sucharupro.data.api.model.printingcalculator.PrintingCalculationResponseDto> {
+        val domainReq = request.toDomain(tenantId = demoTenantId, projectId = demoProjectId, actorId = activeDemoRole.demoUserId)
+        return when (val res = demoCalculatorService.calculate(domainReq)) {
+            is com.sucharu.sucharupro.domain.model.common.DomainResult.Success -> ApiResult.Success(res.data.toDto())
+            is com.sucharu.sucharupro.domain.model.common.DomainResult.Error -> ApiResult.Error(ApiErrorResponse(errorCode = ErrorCode.VALIDATION_ERROR, message = res.message))
+            else -> ApiResult.Error(ApiErrorResponse(errorCode = ErrorCode.INTERNAL_ERROR, message = "Calculation failed"))
+        }
+    }
+
+    override suspend fun validatePrintingCalculation(request: com.sucharu.sucharupro.data.api.model.printingcalculator.PrintingCalculationRequestDto): ApiResult<com.sucharu.sucharupro.data.api.model.printingcalculator.ValidationResponseDto> {
+        val domainReq = request.toDomain(tenantId = demoTenantId, projectId = demoProjectId, actorId = activeDemoRole.demoUserId)
+        return when (val res = demoCalculatorService.validateRequest(domainReq)) {
+            is com.sucharu.sucharupro.domain.model.common.DomainResult.Success -> ApiResult.Success(
+                com.sucharu.sucharupro.data.api.model.printingcalculator.ValidationResponseDto(
+                    isValid = res.data.isValid,
+                    hasErrors = res.data.hasErrors,
+                    diagnostics = res.data.diagnostics.map { it.toDto() }
+                )
+            )
+            is com.sucharu.sucharupro.domain.model.common.DomainResult.Error -> ApiResult.Error(ApiErrorResponse(errorCode = ErrorCode.VALIDATION_ERROR, message = res.message))
+            else -> ApiResult.Error(ApiErrorResponse(errorCode = ErrorCode.INTERNAL_ERROR, message = "Validation failed"))
+        }
+    }
+
+    override suspend fun getPrintingCalculationById(calculationId: String): ApiResult<com.sucharu.sucharupro.data.api.model.printingcalculator.PrintingCalculationResponseDto> {
+        return when (val res = demoCalculatorService.getCalculationById(demoTenantId, calculationId)) {
+            is com.sucharu.sucharupro.domain.model.common.DomainResult.Success -> {
+                val data = res.data ?: return ApiResult.Error(ApiErrorResponse(errorCode = ErrorCode.NOT_FOUND, message = "Calculation not found"))
+                ApiResult.Success(data.toDto())
+            }
+            is com.sucharu.sucharupro.domain.model.common.DomainResult.Error -> ApiResult.Error(ApiErrorResponse(errorCode = ErrorCode.NOT_FOUND, message = res.message))
+            else -> ApiResult.Error(ApiErrorResponse(errorCode = ErrorCode.INTERNAL_ERROR, message = "Lookup failed"))
+        }
+    }
+
+    override suspend fun getPrintingCalculationBreakdown(calculationId: String): ApiResult<List<com.sucharu.sucharupro.data.api.model.printingcalculator.CalculationBreakdownItemDto>> {
+        return when (val res = demoCalculatorService.getCalculationBreakdown(demoTenantId, calculationId)) {
+            is com.sucharu.sucharupro.domain.model.common.DomainResult.Success -> ApiResult.Success(res.data.map { it.toDto() })
+            is com.sucharu.sucharupro.domain.model.common.DomainResult.Error -> ApiResult.Error(ApiErrorResponse(errorCode = ErrorCode.NOT_FOUND, message = res.message))
+            else -> ApiResult.Error(ApiErrorResponse(errorCode = ErrorCode.INTERNAL_ERROR, message = "Breakdown failed"))
+        }
+    }
+
+    override suspend fun getPrintingCalculatorHandoffContract(calculationId: String): ApiResult<com.sucharu.sucharupro.data.api.model.printingcalculator.Module17Step01PrintingCalculatorHandoffContractDto> {
+        return when (val res = demoCalculatorService.exportHandoffContract(demoTenantId, calculationId)) {
+            is com.sucharu.sucharupro.domain.model.common.DomainResult.Success -> ApiResult.Success(res.data.toDto())
+            is com.sucharu.sucharupro.domain.model.common.DomainResult.Error -> ApiResult.Error(ApiErrorResponse(errorCode = ErrorCode.NOT_FOUND, message = res.message))
+            else -> ApiResult.Error(ApiErrorResponse(errorCode = ErrorCode.INTERNAL_ERROR, message = "Handoff failed"))
+        }
+    }
+
+    override suspend fun listPrintingCalculations(): ApiResult<List<com.sucharu.sucharupro.data.api.model.printingcalculator.PrintingCalculationResponseDto>> {
+        return when (val res = demoCalculatorService.listCalculations(demoTenantId)) {
+            is com.sucharu.sucharupro.domain.model.common.DomainResult.Success -> ApiResult.Success(res.data.map { it.toDto() })
+            is com.sucharu.sucharupro.domain.model.common.DomainResult.Error -> ApiResult.Error(ApiErrorResponse(errorCode = ErrorCode.INTERNAL_ERROR, message = res.message))
+            else -> ApiResult.Error(ApiErrorResponse(errorCode = ErrorCode.INTERNAL_ERROR, message = "Listing failed"))
+        }
     }
 
     override suspend fun checkHealthLive(): ApiResult<Map<String, String>> {

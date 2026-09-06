@@ -52,6 +52,9 @@ sealed class Screen(val route: String, val title: String) {
         const val ARG_ORDER_ID = "orderId"
         fun createRoute(orderId: String): String = "order/$orderId"
     }
+    data object OrderCreate : Screen(route = "order/create", title = "New Order Placement Wizard")
+
+
 
     data object FinancialReconciliationDashboard : Screen(route = "finance/reconciliation", title = "Financial Reconciliation")
     data object FinancialReconciliationExecution : Screen(route = "finance/reconciliation/execute/{periodId}", title = "Execute Reconciliation") {

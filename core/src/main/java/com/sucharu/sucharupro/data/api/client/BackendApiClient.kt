@@ -17,6 +17,7 @@ import kotlinx.coroutines.sync.withLock
 interface BackendApiClient {
     suspend fun register(request: RegisterRequestDto): ApiResult<RegisterResponseDto>
     suspend fun login(request: LoginRequestDto): ApiResult<AuthResponseDto>
+    suspend fun loginWithFirebase(request: FirebaseAuthRequestDto): ApiResult<AuthResponseDto>
     suspend fun refreshToken(refreshToken: String): ApiResult<AuthResponseDto>
     suspend fun logout(allDevices: Boolean = false): ApiResult<Map<String, String>>
     suspend fun logoutAll(): ApiResult<Map<String, String>>
@@ -28,12 +29,24 @@ interface BackendApiClient {
     suspend fun getPublicCompanyInfo(): ApiResult<CompanyInfoDto>
     suspend fun getPublicProducts(): ApiResult<List<PublicProductDto>>
     suspend fun getMyProfile(): ApiResult<AuthenticatedPrincipal>
+    suspend fun updateProfile(request: UpdateUserProfileRequestDto): ApiResult<Map<String, Any>>
     suspend fun getCustomerProfile(): ApiResult<CustomerProfileDto>
+    suspend fun listCustomers(): ApiResult<List<CustomerDto>>
+    suspend fun getCustomerById(customerId: String): ApiResult<CustomerDto>
+    suspend fun createCustomer(request: CreateCustomerRequestDto): ApiResult<CustomerDto>
+    suspend fun updateCustomer(customerId: String, request: UpdateCustomerRequestDto): ApiResult<CustomerDto>
+    suspend fun setCustomerStatus(customerId: String, request: SetCustomerStatusRequestDto): ApiResult<CustomerDto>
     suspend fun getCustomerOrders(): ApiResult<List<CustomerOrderSummaryDto>>
     suspend fun getCustomerOrderDetail(orderId: String): ApiResult<CustomerOrderDetailDto>
     suspend fun createCustomerOrder(request: CreateOrderRequestDto, idempotencyKey: String? = null): ApiResult<CustomerOrderDetailDto>
     suspend fun getAffiliateProfile(): ApiResult<LegacyAffiliateProfileDto>
     suspend fun getAffiliateCommission(): ApiResult<AffiliateCommissionDto>
+    suspend fun calculatePrintingCost(request: com.sucharu.sucharupro.data.api.model.printingcalculator.PrintingCalculationRequestDto): ApiResult<com.sucharu.sucharupro.data.api.model.printingcalculator.PrintingCalculationResponseDto>
+    suspend fun validatePrintingCalculation(request: com.sucharu.sucharupro.data.api.model.printingcalculator.PrintingCalculationRequestDto): ApiResult<com.sucharu.sucharupro.data.api.model.printingcalculator.ValidationResponseDto>
+    suspend fun getPrintingCalculationById(calculationId: String): ApiResult<com.sucharu.sucharupro.data.api.model.printingcalculator.PrintingCalculationResponseDto>
+    suspend fun getPrintingCalculationBreakdown(calculationId: String): ApiResult<List<com.sucharu.sucharupro.data.api.model.printingcalculator.CalculationBreakdownItemDto>>
+    suspend fun getPrintingCalculatorHandoffContract(calculationId: String): ApiResult<com.sucharu.sucharupro.data.api.model.printingcalculator.Module17Step01PrintingCalculatorHandoffContractDto>
+    suspend fun listPrintingCalculations(): ApiResult<List<com.sucharu.sucharupro.data.api.model.printingcalculator.PrintingCalculationResponseDto>>
     suspend fun checkHealthLive(): ApiResult<Map<String, String>>
     suspend fun checkHealthReady(): ApiResult<DatabaseHealthStatus>
 }
@@ -80,6 +93,19 @@ class DirectBackendApiClient(
 
     override suspend fun login(request: LoginRequestDto): ApiResult<AuthResponseDto> {
         val res = server.handle(HttpRequest(method = "POST", path = "/api/v1/auth/login", body = request))
+        return if (res.statusCode == 200) {
+            val success = res.body as ApiSuccessResponse<*>
+            @Suppress("UNCHECKED_CAST")
+            val authResp = success.data as AuthResponseDto
+            tokenStorage.saveToken(authResp.accessToken)
+            ApiResult.Success(authResp, res.correlationId)
+        } else {
+            ApiResult.Error(res.body as ApiErrorResponse)
+        }
+    }
+
+    override suspend fun loginWithFirebase(request: FirebaseAuthRequestDto): ApiResult<AuthResponseDto> {
+        val res = server.handle(HttpRequest(method = "POST", path = "/api/v1/auth/firebase", body = request))
         return if (res.statusCode == 200) {
             val success = res.body as ApiSuccessResponse<*>
             @Suppress("UNCHECKED_CAST")
@@ -240,12 +266,78 @@ class DirectBackendApiClient(
         }
     }
 
+    override suspend fun updateProfile(request: UpdateUserProfileRequestDto): ApiResult<Map<String, Any>> {
+        val res = server.handle(HttpRequest(method = "PATCH", path = "/api/v1/auth/profile", headers = buildHeaders(), body = request))
+        return if (res.statusCode == 200) {
+            val success = res.body as ApiSuccessResponse<*>
+            @Suppress("UNCHECKED_CAST")
+            ApiResult.Success(success.data as Map<String, Any>, res.correlationId)
+        } else {
+            ApiResult.Error(res.body as ApiErrorResponse)
+        }
+    }
+
     override suspend fun getCustomerProfile(): ApiResult<CustomerProfileDto> {
         val res = server.handle(HttpRequest(method = "GET", path = "/api/v1/customer/profile", headers = buildHeaders()))
         return if (res.statusCode == 200) {
             val success = res.body as ApiSuccessResponse<*>
             @Suppress("UNCHECKED_CAST")
             ApiResult.Success(success.data as CustomerProfileDto, res.correlationId)
+        } else {
+            ApiResult.Error(res.body as ApiErrorResponse)
+        }
+    }
+
+    override suspend fun listCustomers(): ApiResult<List<CustomerDto>> {
+        val res = server.handle(HttpRequest(method = "GET", path = "/api/v1/customers", headers = buildHeaders()))
+        return if (res.statusCode == 200) {
+            val success = res.body as ApiSuccessResponse<*>
+            @Suppress("UNCHECKED_CAST")
+            ApiResult.Success(success.data as List<CustomerDto>, res.correlationId)
+        } else {
+            ApiResult.Error(res.body as ApiErrorResponse)
+        }
+    }
+
+    override suspend fun getCustomerById(customerId: String): ApiResult<CustomerDto> {
+        val res = server.handle(HttpRequest(method = "GET", path = "/api/v1/customers/$customerId", headers = buildHeaders()))
+        return if (res.statusCode == 200) {
+            val success = res.body as ApiSuccessResponse<*>
+            @Suppress("UNCHECKED_CAST")
+            ApiResult.Success(success.data as CustomerDto, res.correlationId)
+        } else {
+            ApiResult.Error(res.body as ApiErrorResponse)
+        }
+    }
+
+    override suspend fun createCustomer(request: CreateCustomerRequestDto): ApiResult<CustomerDto> {
+        val res = server.handle(HttpRequest(method = "POST", path = "/api/v1/customers", headers = buildHeaders(request.idempotencyKey), body = request))
+        return if (res.statusCode == 200 || res.statusCode == 201) {
+            val success = res.body as ApiSuccessResponse<*>
+            @Suppress("UNCHECKED_CAST")
+            ApiResult.Success(success.data as CustomerDto, res.correlationId)
+        } else {
+            ApiResult.Error(res.body as ApiErrorResponse)
+        }
+    }
+
+    override suspend fun updateCustomer(customerId: String, request: UpdateCustomerRequestDto): ApiResult<CustomerDto> {
+        val res = server.handle(HttpRequest(method = "PUT", path = "/api/v1/customers/$customerId", headers = buildHeaders(), body = request))
+        return if (res.statusCode == 200) {
+            val success = res.body as ApiSuccessResponse<*>
+            @Suppress("UNCHECKED_CAST")
+            ApiResult.Success(success.data as CustomerDto, res.correlationId)
+        } else {
+            ApiResult.Error(res.body as ApiErrorResponse)
+        }
+    }
+
+    override suspend fun setCustomerStatus(customerId: String, request: SetCustomerStatusRequestDto): ApiResult<CustomerDto> {
+        val res = server.handle(HttpRequest(method = "POST", path = "/api/v1/customers/$customerId/status", headers = buildHeaders(), body = request))
+        return if (res.statusCode == 200) {
+            val success = res.body as ApiSuccessResponse<*>
+            @Suppress("UNCHECKED_CAST")
+            ApiResult.Success(success.data as CustomerDto, res.correlationId)
         } else {
             ApiResult.Error(res.body as ApiErrorResponse)
         }
@@ -323,6 +415,72 @@ class DirectBackendApiClient(
             val success = res.body as ApiSuccessResponse<*>
             @Suppress("UNCHECKED_CAST")
             ApiResult.Success(success.data as DatabaseHealthStatus, res.correlationId)
+        } else {
+            ApiResult.Error(res.body as ApiErrorResponse)
+        }
+    }
+
+    override suspend fun calculatePrintingCost(request: com.sucharu.sucharupro.data.api.model.printingcalculator.PrintingCalculationRequestDto): ApiResult<com.sucharu.sucharupro.data.api.model.printingcalculator.PrintingCalculationResponseDto> {
+        val res = server.handle(HttpRequest(method = "POST", path = "/api/v1/printing-calculator/calculations", headers = buildHeaders(request.idempotencyKey), body = request))
+        return if (res.statusCode == 200 || res.statusCode == 201) {
+            val success = res.body as ApiSuccessResponse<*>
+            @Suppress("UNCHECKED_CAST")
+            ApiResult.Success(success.data as com.sucharu.sucharupro.data.api.model.printingcalculator.PrintingCalculationResponseDto, res.correlationId)
+        } else {
+            ApiResult.Error(res.body as ApiErrorResponse)
+        }
+    }
+
+    override suspend fun validatePrintingCalculation(request: com.sucharu.sucharupro.data.api.model.printingcalculator.PrintingCalculationRequestDto): ApiResult<com.sucharu.sucharupro.data.api.model.printingcalculator.ValidationResponseDto> {
+        val res = server.handle(HttpRequest(method = "POST", path = "/api/v1/printing-calculator/validate", headers = buildHeaders(), body = request))
+        return if (res.statusCode == 200) {
+            val success = res.body as ApiSuccessResponse<*>
+            @Suppress("UNCHECKED_CAST")
+            ApiResult.Success(success.data as com.sucharu.sucharupro.data.api.model.printingcalculator.ValidationResponseDto, res.correlationId)
+        } else {
+            ApiResult.Error(res.body as ApiErrorResponse)
+        }
+    }
+
+    override suspend fun getPrintingCalculationById(calculationId: String): ApiResult<com.sucharu.sucharupro.data.api.model.printingcalculator.PrintingCalculationResponseDto> {
+        val res = server.handle(HttpRequest(method = "GET", path = "/api/v1/printing-calculator/calculations/$calculationId", headers = buildHeaders()))
+        return if (res.statusCode == 200) {
+            val success = res.body as ApiSuccessResponse<*>
+            @Suppress("UNCHECKED_CAST")
+            ApiResult.Success(success.data as com.sucharu.sucharupro.data.api.model.printingcalculator.PrintingCalculationResponseDto, res.correlationId)
+        } else {
+            ApiResult.Error(res.body as ApiErrorResponse)
+        }
+    }
+
+    override suspend fun getPrintingCalculationBreakdown(calculationId: String): ApiResult<List<com.sucharu.sucharupro.data.api.model.printingcalculator.CalculationBreakdownItemDto>> {
+        val res = server.handle(HttpRequest(method = "GET", path = "/api/v1/printing-calculator/calculations/$calculationId/breakdown", headers = buildHeaders()))
+        return if (res.statusCode == 200) {
+            val success = res.body as ApiSuccessResponse<*>
+            @Suppress("UNCHECKED_CAST")
+            ApiResult.Success(success.data as List<com.sucharu.sucharupro.data.api.model.printingcalculator.CalculationBreakdownItemDto>, res.correlationId)
+        } else {
+            ApiResult.Error(res.body as ApiErrorResponse)
+        }
+    }
+
+    override suspend fun getPrintingCalculatorHandoffContract(calculationId: String): ApiResult<com.sucharu.sucharupro.data.api.model.printingcalculator.Module17Step01PrintingCalculatorHandoffContractDto> {
+        val res = server.handle(HttpRequest(method = "GET", path = "/api/v1/printing-calculator/calculations/$calculationId/handoff", headers = buildHeaders()))
+        return if (res.statusCode == 200) {
+            val success = res.body as ApiSuccessResponse<*>
+            @Suppress("UNCHECKED_CAST")
+            ApiResult.Success(success.data as com.sucharu.sucharupro.data.api.model.printingcalculator.Module17Step01PrintingCalculatorHandoffContractDto, res.correlationId)
+        } else {
+            ApiResult.Error(res.body as ApiErrorResponse)
+        }
+    }
+
+    override suspend fun listPrintingCalculations(): ApiResult<List<com.sucharu.sucharupro.data.api.model.printingcalculator.PrintingCalculationResponseDto>> {
+        val res = server.handle(HttpRequest(method = "GET", path = "/api/v1/printing-calculator/calculations", headers = buildHeaders()))
+        return if (res.statusCode == 200) {
+            val success = res.body as ApiSuccessResponse<*>
+            @Suppress("UNCHECKED_CAST")
+            ApiResult.Success(success.data as List<com.sucharu.sucharupro.data.api.model.printingcalculator.PrintingCalculationResponseDto>, res.correlationId)
         } else {
             ApiResult.Error(res.body as ApiErrorResponse)
         }

@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import com.sucharu.sucharupro.data.auth.FirebaseAuthenticationProvider
 import com.sucharu.sucharupro.data.composition.DevelopmentDemoRuntimeComposition
 import com.sucharu.sucharupro.data.composition.ProductionRuntimeComposition
 import com.sucharu.sucharupro.ui.shell.SucharuGraphicsAppShell
@@ -28,17 +29,21 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun SucharuProMainApp() {
     val isDemo = BuildConfig.DEMO_MODE
-    val sessionManager = remember {
-        val composition = if (isDemo) {
-            DevelopmentDemoRuntimeComposition()
+    val firebaseAuthProvider = remember { FirebaseAuthenticationProvider() }
+    val composition = remember {
+        if (isDemo) {
+            DevelopmentDemoRuntimeComposition(authenticationProvider = firebaseAuthProvider)
         } else {
-            ProductionRuntimeComposition()
+            ProductionRuntimeComposition(authenticationProvider = firebaseAuthProvider)
         }
+    }
+    val sessionManager = remember(composition) {
         composition.createSessionManager()
     }
 
     SucharuGraphicsAppShell(
         sessionManager = sessionManager,
+        composition = composition,
         isDemoMode = isDemo,
         modifier = Modifier.fillMaxSize()
     )

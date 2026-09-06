@@ -60,6 +60,7 @@ fun QuotationOrderManagementScreen(
     onOrderClick: (String) -> Unit = {},
     onAddInquiryClick: () -> Unit = {},
     onAddQuotationClick: () -> Unit = {},
+    onAddOrderClick: () -> Unit = {},
     initialTabIndex: Int = 0,
     modifier: Modifier = Modifier
 ) {
@@ -109,6 +110,19 @@ fun QuotationOrderManagementScreen(
                     com.sucharu.sucharupro.ui.components.AppButton(
                         text = "New Quotation",
                         onClick = onAddQuotationClick,
+                        leadingIcon = {
+                            Icon(
+                                imageVector = androidx.compose.material.icons.Icons.Default.Add,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    )
+                }
+                2 -> {
+                    com.sucharu.sucharupro.ui.components.AppButton(
+                        text = "New Order",
+                        onClick = onAddOrderClick,
                         leadingIcon = {
                             Icon(
                                 imageVector = androidx.compose.material.icons.Icons.Default.Add,

@@ -1,5 +1,6 @@
 package com.sucharu.sucharupro.data.api.server
 
+import kotlinx.coroutines.flow.first
 import com.sucharu.sucharupro.data.api.model.*
 import com.sucharu.sucharupro.data.api.model.businesscostcontrol.*
 import com.sucharu.sucharupro.data.api.model.businessreconciliation.*
@@ -111,6 +112,122 @@ class BackendUseCases(
                 }
                 else -> throw NotFoundException("Customer profile not found for '${principal.userId}'.")
             }
+        }
+    }
+
+    suspend fun listCustomers(principal: AuthenticatedPrincipal): List<CustomerDto> {
+        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.CUSTOMER, UserRole.AI_AGENT)
+        val customerRepo = repositoryFactory.createCustomerRepository(principal.projectId)
+        if (principal.role == UserRole.CUSTOMER) {
+            val ownRes = customerRepo.findCustomerById(principal.userId)
+            return if (ownRes is DomainResult.Success) listOf(ownRes.data.toDto()) else emptyList()
+        }
+        val list = customerRepo.getCustomers().first()
+        return list.map { it.toDto() }
+    }
+
+    suspend fun getCustomerById(principal: AuthenticatedPrincipal, customerId: String): CustomerDto {
+        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.CUSTOMER, UserRole.AI_AGENT)
+        if (principal.role == UserRole.CUSTOMER) {
+            BackendAuthorizationPolicy.enforceCustomerOwnership(principal, customerId)
+        }
+        val customerRepo = repositoryFactory.createCustomerRepository(principal.projectId)
+        return when (val res = customerRepo.findCustomerById(customerId)) {
+            is DomainResult.Success -> res.data.toDto()
+            is DomainResult.Error -> throw NotFoundException("Customer not found: $customerId")
+            DomainResult.Loading -> throw IllegalStateException("Unexpected loading state")
+        }
+    }
+
+    suspend fun createCustomer(
+        principal: AuthenticatedPrincipal,
+        request: CreateCustomerRequestDto,
+        idempotencyKey: String? = null
+    ): CustomerDto {
+        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.AI_AGENT)
+        val customerRepo = repositoryFactory.createCustomerRepository(principal.projectId)
+
+        val newId = "CUST-${System.currentTimeMillis()}"
+        val code = "CUS-${newId.takeLast(6).uppercase()}"
+        val cType = try { com.sucharu.sucharupro.domain.model.customer.CustomerType.valueOf(request.customerType.uppercase()) } catch (_: Exception) { com.sucharu.sucharupro.domain.model.customer.CustomerType.INDIVIDUAL }
+
+        val customer = com.sucharu.sucharupro.domain.model.customer.Customer(
+            customerId = newId,
+            customerCode = code,
+            displayName = request.displayName,
+            customerType = cType,
+            status = com.sucharu.sucharupro.domain.model.customer.CustomerStatusType.ACTIVE,
+            primaryPhone = request.primaryPhone,
+            alternatePhone = request.alternatePhone,
+            email = request.email,
+            contactPersonName = request.contactPersonName,
+            creditProfile = com.sucharu.sucharupro.domain.model.customer.CustomerCreditProfile(
+                creditLimit = com.sucharu.sucharupro.domain.model.common.Money(request.creditLimit ?: BigDecimal.ZERO),
+                paymentTermDays = request.paymentTermDays ?: 0
+            ),
+            notes = request.notes,
+            createdAt = java.time.Instant.now().toString(),
+            updatedAt = java.time.Instant.now().toString()
+        )
+
+        return when (val res = customerRepo.addCustomer(customer)) {
+            is DomainResult.Success -> res.data.toDto()
+            is DomainResult.Error -> throw IllegalArgumentException(res.message)
+            DomainResult.Loading -> throw IllegalStateException("Unexpected loading state")
+        }
+    }
+
+    suspend fun updateCustomer(
+        principal: AuthenticatedPrincipal,
+        customerId: String,
+        request: UpdateCustomerRequestDto
+    ): CustomerDto {
+        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.AI_AGENT)
+        val customerRepo = repositoryFactory.createCustomerRepository(principal.projectId)
+
+        val existing = when (val res = customerRepo.findCustomerById(customerId)) {
+            is DomainResult.Success -> res.data
+            else -> throw NotFoundException("Customer not found: $customerId")
+        }
+
+        val cType = request.customerType?.let { try { com.sucharu.sucharupro.domain.model.customer.CustomerType.valueOf(it.uppercase()) } catch (_: Exception) { null } } ?: existing.customerType
+        val sType = request.status?.let { try { com.sucharu.sucharupro.domain.model.customer.CustomerStatusType.valueOf(it.uppercase()) } catch (_: Exception) { null } } ?: existing.status
+
+        val updated = existing.copy(
+            displayName = request.displayName,
+            customerType = cType,
+            status = sType,
+            primaryPhone = request.primaryPhone,
+            alternatePhone = request.alternatePhone ?: existing.alternatePhone,
+            email = request.email ?: existing.email,
+            contactPersonName = request.contactPersonName ?: existing.contactPersonName,
+            creditProfile = com.sucharu.sucharupro.domain.model.customer.CustomerCreditProfile(
+                creditLimit = request.creditLimit?.let { com.sucharu.sucharupro.domain.model.common.Money(it) } ?: existing.creditProfile.creditLimit,
+                paymentTermDays = request.paymentTermDays ?: existing.creditProfile.paymentTermDays
+            ),
+            notes = request.notes ?: existing.notes
+        )
+
+        return when (val res = customerRepo.updateCustomer(updated)) {
+            is DomainResult.Success -> res.data.toDto()
+            is DomainResult.Error -> throw IllegalArgumentException(res.message)
+            DomainResult.Loading -> throw IllegalStateException("Unexpected loading state")
+        }
+    }
+
+    suspend fun setCustomerStatus(
+        principal: AuthenticatedPrincipal,
+        customerId: String,
+        status: String
+    ): CustomerDto {
+        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.AI_AGENT)
+        val customerRepo = repositoryFactory.createCustomerRepository(principal.projectId)
+        val targetStatus = try { com.sucharu.sucharupro.domain.model.customer.CustomerStatusType.valueOf(status.uppercase()) } catch (_: Exception) { throw IllegalArgumentException("Invalid status: $status") }
+
+        return when (val res = customerRepo.setCustomerStatus(customerId, targetStatus)) {
+            is DomainResult.Success -> res.data.toDto()
+            is DomainResult.Error -> throw IllegalArgumentException(res.message)
+            DomainResult.Loading -> throw IllegalStateException("Unexpected loading state")
         }
     }
 
@@ -15549,14 +15666,14 @@ class BackendUseCases(
     }
 
     // ==========================================
-    // MODULE 17 STEP 01 â€” SMART PRINTING CALCULATOR
+    // MODULE 17 STEP 01 — SMART PRINTING CALCULATOR
     // ==========================================
 
     suspend fun calculatePrintingEstimate(
         principal: AuthenticatedPrincipal,
         requestDto: com.sucharu.sucharupro.data.api.model.printingcalculator.PrintingCalculationRequestDto
     ): com.sucharu.sucharupro.data.api.model.printingcalculator.PrintingCalculationResponseDto {
-        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.AI_AGENT)
+        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.CUSTOMER, UserRole.AI_AGENT)
         val domainRequest = requestDto.toDomain(
             tenantId = principal.projectId,
             projectId = principal.projectId,
@@ -15574,7 +15691,7 @@ class BackendUseCases(
         principal: AuthenticatedPrincipal,
         calculationId: String
     ): com.sucharu.sucharupro.data.api.model.printingcalculator.PrintingCalculationResponseDto {
-        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.AI_AGENT)
+        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.CUSTOMER, UserRole.AI_AGENT)
         val service = repositoryFactory.createPrintingCalculatorService(principal.projectId)
         return when (val res = service.getCalculationById(principal.projectId, calculationId)) {
             is DomainResult.Success -> {
@@ -15590,7 +15707,7 @@ class BackendUseCases(
         principal: AuthenticatedPrincipal,
         calculationId: String
     ): List<com.sucharu.sucharupro.data.api.model.printingcalculator.CalculationBreakdownItemDto> {
-        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.AI_AGENT)
+        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.CUSTOMER, UserRole.AI_AGENT)
         val service = repositoryFactory.createPrintingCalculatorService(principal.projectId)
         return when (val res = service.getCalculationBreakdown(principal.projectId, calculationId)) {
             is DomainResult.Success -> res.data.map { it.toDto() }
@@ -15603,7 +15720,7 @@ class BackendUseCases(
         principal: AuthenticatedPrincipal,
         requestDto: com.sucharu.sucharupro.data.api.model.printingcalculator.PrintingCalculationRequestDto
     ): com.sucharu.sucharupro.data.api.model.printingcalculator.ValidationResponseDto {
-        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.AI_AGENT)
+        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.CUSTOMER, UserRole.AI_AGENT)
         val domainRequest = requestDto.toDomain(
             tenantId = principal.projectId,
             projectId = principal.projectId,
@@ -15625,7 +15742,7 @@ class BackendUseCases(
         principal: AuthenticatedPrincipal,
         calculationId: String
     ): com.sucharu.sucharupro.data.api.model.printingcalculator.Module17Step01PrintingCalculatorHandoffContractDto {
-        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.AI_AGENT)
+        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.CUSTOMER, UserRole.AI_AGENT)
         val service = repositoryFactory.createPrintingCalculatorService(principal.projectId)
         return when (val res = service.exportHandoffContract(principal.projectId, calculationId)) {
             is DomainResult.Success -> res.data.toDto()
@@ -15638,7 +15755,7 @@ class BackendUseCases(
         principal: AuthenticatedPrincipal,
         limit: Int = 50
     ): List<com.sucharu.sucharupro.data.api.model.printingcalculator.PrintingCalculationResponseDto> {
-        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.AI_AGENT)
+        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.CUSTOMER, UserRole.AI_AGENT)
         val service = repositoryFactory.createPrintingCalculatorService(principal.projectId)
         return when (val res = service.listCalculations(principal.projectId, limit)) {
             is DomainResult.Success -> res.data.map { it.toDto() }

@@ -36,11 +36,24 @@ class SessionExpiryNavigationTest {
             override suspend fun getCustomerProfile(): ApiResult<CustomerProfileDto> = err
             override suspend fun getCustomerOrders(): ApiResult<List<CustomerOrderSummaryDto>> = ApiResult.Success(emptyList())
             override suspend fun getCustomerOrderDetail(orderId: String): ApiResult<CustomerOrderDetailDto> = err
+            override suspend fun updateProfile(request: UpdateUserProfileRequestDto): ApiResult<Map<String, Any>> = err
             override suspend fun createCustomerOrder(request: CreateOrderRequestDto, idempotencyKey: String?): ApiResult<CustomerOrderDetailDto> = err
             override suspend fun getAffiliateProfile(): ApiResult<LegacyAffiliateProfileDto> = err
             override suspend fun getAffiliateCommission(): ApiResult<AffiliateCommissionDto> = err
             override suspend fun checkHealthLive(): ApiResult<Map<String, String>> = ApiResult.Success(mapOf("status" to "UP"))
             override suspend fun checkHealthReady(): ApiResult<DatabaseHealthStatus> = ApiResult.Success(DatabaseHealthStatus(isLive = true, isReady = true))
+            override suspend fun calculatePrintingCost(request: com.sucharu.sucharupro.data.api.model.printingcalculator.PrintingCalculationRequestDto): ApiResult<com.sucharu.sucharupro.data.api.model.printingcalculator.PrintingCalculationResponseDto> = err
+            override suspend fun validatePrintingCalculation(request: com.sucharu.sucharupro.data.api.model.printingcalculator.PrintingCalculationRequestDto): ApiResult<com.sucharu.sucharupro.data.api.model.printingcalculator.ValidationResponseDto> = err
+            override suspend fun getPrintingCalculationById(calculationId: String): ApiResult<com.sucharu.sucharupro.data.api.model.printingcalculator.PrintingCalculationResponseDto> = err
+            override suspend fun getPrintingCalculationBreakdown(calculationId: String): ApiResult<List<com.sucharu.sucharupro.data.api.model.printingcalculator.CalculationBreakdownItemDto>> = err
+            override suspend fun getPrintingCalculatorHandoffContract(calculationId: String): ApiResult<com.sucharu.sucharupro.data.api.model.printingcalculator.Module17Step01PrintingCalculatorHandoffContractDto> = err
+            override suspend fun listCustomers(): ApiResult<List<CustomerDto>> = err
+            override suspend fun getCustomerById(customerId: String): ApiResult<CustomerDto> = err
+            override suspend fun createCustomer(request: CreateCustomerRequestDto): ApiResult<CustomerDto> = err
+            override suspend fun updateCustomer(customerId: String, request: UpdateCustomerRequestDto): ApiResult<CustomerDto> = err
+            override suspend fun setCustomerStatus(customerId: String, request: SetCustomerStatusRequestDto): ApiResult<CustomerDto> = err
+            override suspend fun loginWithFirebase(request: FirebaseAuthRequestDto): ApiResult<AuthResponseDto> = err
+            override suspend fun listPrintingCalculations(): ApiResult<List<com.sucharu.sucharupro.data.api.model.printingcalculator.PrintingCalculationResponseDto>> = err
         }
 
         sessionManager = AuthenticationSessionManager(client = stubClient, sessionStore = store)

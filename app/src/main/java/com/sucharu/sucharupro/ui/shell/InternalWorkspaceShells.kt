@@ -17,14 +17,17 @@ import com.sucharu.sucharupro.data.api.model.UserRole
 import com.sucharu.sucharupro.ui.features.dashboard.DashboardScreen
 import com.sucharu.sucharupro.ui.navigation.AppDestination
 
+import com.sucharu.sucharupro.data.composition.AppRuntimeComposition
+
 /**
- * Responsive Dark Navy Foundation Workspace Shell for Internal ERP Roles: STAFF, MANAGER, ADMIN (INFRA-03 Step 06).
+ * Responsive Dark Navy Foundation Workspace Shell for Internal ERP Roles: STAFF, MANAGER, ADMIN (INFRA-03 Step 06 & INFRA-05 Step 03).
  */
 @Composable
 fun InternalWorkspaceShell(
     principal: AuthenticatedPrincipal,
     currentDestination: AppDestination,
     onNavigate: (AppDestination) -> Unit,
+    composition: AppRuntimeComposition? = null,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -151,16 +154,25 @@ fun InternalWorkspaceShell(
             currentDestination == AppDestination.Manager.Operations ||
             currentDestination == AppDestination.Staff.AssignedWork
         ) {
+            val dashRepo = remember(composition) {
+                composition?.dashboardRepository ?: com.sucharu.sucharupro.data.repository.FakeDashboardRepository()
+            }
+            val defaultHome = when (principal.role) {
+                UserRole.STAFF -> AppDestination.Staff.AssignedWork
+                UserRole.MANAGER -> AppDestination.Manager.Operations
+                UserRole.ADMIN -> AppDestination.Admin.FullAdministration
+                else -> AppDestination.Public.Home
+            }
             DashboardScreen(
-                viewModel = viewModel(),
-                onNavigateToNewOrder = {},
-                onNavigateToOrders = {},
-                onNavigateToOrderDetail = {},
-                onNavigateToProductionStage = {},
-                onNavigateToPrintingCalculator = {},
-                onNavigateToCustomers = {},
-                onNavigateToInvoices = {},
-                onNavigateToInventory = {},
+                viewModel = viewModel { com.sucharu.sucharupro.ui.features.dashboard.DashboardViewModel(repository = dashRepo) },
+                onNavigateToNewOrder = { onNavigate(AppDestination.Staff.Production) },
+                onNavigateToOrders = { onNavigate(AppDestination.Staff.AssignedWork) },
+                onNavigateToOrderDetail = { orderId -> onNavigate(AppDestination.Customer.OrderDetails(orderId)) },
+                onNavigateToProductionStage = { onNavigate(AppDestination.Staff.Production) },
+                onNavigateToPrintingCalculator = { onNavigate(AppDestination.Public.Home) },
+                onNavigateToCustomers = { onNavigate(AppDestination.Admin.Users) },
+                onNavigateToInvoices = { onNavigate(AppDestination.Admin.Finance) },
+                onNavigateToInventory = { onNavigate(AppDestination.Staff.SubstrateReservation) },
                 userRole = try {
                     com.sucharu.sucharupro.domain.model.user.UserRole.valueOf(principal.role.name)
                 } catch (_: Exception) {
@@ -174,144 +186,309 @@ fun InternalWorkspaceShell(
             currentDestination is AppDestination.Admin.WorkflowMetrics ||
             currentDestination is AppDestination.Admin.WorkflowAudit
         ) {
-            com.sucharu.sucharupro.ui.features.workflow.WorkflowDashboardScreen(
-                principal = principal,
+            val defaultHome = when (principal.role) {
+                UserRole.STAFF -> AppDestination.Staff.AssignedWork
+                UserRole.MANAGER -> AppDestination.Manager.Operations
+                UserRole.ADMIN -> AppDestination.Admin.FullAdministration
+                else -> AppDestination.Public.Home
+            }
+            val prodRepo: com.sucharu.sucharupro.domain.repository.ProductionJobRepository = remember {
+                com.sucharu.sucharupro.data.repository.ProductionJobRepositoryImpl(
+                    dataSource = com.sucharu.sucharupro.data.datasource.FakeProductionJobDataSource()
+                )
+            }
+            com.sucharu.sucharupro.ui.features.production.monitoring.ProductionMonitoringDashboardScreen(
+                viewModel = viewModel {
+                    com.sucharu.sucharupro.ui.features.production.monitoring.ProductionMonitoringDashboardViewModel(
+                        repository = prodRepo
+                    )
+                },
+                onOpenJobDetails = {},
+                onOpenOperatorQueue = {},
+                onNavigateBack = { onNavigate(defaultHome) }
+            )
+        } else if (currentDestination == AppDestination.Staff.Production ||
+            currentDestination == AppDestination.Manager.Production
+        ) {
+            val defaultHome = when (principal.role) {
+                UserRole.STAFF -> AppDestination.Staff.AssignedWork
+                UserRole.MANAGER -> AppDestination.Manager.Operations
+                UserRole.ADMIN -> AppDestination.Admin.FullAdministration
+                else -> AppDestination.Public.Home
+            }
+            val prodRepo: com.sucharu.sucharupro.domain.repository.ProductionJobRepository = remember {
+                com.sucharu.sucharupro.data.repository.ProductionJobRepositoryImpl(
+                    dataSource = com.sucharu.sucharupro.data.datasource.FakeProductionJobDataSource()
+                )
+            }
+            com.sucharu.sucharupro.ui.features.production.job.list.ProductionJobListScreen(
+                viewModel = viewModel {
+                    com.sucharu.sucharupro.ui.features.production.job.list.ProductionJobListViewModel(
+                        repository = prodRepo
+                    )
+                },
+                onJobClick = {},
                 modifier = Modifier.weight(1f)
             )
         } else if (currentDestination == AppDestination.Staff.ProductionScheduling ||
             currentDestination == AppDestination.Manager.ProductionScheduling ||
             currentDestination == AppDestination.Admin.ProductionScheduling
         ) {
+            val defaultHome = when (principal.role) {
+                UserRole.STAFF -> AppDestination.Staff.AssignedWork
+                UserRole.MANAGER -> AppDestination.Manager.Operations
+                UserRole.ADMIN -> AppDestination.Admin.FullAdministration
+                else -> AppDestination.Public.Home
+            }
             com.sucharu.sucharupro.ui.features.production.scheduling.ProductionSchedulingCommandCenterScreen(
                 schedule = null,
                 isLoading = false,
-                onNavigateBack = {}
+                onNavigateBack = { onNavigate(defaultHome) }
             )
         } else if (currentDestination == AppDestination.Staff.ShopFloorTracking ||
             currentDestination == AppDestination.Manager.ShopFloorTracking ||
             currentDestination == AppDestination.Admin.ShopFloorTracking
         ) {
+            val defaultHome = when (principal.role) {
+                UserRole.STAFF -> AppDestination.Staff.AssignedWork
+                UserRole.MANAGER -> AppDestination.Manager.Operations
+                UserRole.ADMIN -> AppDestination.Admin.FullAdministration
+                else -> AppDestination.Public.Home
+            }
             com.sucharu.sucharupro.ui.features.production.tracking.ShopFloorTrackingCommandCenterScreen(
                 jobId = "JOB-LIVE-001",
                 isLoading = false,
-                onNavigateBack = {}
+                onNavigateBack = { onNavigate(defaultHome) }
             )
         } else if (currentDestination == AppDestination.Staff.FinalQcPackaging ||
             currentDestination == AppDestination.Manager.FinalQcPackaging ||
             currentDestination == AppDestination.Admin.FinalQcPackaging
         ) {
+            val defaultHome = when (principal.role) {
+                UserRole.STAFF -> AppDestination.Staff.AssignedWork
+                UserRole.MANAGER -> AppDestination.Manager.Operations
+                UserRole.ADMIN -> AppDestination.Admin.FullAdministration
+                else -> AppDestination.Public.Home
+            }
             com.sucharu.sucharupro.ui.features.production.finalqc.FinalQcPackagingCommandCenterScreen(
                 jobId = "JOB-FINAL-001",
                 isLoading = false,
-                onNavigateBack = {}
+                onNavigateBack = { onNavigate(defaultHome) }
             )
         } else if (currentDestination == AppDestination.Staff.ProductionJobCosting ||
             currentDestination == AppDestination.Manager.ProductionJobCosting ||
             currentDestination == AppDestination.Admin.ProductionJobCosting
         ) {
+            val defaultHome = when (principal.role) {
+                UserRole.STAFF -> AppDestination.Staff.AssignedWork
+                UserRole.MANAGER -> AppDestination.Manager.Operations
+                UserRole.ADMIN -> AppDestination.Admin.FullAdministration
+                else -> AppDestination.Public.Home
+            }
             com.sucharu.sucharupro.ui.features.production.jobcosting.ProductionJobCostingCommandCenterScreen(
                 jobId = "JOB-COST-001",
                 isLoading = false,
-                onNavigateBack = {}
+                onNavigateBack = { onNavigate(defaultHome) }
             )
         } else if (currentDestination == AppDestination.Staff.ProductionJobClosure ||
             currentDestination == AppDestination.Manager.ProductionJobClosure ||
             currentDestination == AppDestination.Admin.ProductionJobClosure
         ) {
+            val defaultHome = when (principal.role) {
+                UserRole.STAFF -> AppDestination.Staff.AssignedWork
+                UserRole.MANAGER -> AppDestination.Manager.Operations
+                UserRole.ADMIN -> AppDestination.Admin.FullAdministration
+                else -> AppDestination.Public.Home
+            }
             com.sucharu.sucharupro.ui.features.production.jobclosure.ProductionJobClosureCommandCenterScreen(
                 jobId = "JOB-CLOSE-001",
                 isLoading = false,
-                onNavigateBack = {}
+                onNavigateBack = { onNavigate(defaultHome) }
             )
         } else if (currentDestination == AppDestination.Staff.SubstrateReservation ||
             currentDestination == AppDestination.Manager.SubstrateReservation ||
             currentDestination == AppDestination.Admin.SubstrateReservation
         ) {
+            val defaultHome = when (principal.role) {
+                UserRole.STAFF -> AppDestination.Staff.AssignedWork
+                UserRole.MANAGER -> AppDestination.Manager.Operations
+                UserRole.ADMIN -> AppDestination.Admin.FullAdministration
+                else -> AppDestination.Public.Home
+            }
+            val resService = remember {
+                com.sucharu.sucharupro.domain.service.substratereservation.SubstrateReservationServiceImpl(
+                    repository = com.sucharu.sucharupro.data.repository.substratereservation.SubstrateReservationRepositoryImpl(
+                        dataSource = com.sucharu.sucharupro.data.datasource.substratereservation.FakeSubstrateReservationDataSource()
+                    )
+                )
+            }
             com.sucharu.sucharupro.ui.features.inventory.substratereservation.SubstrateReservationCommandCenterScreen(
-                viewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
-                onNavigateBack = {}
+                viewModel = viewModel {
+                    com.sucharu.sucharupro.ui.features.inventory.substratereservation.SubstrateReservationViewModel(
+                        reservationService = resService,
+                        defaultTenantId = principal.projectId
+                    )
+                },
+                onNavigateBack = { onNavigate(defaultHome) }
             )
         } else if (currentDestination == AppDestination.Staff.Imposition ||
             currentDestination == AppDestination.Manager.Imposition ||
             currentDestination == AppDestination.Admin.Imposition
         ) {
+            val defaultHome = when (principal.role) {
+                UserRole.STAFF -> AppDestination.Staff.AssignedWork
+                UserRole.MANAGER -> AppDestination.Manager.Operations
+                UserRole.ADMIN -> AppDestination.Admin.FullAdministration
+                else -> AppDestination.Public.Home
+            }
             com.sucharu.sucharupro.ui.features.imposition.ImpositionCommandCenterScreen(
-                viewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
-                onNavigateBack = {}
+                viewModel = viewModel { com.sucharu.sucharupro.ui.features.imposition.ImpositionViewModel() },
+                onNavigateBack = { onNavigate(defaultHome) }
             )
         } else if (currentDestination == AppDestination.Staff.GangRun ||
             currentDestination == AppDestination.Manager.GangRun ||
             currentDestination == AppDestination.Admin.GangRun
         ) {
+            val defaultHome = when (principal.role) {
+                UserRole.STAFF -> AppDestination.Staff.AssignedWork
+                UserRole.MANAGER -> AppDestination.Manager.Operations
+                UserRole.ADMIN -> AppDestination.Admin.FullAdministration
+                else -> AppDestination.Public.Home
+            }
             com.sucharu.sucharupro.ui.features.imposition.GangRunCommandCenterScreen(
-                viewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
-                onNavigateBack = {}
+                viewModel = viewModel { com.sucharu.sucharupro.ui.features.imposition.GangRunViewModel() },
+                onNavigateBack = { onNavigate(defaultHome) }
             )
         } else if (currentDestination == AppDestination.Staff.DynamicNesting ||
             currentDestination == AppDestination.Manager.DynamicNesting ||
             currentDestination == AppDestination.Admin.DynamicNesting
         ) {
+            val defaultHome = when (principal.role) {
+                UserRole.STAFF -> AppDestination.Staff.AssignedWork
+                UserRole.MANAGER -> AppDestination.Manager.Operations
+                UserRole.ADMIN -> AppDestination.Admin.FullAdministration
+                else -> AppDestination.Public.Home
+            }
             com.sucharu.sucharupro.ui.features.imposition.DynamicNestingCommandCenterScreen(
-                viewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
-                onNavigateBack = {}
+                viewModel = viewModel { com.sucharu.sucharupro.ui.features.imposition.NestingViewModel() },
+                onNavigateBack = { onNavigate(defaultHome) }
             )
         } else if (currentDestination == AppDestination.Staff.SignatureImposition ||
             currentDestination == AppDestination.Manager.SignatureImposition ||
             currentDestination == AppDestination.Admin.SignatureImposition
         ) {
+            val defaultHome = when (principal.role) {
+                UserRole.STAFF -> AppDestination.Staff.AssignedWork
+                UserRole.MANAGER -> AppDestination.Manager.Operations
+                UserRole.ADMIN -> AppDestination.Admin.FullAdministration
+                else -> AppDestination.Public.Home
+            }
             com.sucharu.sucharupro.ui.features.imposition.SignatureImpositionCommandCenterScreen(
-                viewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
-                onNavigateBack = {}
+                viewModel = viewModel { com.sucharu.sucharupro.ui.features.imposition.SignatureViewModel() },
+                onNavigateBack = { onNavigate(defaultHome) }
             )
         } else if (currentDestination == AppDestination.Staff.CtpOutput ||
             currentDestination == AppDestination.Manager.CtpOutput ||
             currentDestination == AppDestination.Admin.CtpOutput
         ) {
+            val defaultHome = when (principal.role) {
+                UserRole.STAFF -> AppDestination.Staff.AssignedWork
+                UserRole.MANAGER -> AppDestination.Manager.Operations
+                UserRole.ADMIN -> AppDestination.Admin.FullAdministration
+                else -> AppDestination.Public.Home
+            }
             com.sucharu.sucharupro.ui.features.imposition.CtpOutputCommandCenterScreen(
-                viewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
-                onNavigateBack = {}
+                viewModel = viewModel { com.sucharu.sucharupro.ui.features.imposition.CtpViewModel() },
+                onNavigateBack = { onNavigate(defaultHome) }
             )
         } else if (currentDestination == AppDestination.Admin.PrepressOrchestration
         ) {
+            val defaultHome = when (principal.role) {
+                UserRole.STAFF -> AppDestination.Staff.AssignedWork
+                UserRole.MANAGER -> AppDestination.Manager.Operations
+                UserRole.ADMIN -> AppDestination.Admin.FullAdministration
+                else -> AppDestination.Public.Home
+            }
             com.sucharu.sucharupro.ui.features.imposition.PrepressOrchestrationCommandCenterScreen(
-                viewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
-                onNavigateBack = {}
+                viewModel = viewModel { com.sucharu.sucharupro.ui.features.imposition.PrepressOrchestrationViewModel() },
+                onNavigateBack = { onNavigate(defaultHome) }
             )
         } else if (currentDestination == AppDestination.Admin.SubstrateBatchSelection
         ) {
             com.sucharu.sucharupro.ui.features.substratereservation.SubstrateBatchSelectionCommandCenterScreen(
-                viewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+                viewModel = viewModel { com.sucharu.sucharupro.ui.features.substratereservation.SubstrateBatchSelectionViewModel() }
             )
         } else if (currentDestination == AppDestination.Staff.SubstrateReplenishment ||
             currentDestination == AppDestination.Manager.SubstrateReplenishment ||
             currentDestination == AppDestination.Admin.SubstrateReplenishment
         ) {
+            val defaultHome = when (principal.role) {
+                UserRole.STAFF -> AppDestination.Staff.AssignedWork
+                UserRole.MANAGER -> AppDestination.Manager.Operations
+                UserRole.ADMIN -> AppDestination.Admin.FullAdministration
+                else -> AppDestination.Public.Home
+            }
             com.sucharu.sucharupro.ui.features.substratereservation.SubstrateReplenishmentCommandCenterScreen(
-                viewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
-                onNavigateBack = {}
+                viewModel = viewModel { com.sucharu.sucharupro.ui.features.substratereservation.SubstrateReplenishmentViewModel() },
+                onNavigateBack = { onNavigate(defaultHome) }
             )
         } else if (currentDestination == AppDestination.Staff.SubstrateReleaseGovernance ||
             currentDestination == AppDestination.Manager.SubstrateReleaseGovernance ||
             currentDestination == AppDestination.Admin.SubstrateReleaseGovernance
         ) {
+            val defaultHome = when (principal.role) {
+                UserRole.STAFF -> AppDestination.Staff.AssignedWork
+                UserRole.MANAGER -> AppDestination.Manager.Operations
+                UserRole.ADMIN -> AppDestination.Admin.FullAdministration
+                else -> AppDestination.Public.Home
+            }
             com.sucharu.sucharupro.ui.features.substratereservation.SubstrateReleaseGovernanceCommandCenterScreen(
-                viewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
-                onNavigateBack = {}
+                viewModel = viewModel { com.sucharu.sucharupro.ui.features.substratereservation.SubstrateReleaseGovernanceViewModel() },
+                onNavigateBack = { onNavigate(defaultHome) }
             )
         } else if (currentDestination == AppDestination.Staff.SubstrateEnterpriseAudit ||
             currentDestination == AppDestination.Manager.SubstrateEnterpriseAudit ||
             currentDestination == AppDestination.Admin.SubstrateEnterpriseAudit
         ) {
+            val defaultHome = when (principal.role) {
+                UserRole.STAFF -> AppDestination.Staff.AssignedWork
+                UserRole.MANAGER -> AppDestination.Manager.Operations
+                UserRole.ADMIN -> AppDestination.Admin.FullAdministration
+                else -> AppDestination.Public.Home
+            }
             com.sucharu.sucharupro.ui.features.substratereservation.SubstrateEnterpriseAuditCommandCenterScreen(
-                viewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
-                onNavigateBack = {}
+                viewModel = viewModel { com.sucharu.sucharupro.ui.features.substratereservation.SubstrateEnterpriseAuditViewModel() },
+                onNavigateBack = { onNavigate(defaultHome) }
             )
         } else if (currentDestination == AppDestination.Staff.AffiliateManagement ||
             currentDestination == AppDestination.Manager.AffiliateManagement ||
             currentDestination == AppDestination.Admin.AffiliateManagement
         ) {
+            val txManager = remember {
+                com.sucharu.sucharupro.data.persistence.postgres.DefaultPostgresTransactionManager(
+                    connectionProvider = com.sucharu.sucharupro.data.persistence.postgres.DefaultPostgresConnectionProvider(
+                        config = com.sucharu.sucharupro.data.persistence.postgres.PostgresConnectionConfig()
+                    )
+                )
+            }
+            val repoFactory = remember(txManager) {
+                com.sucharu.sucharupro.data.persistence.postgres.PostgresRepositoryFactory(
+                    transactionManager = txManager
+                )
+            }
+            val affUseCases = remember(txManager, repoFactory) {
+                com.sucharu.sucharupro.data.api.server.BackendUseCases(
+                    transactionManager = txManager,
+                    repositoryFactory = repoFactory
+                )
+            }
             com.sucharu.sucharupro.ui.features.affiliate.AffiliateManagementCommandCenterScreen(
-                viewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
+                viewModel = viewModel(key = principal.userId) {
+                    com.sucharu.sucharupro.ui.features.affiliate.AffiliateManagementViewModel(
+                        useCases = affUseCases,
+                        principal = principal
+                    )
+                },
                 modifier = modifier
             )
         } else {

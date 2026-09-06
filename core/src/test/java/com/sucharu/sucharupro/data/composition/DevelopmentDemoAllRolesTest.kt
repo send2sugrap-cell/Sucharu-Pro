@@ -155,16 +155,16 @@ class DevelopmentDemoAllRolesTest {
     }
 
     @Test
-    fun testDemoOtp_verifiesAnySelectedDemoRole() = runBlocking {
+    fun testOtp_verifiesSelectedRole_andRejectsHardcoded123456() = runBlocking {
         val composition = DevelopmentDemoRuntimeComposition(initialRole = DemoRole.MANAGER)
         val sessionManager = composition.createSessionManager()
 
-        // Valid OTP '123456' succeeds
-        val validRes = sessionManager.confirmVerification("123456", VerificationType.PHONE)
+        // Valid non-hardcoded token '654321' succeeds
+        val validRes = sessionManager.confirmVerification("654321", VerificationType.PHONE)
         assertTrue(validRes is ApiResult.Success)
 
-        // Invalid OTP '000000' fails
-        val invalidRes = sessionManager.confirmVerification("000000", VerificationType.PHONE)
+        // Hardcoded '123456' fails
+        val invalidRes = sessionManager.confirmVerification("123456", VerificationType.PHONE)
         assertTrue(invalidRes is ApiResult.Error)
     }
 

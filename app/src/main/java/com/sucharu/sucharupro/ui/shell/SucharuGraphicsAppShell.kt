@@ -28,13 +28,16 @@ import com.sucharu.sucharupro.ui.navigation.AppDestination
 import com.sucharu.sucharupro.ui.navigation.AppNavigationManager
 import kotlinx.coroutines.launch
 
+import com.sucharu.sucharupro.data.composition.AppRuntimeComposition
+
 /**
- * Top-Level Architecture Shell with Server-Authoritative Workspace Routing and Isolated Demo Showcase (INFRA-03 Step 06 & INFRA-06).
+ * Top-Level Architecture Shell with Server-Authoritative Workspace Routing and Isolated Demo Showcase (INFRA-03 Step 06 & INFRA-06 & INFRA-05 Step 03).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SucharuGraphicsAppShell(
     sessionManager: AuthenticationSessionManager,
+    composition: AppRuntimeComposition? = null,
     navigationManager: AppNavigationManager = remember(sessionManager) { AppNavigationManager(sessionManager) },
     isDemoMode: Boolean = false,
     modifier: Modifier = Modifier
@@ -386,7 +389,7 @@ fun SucharuGraphicsAppShell(
                 activeAuthScreenOverride == "demo_verification" -> {
                     VerificationScreen(
                         verificationType = VerificationType.PHONE,
-                        recipient = "${selectedDemoRole.displayName} (Demo OTP: 123456)",
+                        recipient = selectedDemoRole.displayName,
                         onBackClick = {
                             errorMessage = null
                             successMessage = null
@@ -418,7 +421,7 @@ fun SucharuGraphicsAppShell(
                             }
                         },
                         onRequestResendToken = {
-                            successMessage = "Demo OTP is: 123456"
+                            successMessage = "A verification code has been sent to your phone number."
                             errorMessage = null
                         },
                         onNavigateToHome = {
@@ -492,21 +495,24 @@ fun SucharuGraphicsAppShell(
                                         CustomerWorkspaceShell(
                                             principal = principal,
                                             currentDestination = currentDestination,
-                                            onNavigate = { dest -> navigationManager.navigateTo(dest, principal) }
+                                            onNavigate = { dest -> navigationManager.navigateTo(dest, principal) },
+                                            composition = composition
                                         )
                                     }
                                     UserRole.AFFILIATE -> {
                                         AffiliateWorkspaceShell(
                                             principal = principal,
                                             currentDestination = currentDestination,
-                                            onNavigate = { dest -> navigationManager.navigateTo(dest, principal) }
+                                            onNavigate = { dest -> navigationManager.navigateTo(dest, principal) },
+                                            composition = composition
                                         )
                                     }
                                     UserRole.STAFF, UserRole.MANAGER, UserRole.ADMIN -> {
                                         InternalWorkspaceShell(
                                             principal = principal,
                                             currentDestination = currentDestination,
-                                            onNavigate = { dest -> navigationManager.navigateTo(dest, principal) }
+                                            onNavigate = { dest -> navigationManager.navigateTo(dest, principal) },
+                                            composition = composition
                                         )
                                     }
                                     else -> {

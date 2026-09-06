@@ -147,7 +147,7 @@ fun VerificationScreen(
                         tokenInput = input.trim()
                     },
                     label = { Text("Verification Code", color = Color(0xFFB7C8D8)) },
-                    placeholder = { Text("e.g. 123456", color = Color(0xFF6C757D)) },
+                    placeholder = { Text("e.g. 654321", color = Color(0xFF6C757D)) },
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = Color.White,

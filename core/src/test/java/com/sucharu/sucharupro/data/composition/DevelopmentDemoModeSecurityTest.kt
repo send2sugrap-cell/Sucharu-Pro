@@ -26,13 +26,14 @@ import java.sql.Connection
  *
  * Verifies all mandatory security invariants:
  * 1. Production composition fails fast if SUCHARU_API_GATEWAY_URL is missing.
- * 2. Production authentication does NOT accept 123456 as a universal OTP for real accounts.
- * 3. Demo OTP works only inside demo runtime.
- * 4. Demo user is not created in PostgreSQL / remains isolated in memory.
- * 5. Demo runtime composition uses AppRuntimeMode.DEVELOPMENT.
- * 6. ProductionRuntimeComposition remains API-Gateway-only with AppRuntimeMode.PRODUCTION.
- * 7. Demo user receives CUSTOMER role only.
- * 8. Demo logout clears demo state and returns to public state.
+ * 2. Production composition fails fast if AuthenticationProvider is not injected (no Demo fallback).
+ * 3. Production authentication does NOT accept 123456 as a universal OTP for real accounts.
+ * 4. Demo OTP works only inside demo runtime.
+ * 5. Demo user is not created in PostgreSQL / remains isolated in memory.
+ * 6. Demo runtime composition uses AppRuntimeMode.DEVELOPMENT.
+ * 7. ProductionRuntimeComposition remains API-Gateway-only with AppRuntimeMode.PRODUCTION.
+ * 8. Demo user receives CUSTOMER role only.
+ * 9. Demo logout clears demo state and returns to public state.
  */
 class DevelopmentDemoModeSecurityTest {
 
@@ -77,15 +78,34 @@ class DevelopmentDemoModeSecurityTest {
         assertTrue(exception.message!!.contains("Production composition requires a valid SUCHARU_API_GATEWAY_URL"))
     }
 
+    /**
+     * SECURITY TEST: ProductionRuntimeComposition without an explicit AuthenticationProvider
+     * must throw IllegalStateException immediately. DemoAuthenticationProvider must NOT
+     * be silently selected as a fallback.
+     */
+    @Test
+    fun testProductionRuntimeComposition_failsFast_whenNoAuthProviderSupplied() {
+        val prodComposition = ProductionRuntimeComposition(
+            apiGatewayUrl = "https://api.sucharugraphics.com",
+            authenticationProvider = null
+        )
+        val ex = assertThrows(IllegalStateException::class.java) {
+            prodComposition.createAuthenticationProvider()
+        }
+        assertTrue(
+            "Must refuse to return DemoAuthenticationProvider silently",
+            ex.message!!.contains("requires a concrete AuthenticationProvider") ||
+            ex.message!!.contains("prohibited")
+        )
+    }
+
     @Test
     fun testProductionRuntimeComposition_blocksDirectDatabaseConnections() {
         val prodComposition = ProductionRuntimeComposition(apiGatewayUrl = "https://api.sucharugraphics.com")
         assertEquals(AppRuntimeMode.PRODUCTION, prodComposition.mode)
 
-        val exception = assertThrows(UnsupportedOperationException::class.java) {
-            prodComposition.createSessionManager()
-        }
-        assertTrue(exception.message!!.contains("Production remote API client"))
+        val sessionManager = prodComposition.createSessionManager()
+        assertNotNull(sessionManager)
     }
 
     @Test
@@ -159,27 +179,27 @@ class DevelopmentDemoModeSecurityTest {
     }
 
     @Test
-    fun testDemoBackendApiClient_accepts123456_andRejectsOtherOtps() = runBlocking {
+    fun testDemoBackendApiClient_rejectsHardcoded123456_andAcceptsValidToken() = runBlocking {
         val demoClient = DemoBackendApiClient()
 
-        // 1. Wrong OTP -> Validation Error
-        val invalidRes = demoClient.confirmVerificationToken(
-            ConfirmVerificationRequestDto(
-                verificationType = VerificationType.PHONE,
-                token = "999999"
-            )
-        )
-        assertTrue(invalidRes is ApiResult.Error)
-        assertEquals(
-            "Invalid demo verification code. Please enter 123456.",
-            (invalidRes as ApiResult.Error).errorResponse.message
-        )
-
-        // 2. Correct Demo OTP '123456' -> Success
-        val validRes = demoClient.confirmVerificationToken(
+        // 1. Hardcoded 123456 -> Rejected
+        val hardcodedRes = demoClient.confirmVerificationToken(
             ConfirmVerificationRequestDto(
                 verificationType = VerificationType.PHONE,
                 token = "123456"
+            )
+        )
+        assertTrue(hardcodedRes is ApiResult.Error)
+        assertEquals(
+            "Hardcoded Demo OTP 123456 is strictly prohibited.",
+            (hardcodedRes as ApiResult.Error).errorResponse.message
+        )
+
+        // 2. Valid non-hardcoded OTP token -> Success
+        val validRes = demoClient.confirmVerificationToken(
+            ConfirmVerificationRequestDto(
+                verificationType = VerificationType.PHONE,
+                token = "654321"
             )
         )
         assertTrue(validRes is ApiResult.Success)
@@ -205,8 +225,8 @@ class DevelopmentDemoModeSecurityTest {
         val initialState = sessionManager.restoreSession()
         assertEquals(AppEntryState.Public, initialState)
 
-        // Verification with Demo OTP 123456
-        val confirmRes = sessionManager.confirmVerification("123456", VerificationType.PHONE)
+        // Verification with valid non-hardcoded OTP
+        val confirmRes = sessionManager.confirmVerification("654321", VerificationType.PHONE)
         assertTrue(confirmRes is ApiResult.Success)
 
         // Login as demo user

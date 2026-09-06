@@ -27,7 +27,11 @@ class AuthenticationService(
     private val passwordHistoryDataSource: AuthPasswordHistoryDataSource? = null,
     private val notificationProvider: IVerificationNotificationProvider = FakeVerificationNotificationProvider(),
     private val jwtProvider: JwtTokenProvider = JwtTokenProvider(),
-    private val config: AuthConfig = AuthConfig()
+    private val config: AuthConfig = AuthConfig(),
+    // Server-side only: injected by BackendApiServer/PostgresRuntimeComposition.
+    // MUST be null on Android — firebase-admin SDK is not on the Android runtime classpath.
+    // Passing null makes loginWithFirebase() unavailable, which is correct: it is a server endpoint.
+    private val firebaseTokenVerifier: IIdTokenVerifier? = null
 ) {
 
 
@@ -1001,5 +1005,151 @@ class AuthenticationService(
         } catch (_: Exception) {
             // Auditing failure should not crash core workflow, but is recorded
         }
+    }
+
+    /**
+     * Authenticates a user via verified Firebase Identity Token.
+     * Verifies token signature/claims, normalizes phone number, resolves canonical Sucharu account & tenant,
+     * creates new canonical account if necessary, and issues an authoritative Sucharu session.
+     */
+    suspend fun loginWithFirebase(
+        request: FirebaseAuthRequestDto,
+        correlationId: String,
+        clientIp: String? = null,
+        userAgent: String? = null
+    ): AuthResponseDto {
+        val verifier = firebaseTokenVerifier
+            ?: throw UnauthenticatedException(
+                "Firebase ID token verification is not available in this runtime context. " +
+                "This endpoint is server-side only and requires FirebaseTokenVerifier to be injected. " +
+                "Android clients must use FirebaseAuthenticationProvider instead."
+            )
+        val verifiedToken = verifier.verifyIdToken(request.idToken)
+
+        val projectId = request.requestedProjectId ?: "TENANT-001"
+        val now = System.currentTimeMillis()
+        val phone = verifiedToken.phoneNumber ?: ""
+        val normalizedPhone = com.sucharu.sucharupro.core.validation.CustomerValidation.normalizePhoneNumber(phone)
+
+        // 1. Existing Account Lookup
+        var account = if (normalizedPhone.isNotBlank()) {
+            accountDataSource.getAccount(projectId, normalizedPhone)
+        } else null
+
+        if (account == null) {
+            account = accountDataSource.getAccountById(projectId, verifiedToken.uid)
+        }
+
+        // 2. Account Resolution / Creation
+        if (account == null) {
+            val userId = "USR-FB-${UUID.randomUUID().toString().take(8)}"
+            val role = request.requestedRole ?: UserRole.CUSTOMER
+            val username = if (!verifiedToken.name.isNullOrBlank()) {
+                verifiedToken.name
+            } else if (normalizedPhone.isNotBlank()) {
+                "User_${normalizedPhone.takeLast(4)}"
+            } else {
+                "User_${userId.takeLast(6)}"
+            }
+
+            val hashedPassword = PasswordHasher.hashPassword(UUID.randomUUID().toString())
+
+            account = AuthAccount(
+                projectId = projectId,
+                userId = userId,
+                username = username,
+                email = verifiedToken.email,
+                phone = if (normalizedPhone.isNotBlank()) normalizedPhone else phone,
+                passwordHash = hashedPassword.hashHex,
+                passwordSalt = hashedPassword.saltHex,
+                role = role,
+                accountStatus = AccountStatus.ACTIVE,
+                createdAt = now,
+                updatedAt = now
+            )
+
+            accountDataSource.createAccount(account)
+
+            profileDataSource?.createOrUpdateProfile(
+                UserProfile(
+                    projectId = projectId,
+                    userId = userId,
+                    displayName = request.displayName ?: username,
+                    email = verifiedToken.email,
+                    phone = if (normalizedPhone.isNotBlank()) normalizedPhone else phone,
+                    phoneVerifiedAt = now,
+                    createdAt = now,
+                    updatedAt = now
+                )
+            )
+        }
+
+        if (!account.canAuthenticate) {
+            throw UnauthenticatedException("Account unavailable or restricted.")
+        }
+
+        // 3. Issue Session
+        val sessionId = "sess_${UUID.randomUUID()}"
+        val refreshToken = TokenGenerator.generateSecureToken(32)
+        val refreshTokenHash = TokenGenerator.hashToken(refreshToken)
+
+        val session = AuthSession(
+            sessionId = sessionId,
+            projectId = projectId,
+            userId = account.userId,
+            sessionStatus = SessionStatus.ACTIVE,
+            refreshTokenHash = refreshTokenHash,
+            deviceName = request.deviceName ?: "Mobile Device",
+            clientIp = clientIp,
+            userAgent = userAgent,
+            createdAt = now,
+            lastSeenAt = now,
+            expiresAt = now + (config.refreshTokenTtlSeconds * 1000L)
+        )
+
+        sessionDataSource.createSession(session)
+        accountDataSource.recordSuccessfulLogin(projectId, account.userId, now)
+
+        val permissions = resolvePermissionsForRole(account.role)
+        val profileEntity = profileDataSource?.getProfile(projectId, account.userId)
+        val userProfile = UserProfileDto(
+            userId = account.userId,
+            projectId = account.projectId,
+            username = account.username,
+            displayName = profileEntity?.displayName ?: account.username,
+            email = account.email ?: profileEntity?.email,
+            phone = account.phone ?: profileEntity?.phone,
+            phoneVerified = true,
+            role = account.role,
+            permissions = permissions,
+            accountStatus = account.accountStatus
+        )
+
+        val principal = userProfile.toAuthenticatedPrincipal()
+
+        val accessToken = jwtProvider.generateAccessToken(
+            principal = principal,
+            sessionId = sessionId
+        )
+
+        recordAudit(
+            projectId = projectId,
+            userId = account.userId,
+            sessionId = sessionId,
+            eventType = AuthEventType.AUTH_LOGIN_SUCCESS,
+            outcome = AuthEventOutcome.SUCCESS,
+            ipAddress = clientIp,
+            userAgent = userAgent,
+            correlationId = correlationId,
+            details = mapOf("provider" to "FIREBASE", "firebaseUid" to verifiedToken.uid)
+        )
+
+        return AuthResponseDto(
+            accessToken = accessToken,
+            refreshToken = refreshToken,
+            expiresInSeconds = config.accessTokenTtlSeconds,
+            user = userProfile,
+            sessionId = sessionId
+        )
     }
 }

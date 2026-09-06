@@ -352,3 +352,155 @@ fun PrintingCalculationRequestDto.toDomain(tenantId: String, projectId: String, 
         idempotencyKey = idempotencyKey
     )
 }
+
+fun CalculationBreakdownItemDto.toDomain(): CalculationBreakdownItem {
+    val diagCode = diagnosticCode?.let { try { DiagnosticCode.valueOf(it) } catch (_: Exception) { null } }
+    val cls = try { EstimateActualClassification.valueOf(classification) } catch (_: Exception) { EstimateActualClassification.ESTIMATED }
+    return CalculationBreakdownItem(
+        componentCode = componentCode,
+        description = description,
+        quantity = BigDecimal(quantity),
+        unit = unit,
+        unitRate = unitRate?.let { BigDecimal(it) },
+        calculatedAmount = calculatedAmount?.let { BigDecimal(it) },
+        classification = cls,
+        formulaReference = formulaReference,
+        diagnosticCode = diagCode
+    )
+}
+
+fun CalculationDiagnosticDto.toDomain(): CalculationDiagnostic {
+    val codeEnum = try { DiagnosticCode.valueOf(code) } catch (_: Exception) { DiagnosticCode.MISSING_MATERIAL_PRICE }
+    val sevEnum = try { DiagnosticSeverity.valueOf(severity) } catch (_: Exception) { DiagnosticSeverity.INFO }
+    return CalculationDiagnostic(
+        code = codeEnum,
+        severity = sevEnum,
+        message = message,
+        targetField = targetField,
+        suggestedRemediation = suggestedRemediation
+    )
+}
+
+fun MaterialRequirementDto.toDomain(): MaterialRequirementResult {
+    val statusEnum = try { CalculationStatus.valueOf(costStatus) } catch (_: Exception) { CalculationStatus.SUCCESSFUL }
+    return MaterialRequirementResult(
+        finishedItemsPerSheet = finishedItemsPerSheet,
+        cutDirection = cutDirection,
+        productiveSheetsRequired = productiveSheetsRequired,
+        wasteSheetsRequired = wasteSheetsRequired,
+        totalSheetsRequired = totalSheetsRequired,
+        totalReamsRequired = BigDecimal(totalReamsRequired),
+        totalWeightKg = totalWeightKg?.let { BigDecimal(it) },
+        estimatedMaterialCost = estimatedMaterialCost?.let { BigDecimal(it) },
+        costStatus = statusEnum,
+        missingPriceReason = missingPriceReason
+    )
+}
+
+fun PrintingRequirementDto.toDomain(): PrintingRequirementResult {
+    val statusEnum = try { CalculationStatus.valueOf(costStatus) } catch (_: Exception) { CalculationStatus.SUCCESSFUL }
+    return PrintingRequirementResult(
+        totalImpressions = totalImpressions,
+        totalPasses = totalPasses,
+        plateCount = plateCount,
+        estimatedPrintingCost = estimatedPrintingCost?.let { BigDecimal(it) },
+        estimatedPlateCost = estimatedPlateCost?.let { BigDecimal(it) },
+        costStatus = statusEnum,
+        missingRateReason = missingRateReason
+    )
+}
+
+fun FinishingRequirementDto.toDomain(): FinishingRequirementResult {
+    val statusEnum = try { CalculationStatus.valueOf(costStatus) } catch (_: Exception) { CalculationStatus.SUCCESSFUL }
+    return FinishingRequirementResult(
+        operations = operations.map { it.toDomain() },
+        totalEstimatedFinishingCost = totalEstimatedFinishingCost?.let { BigDecimal(it) },
+        costStatus = statusEnum
+    )
+}
+
+fun NormalizedSpecificationDto.toDomain(): NormalizedPrintingSpecification {
+    val pType = try { ProductType.valueOf(productType) } catch (_: Exception) { ProductType.PRINTING_JOB }
+    val sType = try { PaperStockType.valueOf(stockType) } catch (_: Exception) { PaperStockType.ART_PAPER }
+    val prcType = try { PrintingProcessType.valueOf(processType) } catch (_: Exception) { PrintingProcessType.OFFSET }
+    val sideOpt = try { PrintingSideOption.valueOf(sides) } catch (_: Exception) { PrintingSideOption.SINGLE_SIDED }
+    val cMode = try { ColorMode.valueOf(colorMode) } catch (_: Exception) { ColorMode.CMYK_FOUR_COLOR }
+    val qUnit = try { QuantityUnit.valueOf(quantityUnit) } catch (_: Exception) { QuantityUnit.PIECES }
+
+    val finDim = PrintingDimension(BigDecimal("210.0000"), BigDecimal("297.0000"), MeasurementUnit.MILLIMETERS)
+    val normDim = PrintingDimension(BigDecimal("210.0000"), BigDecimal("297.0000"), MeasurementUnit.MILLIMETERS)
+
+    return NormalizedPrintingSpecification(
+        jobTitle = jobTitle,
+        productType = pType,
+        finishedDimension = finDim,
+        normalizedDimensionMm = normDim,
+        quantity = QuantitySpecification(orderedQuantity, qUnit),
+        material = PaperMaterialSpecification(
+            materialName = materialName,
+            stockType = sType,
+            gsm = gsm?.let { BigDecimal(it) }
+        ),
+        processType = prcType,
+        sides = sideOpt,
+        color = ColorSpecification(cMode, totalColorsCount, 0, 0),
+        waste = WasteAllowanceSpecification()
+    )
+}
+
+fun PrintingCalculationResponseDto.toDomain(): PrintingCalculationResult {
+    val statusEnum = try { CalculationStatus.valueOf(status) } catch (_: Exception) { CalculationStatus.SUCCESSFUL }
+    val clsEnum = try { EstimateActualClassification.valueOf(classification) } catch (_: Exception) { EstimateActualClassification.ESTIMATED }
+
+    return PrintingCalculationResult(
+        calculationId = calculationId,
+        tenantId = tenantId,
+        projectId = projectId,
+        requestFingerprint = requestFingerprint,
+        requestedAt = requestedAt,
+        calculatedAt = calculatedAt,
+        status = statusEnum,
+        classification = clsEnum,
+        normalizedSpecification = normalizedSpecification.toDomain(),
+        materialRequirement = materialRequirement.toDomain(),
+        printingRequirement = printingRequirement.toDomain(),
+        finishingRequirement = finishingRequirement.toDomain(),
+        breakdownItems = breakdownItems.map { it.toDomain() },
+        totalEstimatedCost = totalEstimatedCost?.let { BigDecimal(it) },
+        estimatedUnitCost = estimatedUnitCost?.let { BigDecimal(it) },
+        currency = currency,
+        diagnostics = diagnostics.map { it.toDomain() },
+        integrityHash = integrityHash,
+        calculationVersion = calculationVersion
+    )
+}
+
+fun Module17Step01PrintingCalculatorHandoffContractDto.toDomain(): Module17Step01PrintingCalculatorHandoffContract {
+    val statusEnum = try { CalculationStatus.valueOf(calculationStatus) } catch (_: Exception) { CalculationStatus.SUCCESSFUL }
+    val clsEnum = try { EstimateActualClassification.valueOf(classification) } catch (_: Exception) { EstimateActualClassification.ESTIMATED }
+
+    return Module17Step01PrintingCalculatorHandoffContract(
+        handoffId = handoffId,
+        calculationId = calculationId,
+        tenantId = tenantId,
+        projectId = projectId,
+        generatedAt = generatedAt,
+        contractVersion = contractVersion,
+        requestFingerprint = requestFingerprint,
+        calculationStatus = statusEnum,
+        classification = clsEnum,
+        jobTitle = jobTitle,
+        orderedQuantity = orderedQuantity,
+        finishedDimensionsMm = finishedDimensionsMm,
+        substrateDetails = substrateDetails,
+        totalSheetsRequired = totalSheetsRequired,
+        totalImpressions = totalImpressions,
+        totalEstimatedCost = totalEstimatedCost?.let { BigDecimal(it) },
+        estimatedUnitCost = estimatedUnitCost?.let { BigDecimal(it) },
+        currency = currency,
+        diagnosticsSummary = diagnosticsSummary,
+        breakdownSummary = breakdownSummary.map { it.toDomain() },
+        isReadOnly = isReadOnly,
+        handoffIntegrityHash = handoffIntegrityHash
+    )
+}

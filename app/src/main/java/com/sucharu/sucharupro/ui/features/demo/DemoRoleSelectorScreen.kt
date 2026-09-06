@@ -264,7 +264,7 @@ private fun DemoRoleCard(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "Demo OTP: 123456",
+                    text = "Phone Auth Active",
                     color = Color(0xFF00B4D8),
                     fontSize = 11.sp,
                     fontWeight = FontWeight.SemiBold

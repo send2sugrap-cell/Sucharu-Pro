@@ -222,6 +222,16 @@ class BackendRouter(
                     HttpResponse(200, ApiSuccessResponse(data = resp, correlationId = correlationId), correlationId)
                 }
 
+                request.path == "/api/v1/auth/firebase" && request.method == "POST" -> {
+                    val fbReq = parseFirebaseAuthRequest(request.body)
+                    val userAgent = request.headers["User-Agent"] ?: request.headers["user-agent"]
+                    if (authService == null) {
+                        throw UnauthenticatedException("Authentication service is not configured.")
+                    }
+                    val resp = authService.loginWithFirebase(fbReq, correlationId, request.clientIp, userAgent)
+                    HttpResponse(200, ApiSuccessResponse(data = resp, correlationId = correlationId), correlationId)
+                }
+
                 request.path == "/api/v1/auth/refresh" && request.method == "POST" -> {
                     val refreshReq = request.body as? RefreshRequestDto
                         ?: throw ValidationException("Request body must be a valid RefreshRequestDto.")
@@ -425,6 +435,43 @@ class BackendRouter(
                     val principal = securityContext.authenticate(request.authorizationHeader)
                     val profile = useCases.getCustomerProfile(principal)
                     HttpResponse(200, ApiSuccessResponse(data = profile, correlationId = correlationId), correlationId)
+                }
+
+                (request.path == "/api/v1/customers" || request.path.startsWith("/api/v1/customers?")) && request.method == "GET" -> {
+                    val principal = securityContext.authenticate(request.authorizationHeader)
+                    val list = useCases.listCustomers(principal)
+                    HttpResponse(200, ApiSuccessResponse(data = list, correlationId = correlationId), correlationId)
+                }
+
+                request.path == "/api/v1/customers" && request.method == "POST" -> {
+                    val principal = securityContext.authenticate(request.authorizationHeader)
+                    val reqDto = parseCreateCustomerRequest(request.body)
+                    val created = useCases.createCustomer(principal, reqDto, request.idempotencyKey)
+                    HttpResponse(201, ApiSuccessResponse(data = created, correlationId = correlationId), correlationId)
+                }
+
+                request.path.startsWith("/api/v1/customers/") && request.path.endsWith("/status") && request.method == "POST" -> {
+                    val principal = securityContext.authenticate(request.authorizationHeader)
+                    val customerId = request.path.substringAfter("/api/v1/customers/").substringBefore("/status")
+                    val statusMap = request.body as? Map<String, Any?>
+                    val status = (statusMap?.get("status") as? String) ?: (request.body as? SetCustomerStatusRequestDto)?.status ?: "ACTIVE"
+                    val updated = useCases.setCustomerStatus(principal, customerId, status)
+                    HttpResponse(200, ApiSuccessResponse(data = updated, correlationId = correlationId), correlationId)
+                }
+
+                request.path.startsWith("/api/v1/customers/") && (request.method == "PUT" || request.method == "PATCH") && !request.path.substringAfter("/api/v1/customers/").contains("/") -> {
+                    val principal = securityContext.authenticate(request.authorizationHeader)
+                    val customerId = request.path.substringAfter("/api/v1/customers/")
+                    val reqDto = parseUpdateCustomerRequest(request.body)
+                    val updated = useCases.updateCustomer(principal, customerId, reqDto)
+                    HttpResponse(200, ApiSuccessResponse(data = updated, correlationId = correlationId), correlationId)
+                }
+
+                request.path.startsWith("/api/v1/customers/") && request.method == "GET" && !request.path.substringAfter("/api/v1/customers/").contains("/") -> {
+                    val principal = securityContext.authenticate(request.authorizationHeader)
+                    val customerId = request.path.substringAfter("/api/v1/customers/")
+                    val customer = useCases.getCustomerById(principal, customerId)
+                    HttpResponse(200, ApiSuccessResponse(data = customer, correlationId = correlationId), correlationId)
                 }
 
                 request.path == "/api/v1/customer/orders" && request.method == "GET" -> {
@@ -15084,12 +15131,94 @@ class BackendRouter(
             HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
         }
 
+        // =========================================================================
+        // PRINTING CALCULATOR ROUTES (MODULE 17 STEP 01)
+        // =========================================================================
+
+        request.path == "/api/v1/printing-calculator/calculations" && request.method == "POST" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val reqDto = parsePrintingCalculationRequest(request.body)
+            val res = useCases.calculatePrintingEstimate(principal, reqDto)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path == "/api/v1/printing-calculator/validate" && request.method == "POST" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val reqDto = parsePrintingCalculationRequest(request.body)
+            val res = useCases.validatePrintingCalculationRequest(principal, reqDto)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        (request.path == "/api/v1/printing-calculator/calculations" || request.path.startsWith("/api/v1/printing-calculator/calculations?")) && request.method == "GET" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val res = useCases.listPrintingCalculations(principal)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/printing-calculator/calculations/[^/]+/breakdown$")) && request.method == "GET" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val calcId = request.path.removePrefix("/api/v1/printing-calculator/calculations/").removeSuffix("/breakdown")
+            val res = useCases.getPrintingCalculationBreakdown(principal, calcId)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/printing-calculator/calculations/[^/]+/handoff$")) && request.method == "GET" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val calcId = request.path.removePrefix("/api/v1/printing-calculator/calculations/").removeSuffix("/handoff")
+            val res = useCases.exportPrintingCalculationHandoffContract(principal, calcId)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/printing-calculator/calculations/[^/]+$")) && request.method == "GET" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val calcId = request.path.removePrefix("/api/v1/printing-calculator/calculations/")
+            val res = useCases.getPrintingCalculationById(principal, calcId)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
         else -> null
     }
 }
 
 @Suppress("UNCHECKED_CAST")
+private fun parseCreateCustomerRequest(body: Any?): CreateCustomerRequestDto {
+    if (body is CreateCustomerRequestDto) return body
+    val map = body as? Map<String, Any?> ?: throw ValidationException("Invalid CreateCustomerRequestDto body.")
+    return CreateCustomerRequestDto(
+        displayName = (map["displayName"] as? String) ?: throw ValidationException("Missing displayName"),
+        customerType = (map["customerType"] as? String) ?: "INDIVIDUAL",
+        primaryPhone = (map["primaryPhone"] as? String) ?: throw ValidationException("Missing primaryPhone"),
+        alternatePhone = map["alternatePhone"] as? String,
+        email = map["email"] as? String,
+        contactPersonName = map["contactPersonName"] as? String,
+        creditLimit = (map["creditLimit"] as? Number)?.let { BigDecimal(it.toString()) } ?: (map["creditLimit"] as? String)?.let { BigDecimal(it) },
+        paymentTermDays = (map["paymentTermDays"] as? Number)?.toInt(),
+        notes = map["notes"] as? String,
+        idempotencyKey = map["idempotencyKey"] as? String
+    )
+}
+
+@Suppress("UNCHECKED_CAST")
+private fun parseUpdateCustomerRequest(body: Any?): UpdateCustomerRequestDto {
+    if (body is UpdateCustomerRequestDto) return body
+    val map = body as? Map<String, Any?> ?: throw ValidationException("Invalid UpdateCustomerRequestDto body.")
+    return UpdateCustomerRequestDto(
+        displayName = (map["displayName"] as? String) ?: throw ValidationException("Missing displayName"),
+        customerType = map["customerType"] as? String,
+        status = map["status"] as? String,
+        primaryPhone = (map["primaryPhone"] as? String) ?: throw ValidationException("Missing primaryPhone"),
+        alternatePhone = map["alternatePhone"] as? String,
+        email = map["email"] as? String,
+        contactPersonName = map["contactPersonName"] as? String,
+        creditLimit = (map["creditLimit"] as? Number)?.let { BigDecimal(it.toString()) } ?: (map["creditLimit"] as? String)?.let { BigDecimal(it) },
+        paymentTermDays = (map["paymentTermDays"] as? Number)?.toInt(),
+        notes = map["notes"] as? String
+    )
+}
+
+@Suppress("UNCHECKED_CAST")
 private fun parsePrintingCalculationRequest(body: Any?): com.sucharu.sucharupro.data.api.model.printingcalculator.PrintingCalculationRequestDto {
+    if (body is com.sucharu.sucharupro.data.api.model.printingcalculator.PrintingCalculationRequestDto) return body
     val map = body as? Map<String, Any?> ?: return com.sucharu.sucharupro.data.api.model.printingcalculator.PrintingCalculationRequestDto(
         quantity = 1000L,
         finishedWidth = "210",
@@ -16591,6 +16720,26 @@ private fun parseAdminLifecycleActionRequest(body: Any?): com.sucharu.sucharupro
             reason = map["reason"]?.toString() ?: "Administrative Command Action"
         )
     }
+}
+
+private fun parseFirebaseAuthRequest(body: Any?): FirebaseAuthRequestDto {
+    if (body is FirebaseAuthRequestDto) return body
+    if (body is Map<*, *>) {
+        val token = body["idToken"] as? String ?: throw ValidationException("Missing 'idToken' parameter.")
+        val displayName = body["displayName"] as? String
+        val roleStr = body["requestedRole"] as? String
+        val role = roleStr?.let { try { UserRole.valueOf(it.uppercase()) } catch (_: Exception) { null } }
+        val deviceName = body["deviceName"] as? String
+        val requestedProjectId = body["requestedProjectId"] as? String
+        return FirebaseAuthRequestDto(
+            idToken = token,
+            displayName = displayName,
+            requestedRole = role,
+            deviceName = deviceName,
+            requestedProjectId = requestedProjectId
+        )
+    }
+    throw ValidationException("Request body must be a valid FirebaseAuthRequestDto.")
 }
 
 

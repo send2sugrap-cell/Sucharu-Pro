@@ -413,4 +413,16 @@ data class PasswordRecoveryResponseDto(
     val message: String = "If the account exists, recovery instructions have been sent."
 )
 
+/**
+ * Firebase Identity Token Authentication Request DTO.
+ */
+data class FirebaseAuthRequestDto(
+    val idToken: String,
+    val displayName: String? = null,
+    val requestedRole: UserRole? = null,
+    val deviceName: String? = null,
+    val requestedProjectId: String? = null
+)
+
+
 

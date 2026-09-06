@@ -83,3 +83,98 @@ data class CreateOrderRequestDto(
     val notes: String? = null,
     val idempotencyKey: String? = null
 )
+
+/**
+ * Full Customer DTO representation for administrative and management endpoints (Phase 04 Step 01).
+ */
+data class CustomerDto(
+    val customerId: String,
+    val customerCode: String,
+    val displayName: String,
+    val customerType: String = "INDIVIDUAL",
+    val status: String = "ACTIVE",
+    val primaryPhone: String,
+    val alternatePhone: String? = null,
+    val email: String? = null,
+    val contactPersonName: String? = null,
+    val creditLimit: BigDecimal = BigDecimal.ZERO,
+    val paymentTermDays: Int = 0,
+    val notes: String? = null,
+    val createdAt: String? = null,
+    val updatedAt: String? = null
+)
+
+/**
+ * Customer creation request DTO.
+ */
+data class CreateCustomerRequestDto(
+    val displayName: String,
+    val customerType: String = "INDIVIDUAL",
+    val primaryPhone: String,
+    val alternatePhone: String? = null,
+    val email: String? = null,
+    val contactPersonName: String? = null,
+    val creditLimit: BigDecimal? = null,
+    val paymentTermDays: Int? = null,
+    val notes: String? = null,
+    val idempotencyKey: String? = null
+)
+
+/**
+ * Customer update request DTO.
+ */
+data class UpdateCustomerRequestDto(
+    val displayName: String,
+    val customerType: String? = null,
+    val status: String? = null,
+    val primaryPhone: String,
+    val alternatePhone: String? = null,
+    val email: String? = null,
+    val contactPersonName: String? = null,
+    val creditLimit: BigDecimal? = null,
+    val paymentTermDays: Int? = null,
+    val notes: String? = null
+)
+
+/**
+ * Customer status change request DTO.
+ */
+data class SetCustomerStatusRequestDto(
+    val status: String
+)
+
+fun com.sucharu.sucharupro.domain.model.customer.Customer.toDto(): CustomerDto = CustomerDto(
+    customerId = customerId,
+    customerCode = customerCode,
+    displayName = displayName,
+    customerType = customerType.name,
+    status = status.name,
+    primaryPhone = primaryPhone,
+    alternatePhone = alternatePhone,
+    email = email,
+    contactPersonName = contactPersonName,
+    creditLimit = creditProfile.creditLimit.amount,
+    paymentTermDays = creditProfile.paymentTermDays,
+    notes = notes,
+    createdAt = createdAt,
+    updatedAt = updatedAt
+)
+
+fun CustomerDto.toDomain(): com.sucharu.sucharupro.domain.model.customer.Customer = com.sucharu.sucharupro.domain.model.customer.Customer(
+    customerId = customerId,
+    customerCode = customerCode,
+    displayName = displayName,
+    customerType = try { com.sucharu.sucharupro.domain.model.customer.CustomerType.valueOf(customerType.uppercase()) } catch (_: Exception) { com.sucharu.sucharupro.domain.model.customer.CustomerType.INDIVIDUAL },
+    status = try { com.sucharu.sucharupro.domain.model.customer.CustomerStatusType.valueOf(status.uppercase()) } catch (_: Exception) { com.sucharu.sucharupro.domain.model.customer.CustomerStatusType.ACTIVE },
+    primaryPhone = primaryPhone,
+    alternatePhone = alternatePhone,
+    email = email,
+    contactPersonName = contactPersonName,
+    creditProfile = com.sucharu.sucharupro.domain.model.customer.CustomerCreditProfile(
+        creditLimit = com.sucharu.sucharupro.domain.model.common.Money(creditLimit),
+        paymentTermDays = paymentTermDays
+    ),
+    notes = notes,
+    createdAt = createdAt ?: "",
+    updatedAt = updatedAt ?: ""
+)

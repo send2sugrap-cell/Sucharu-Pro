@@ -14,14 +14,17 @@ import androidx.compose.ui.unit.sp
 import com.sucharu.sucharupro.data.api.model.AuthenticatedPrincipal
 import com.sucharu.sucharupro.ui.navigation.AppDestination
 
+import com.sucharu.sucharupro.data.composition.AppRuntimeComposition
+
 /**
- * Mobile-First Affiliate Workspace Navigation Shell (INFRA-03 Step 06).
+ * Mobile-First Affiliate Workspace Navigation Shell (INFRA-03 Step 06 & INFRA-05 Step 03).
  */
 @Composable
 fun AffiliateWorkspaceShell(
     principal: AuthenticatedPrincipal,
     currentDestination: AppDestination,
     onNavigate: (AppDestination) -> Unit,
+    composition: AppRuntimeComposition? = null,
     modifier: Modifier = Modifier
 ) {
     Column(

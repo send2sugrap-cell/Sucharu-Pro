@@ -1,7 +1,6 @@
 package com.sucharu.sucharupro.data.composition
 
-import com.sucharu.sucharupro.data.api.client.DemoBackendApiClient
-import com.sucharu.sucharupro.data.api.client.DirectBackendApiClient
+import com.sucharu.sucharupro.data.api.client.*
 import com.sucharu.sucharupro.data.api.server.BackendApiServer
 import com.sucharu.sucharupro.data.api.server.BackendSecurityContext
 import com.sucharu.sucharupro.data.api.model.UserRole
@@ -17,6 +16,19 @@ import com.sucharu.sucharupro.data.persistence.postgres.PostgresRepositoryFactor
 import kotlinx.coroutines.runBlocking
 import java.sql.Connection
 
+import com.sucharu.sucharupro.data.datasource.DemoOrderFixtures
+import com.sucharu.sucharupro.data.datasource.FakeOrderDataSource
+import com.sucharu.sucharupro.data.persistence.postgres.PostgresAffiliateDataSource
+import com.sucharu.sucharupro.data.persistence.postgres.PostgresCustomerDataSource
+import com.sucharu.sucharupro.data.persistence.postgres.PostgresOrderDataSource
+import com.sucharu.sucharupro.data.repository.*
+import com.sucharu.sucharupro.data.repository.affiliate.AffiliateRepositoryImpl
+import com.sucharu.sucharupro.data.repository.affiliate.HttpAffiliateRepository
+import com.sucharu.sucharupro.domain.repository.CustomerRepository
+import com.sucharu.sucharupro.domain.repository.DashboardRepository
+import com.sucharu.sucharupro.domain.repository.OrderRepository
+import com.sucharu.sucharupro.domain.repository.affiliate.AffiliateRepository
+
 /**
  * Global Application Runtime Modes (INFRA-01 Step 01).
  */
@@ -26,7 +38,7 @@ enum class AppRuntimeMode {
 }
 
 /**
- * Unified Composition root for Application Shell (INFRA-01 Step 01).
+ * Unified Composition root for Application Shell (INFRA-01 Step 01 & INFRA-05 Step 03).
  *
  * Guarantees that the Android application interacts with the backend
  * exclusively via the secure API boundary in production.
@@ -34,6 +46,13 @@ enum class AppRuntimeMode {
 interface AppRuntimeComposition {
     val mode: AppRuntimeMode
     fun createSessionManager(): AuthenticationSessionManager
+    fun createAuthenticationProvider(): com.sucharu.sucharupro.data.auth.provider.AuthenticationProvider
+
+    val customerRepository: CustomerRepository
+    val orderRepository: OrderRepository
+    val affiliateRepository: AffiliateRepository
+    val dashboardRepository: DashboardRepository
+    val printingCalculatorService: com.sucharu.sucharupro.domain.service.printingcalculator.PrintingCalculatorService
 }
 
 /**
@@ -83,7 +102,8 @@ class PostgresRuntimeComposition(
             passwordHistoryDataSource = pwdHistDs,
             notificationProvider = notifProvider,
             jwtProvider = jwtProvider,
-            config = authConfig
+            config = authConfig,
+            firebaseTokenVerifier = FirebaseTokenVerifier()
         )
 
         val identityService = UserIdentityService(
@@ -110,20 +130,73 @@ class PostgresRuntimeComposition(
         val client = DirectBackendApiClient(server = server)
         return AuthenticationSessionManager(client = client)
     }
+
+    override fun createAuthenticationProvider(): com.sucharu.sucharupro.data.auth.provider.AuthenticationProvider {
+        // PostgresRuntimeComposition is a server-side / integration-test only composition.
+        // It has no Android Activity context and therefore cannot use FirebaseAuthenticationProvider.
+        // Any caller requiring an AuthenticationProvider must supply one explicitly.
+        // Returning DemoAuthenticationProvider is PROHIBITED — it would allow unverified authentication.
+        throw IllegalStateException(
+            "PostgresRuntimeComposition does not supply an AuthenticationProvider. " +
+            "This composition is for server-side and integration test use only. " +
+            "Inject a concrete AuthenticationProvider at the call site."
+        )
+    }
+
+    override val customerRepository: CustomerRepository by lazy {
+        val tm = DefaultPostgresTransactionManager(connectionProvider)
+        CustomerRepositoryImpl(PostgresCustomerDataSource(tm, "TENANT-001"))
+    }
+
+    override val orderRepository: OrderRepository by lazy {
+        val tm = DefaultPostgresTransactionManager(connectionProvider)
+        OrderRepositoryImpl(PostgresOrderDataSource(tm, "TENANT-001"))
+    }
+
+    override val affiliateRepository: AffiliateRepository by lazy {
+        val tm = DefaultPostgresTransactionManager(connectionProvider)
+        AffiliateRepositoryImpl(PostgresAffiliateDataSource(tm))
+    }
+
+    override val dashboardRepository: DashboardRepository by lazy {
+        FakeDashboardRepository()
+    }
+
+    override val printingCalculatorService: com.sucharu.sucharupro.domain.service.printingcalculator.PrintingCalculatorService by lazy {
+        val tm = DefaultPostgresTransactionManager(connectionProvider)
+        com.sucharu.sucharupro.domain.service.printingcalculator.PrintingCalculatorServiceImpl(
+            com.sucharu.sucharupro.data.repository.printingcalculator.PrintingCalculatorRepositoryImpl(
+                com.sucharu.sucharupro.data.persistence.postgres.PostgresPrintingCalculatorDataSource(tm)
+            )
+        )
+    }
 }
 
 /**
- * Canonical Production Runtime Composition for Android (INFRA-05 Step 01).
+ * Canonical Production Runtime Composition for Android (INFRA-05 Step 01 & Step 03).
  *
  * Enforces strict network isolation. Direct PostgreSQL connectivity or
  * in-process server execution is strictly prohibited in this mode.
  */
 class ProductionRuntimeComposition(
     private val apiGatewayUrl: String? = System.getenv("SUCHARU_API_GATEWAY_URL")
-        ?: System.getProperty("sucharu.api.gateway.url")
+        ?: System.getProperty("sucharu.api.gateway.url"),
+    private val tokenStorage: AuthTokenStorage = InMemoryAuthTokenStorage(),
+    private val authenticationProvider: com.sucharu.sucharupro.data.auth.provider.AuthenticationProvider? = null
 ) : AppRuntimeComposition {
 
     override val mode: AppRuntimeMode = AppRuntimeMode.PRODUCTION
+
+    val client: BackendApiClient by lazy {
+        val endpoint = apiGatewayUrl
+        if (endpoint.isNullOrBlank()) {
+            throw IllegalStateException(
+                "Production composition requires a valid SUCHARU_API_GATEWAY_URL. " +
+                "Direct database connection from the Android client is prohibited."
+            )
+        }
+        HttpBackendApiClient(baseUrl = endpoint, tokenStorage = tokenStorage)
+    }
 
     /**
      * Initializes the authenticated session manager via the secure HTTPS API Gateway.
@@ -132,20 +205,36 @@ class ProductionRuntimeComposition(
      * No fallback to local databases is permitted.
      */
     override fun createSessionManager(): AuthenticationSessionManager {
-        val endpoint = apiGatewayUrl
-        if (endpoint.isNullOrBlank()) {
-            throw IllegalStateException(
-                "Production composition requires a valid SUCHARU_API_GATEWAY_URL. " +
-                "Direct database connection from the Android client is prohibited."
-            )
-        }
+        return AuthenticationSessionManager(client = client)
+    }
 
-        // Implementation of real remote API client (Ktor/Retrofit) is scheduled for INFRA-05 Step 01.
-        // This ensures the build fails if attempting to run production without the network boundary.
-        throw UnsupportedOperationException(
-            "Production remote API client (INFRA-05) not yet implemented. " +
-            "Connect to $endpoint via a real HTTPS transport is required."
-        )
+    override fun createAuthenticationProvider(): com.sucharu.sucharupro.data.auth.provider.AuthenticationProvider {
+        return authenticationProvider
+            ?: throw IllegalStateException(
+                "ProductionRuntimeComposition requires a concrete AuthenticationProvider. " +
+                "Pass FirebaseAuthenticationProvider(activity) from MainActivity. " +
+                "Silent fallback to DemoAuthenticationProvider is strictly prohibited in production."
+            )
+    }
+
+    override val customerRepository: CustomerRepository by lazy {
+        HttpCustomerRepository(client = client)
+    }
+
+    override val orderRepository: OrderRepository by lazy {
+        HttpOrderRepository(client = client)
+    }
+
+    override val affiliateRepository: AffiliateRepository by lazy {
+        HttpAffiliateRepository(client = client)
+    }
+
+    override val dashboardRepository: DashboardRepository by lazy {
+        HttpDashboardRepository(client = client)
+    }
+
+    override val printingCalculatorService: com.sucharu.sucharupro.domain.service.printingcalculator.PrintingCalculatorService by lazy {
+        com.sucharu.sucharupro.data.repository.printingcalculator.HttpPrintingCalculatorService(client = client)
     }
 }
 
@@ -159,13 +248,13 @@ class ProductionRuntimeComposition(
  * 1. MUST NOT connect to PostgreSQL or hold DB credentials.
  * 2. MUST NOT invoke production API Gateway or live SMS services.
  * 3. MUST NOT affect or mutate production authentication accounts.
- * 4. Deterministic demo OTP: '123456' accepted ONLY inside this isolated demo runtime.
+ * 4. Real Firebase OTP or session-based provider required across all runtimes.
  */
 class DevelopmentDemoRuntimeComposition(
     val initialRole: DemoRole = DemoRole.CUSTOMER,
     val demoTenantId: String = "TENANT-DEMO-001",
     val demoProjectId: String = "PROJECT-DEMO-001",
-    val demoOtp: String = "123456"
+    val authenticationProvider: com.sucharu.sucharupro.data.auth.provider.AuthenticationProvider? = null
 ) : AppRuntimeComposition {
 
     override val mode: AppRuntimeMode = AppRuntimeMode.DEVELOPMENT
@@ -174,13 +263,41 @@ class DevelopmentDemoRuntimeComposition(
         DemoBackendApiClient(
             initialRole = initialRole,
             demoTenantId = demoTenantId,
-            demoProjectId = demoProjectId,
-            demoOtp = demoOtp
+            demoProjectId = demoProjectId
         )
     }
 
     override fun createSessionManager(): AuthenticationSessionManager {
         return AuthenticationSessionManager(client = demoClient)
     }
-}
 
+    override fun createAuthenticationProvider(): com.sucharu.sucharupro.data.auth.provider.AuthenticationProvider {
+        return authenticationProvider
+            ?: throw IllegalStateException(
+                "DevelopmentDemoRuntimeComposition requires an explicit AuthenticationProvider. " +
+                "Pass FirebaseAuthenticationProvider(activity) from the host Activity. " +
+                "Silent fallback to DemoAuthenticationProvider is prohibited: " +
+                "it would allow real runtime users to bypass Firebase authentication."
+            )
+    }
+
+    override val customerRepository: CustomerRepository by lazy {
+        FakeCustomerRepository()
+    }
+
+    override val orderRepository: OrderRepository by lazy {
+        OrderRepositoryImpl(FakeOrderDataSource(DemoOrderFixtures.demoOrders()))
+    }
+
+    override val affiliateRepository: AffiliateRepository by lazy {
+        HttpAffiliateRepository(client = demoClient)
+    }
+
+    override val dashboardRepository: DashboardRepository by lazy {
+        HttpDashboardRepository(client = demoClient)
+    }
+
+    override val printingCalculatorService: com.sucharu.sucharupro.domain.service.printingcalculator.PrintingCalculatorService by lazy {
+        com.sucharu.sucharupro.data.repository.printingcalculator.HttpPrintingCalculatorService(client = demoClient)
+    }
+}
