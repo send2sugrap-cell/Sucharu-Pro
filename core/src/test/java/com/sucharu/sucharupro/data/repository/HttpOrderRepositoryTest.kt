@@ -80,6 +80,8 @@ class HttpOrderRepositoryTest {
     }
 
     private class StubBackendApiClient : BackendApiClient {
+        override suspend fun createProductionJobFromOrder(orderId: String): ApiResult<com.sucharu.sucharupro.data.api.model.productionexecution.ProductionJobExecutionDto> = TODO()
+        override suspend fun getProductionJobByOrder(orderId: String): ApiResult<List<com.sucharu.sucharupro.data.api.model.productionexecution.ProductionJobExecutionDto>> = TODO()
         override suspend fun getCustomerOrders(): ApiResult<List<CustomerOrderSummaryDto>> {
             return ApiResult.Success(
                 listOf(

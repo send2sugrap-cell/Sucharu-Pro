@@ -153,11 +153,20 @@ open class PostgresRepositoryFactory(
         return CustomerRepositoryImpl(ds)
     }
 
-    fun createOrderRepository(
+    open fun createOrderRepository(
         tenantId: String = defaultTenantId
     ): OrderRepository {
         val ds = PostgresOrderDataSource(transactionManager, tenantId)
         return OrderRepositoryImpl(ds)
+    }
+
+    open fun createOrderProductionIntegrationService(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.domain.service.production.OrderProductionIntegrationService {
+        return com.sucharu.sucharupro.domain.service.production.OrderProductionIntegrationServiceImpl(
+            productionExecutionService = createProductionExecutionService(tenantId),
+            orderRepository = createOrderRepository(tenantId)
+        )
     }
 
     open fun createVendorRepository(

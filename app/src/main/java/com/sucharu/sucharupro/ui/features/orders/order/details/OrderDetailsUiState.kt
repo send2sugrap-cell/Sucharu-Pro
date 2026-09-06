@@ -14,6 +14,7 @@ sealed interface OrderDetailsUiState {
     data class Success(
         val order: Order,
         val handoff: com.sucharu.sucharupro.domain.model.handoff.OrderJobHandoff? = null,
+        val productionJob: com.sucharu.sucharupro.domain.model.job.ProductionJob? = null,
         val isActionInProgress: Boolean = false,
         val actionMessage: String? = null,
         val actionError: String? = null

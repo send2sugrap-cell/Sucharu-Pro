@@ -107,6 +107,8 @@ class HttpCustomerRepositoryTest {
     }
 
     private class StubBackendApiClient : BackendApiClient {
+        override suspend fun createProductionJobFromOrder(orderId: String): ApiResult<com.sucharu.sucharupro.data.api.model.productionexecution.ProductionJobExecutionDto> = TODO()
+        override suspend fun getProductionJobByOrder(orderId: String): ApiResult<List<com.sucharu.sucharupro.data.api.model.productionexecution.ProductionJobExecutionDto>> = TODO()
         override suspend fun loginWithFirebase(request: FirebaseAuthRequestDto): ApiResult<AuthResponseDto> = TODO()
         override suspend fun register(request: RegisterRequestDto): ApiResult<RegisterResponseDto> {
             return ApiResult.Success(

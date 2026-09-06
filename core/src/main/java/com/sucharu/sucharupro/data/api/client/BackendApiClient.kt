@@ -47,6 +47,8 @@ interface BackendApiClient {
     suspend fun getPrintingCalculationBreakdown(calculationId: String): ApiResult<List<com.sucharu.sucharupro.data.api.model.printingcalculator.CalculationBreakdownItemDto>>
     suspend fun getPrintingCalculatorHandoffContract(calculationId: String): ApiResult<com.sucharu.sucharupro.data.api.model.printingcalculator.Module17Step01PrintingCalculatorHandoffContractDto>
     suspend fun listPrintingCalculations(): ApiResult<List<com.sucharu.sucharupro.data.api.model.printingcalculator.PrintingCalculationResponseDto>>
+    suspend fun createProductionJobFromOrder(orderId: String): ApiResult<com.sucharu.sucharupro.data.api.model.productionexecution.ProductionJobExecutionDto>
+    suspend fun getProductionJobByOrder(orderId: String): ApiResult<List<com.sucharu.sucharupro.data.api.model.productionexecution.ProductionJobExecutionDto>>
     suspend fun checkHealthLive(): ApiResult<Map<String, String>>
     suspend fun checkHealthReady(): ApiResult<DatabaseHealthStatus>
 }
@@ -481,6 +483,28 @@ class DirectBackendApiClient(
             val success = res.body as ApiSuccessResponse<*>
             @Suppress("UNCHECKED_CAST")
             ApiResult.Success(success.data as List<com.sucharu.sucharupro.data.api.model.printingcalculator.PrintingCalculationResponseDto>, res.correlationId)
+        } else {
+            ApiResult.Error(res.body as ApiErrorResponse)
+        }
+    }
+
+    override suspend fun createProductionJobFromOrder(orderId: String): ApiResult<com.sucharu.sucharupro.data.api.model.productionexecution.ProductionJobExecutionDto> {
+        val res = server.handle(HttpRequest(method = "POST", path = "/api/v1/orders/$orderId/production", headers = buildHeaders()))
+        return if (res.statusCode == 201 || res.statusCode == 200) {
+            val success = res.body as ApiSuccessResponse<*>
+            @Suppress("UNCHECKED_CAST")
+            ApiResult.Success(success.data as com.sucharu.sucharupro.data.api.model.productionexecution.ProductionJobExecutionDto, res.correlationId)
+        } else {
+            ApiResult.Error(res.body as ApiErrorResponse)
+        }
+    }
+
+    override suspend fun getProductionJobByOrder(orderId: String): ApiResult<List<com.sucharu.sucharupro.data.api.model.productionexecution.ProductionJobExecutionDto>> {
+        val res = server.handle(HttpRequest(method = "GET", path = "/api/v1/orders/$orderId/production", headers = buildHeaders()))
+        return if (res.statusCode == 200) {
+            val success = res.body as ApiSuccessResponse<*>
+            @Suppress("UNCHECKED_CAST")
+            ApiResult.Success(success.data as List<com.sucharu.sucharupro.data.api.model.productionexecution.ProductionJobExecutionDto>, res.correlationId)
         } else {
             ApiResult.Error(res.body as ApiErrorResponse)
         }

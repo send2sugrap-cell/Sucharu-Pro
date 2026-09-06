@@ -490,6 +490,89 @@ class DemoBackendApiClient(
         }
     }
 
+    override suspend fun createProductionJobFromOrder(orderId: String): ApiResult<com.sucharu.sucharupro.data.api.model.productionexecution.ProductionJobExecutionDto> {
+        val now = System.currentTimeMillis()
+        val dummyJob = com.sucharu.sucharupro.data.api.model.productionexecution.ProductionJobExecutionDto(
+            executionJobId = "JOB-DEMO-$orderId",
+            tenantId = demoTenantId,
+            projectId = demoProjectId,
+            orderId = orderId,
+            orderNumber = "ORD-DEMO-001",
+            orderItemId = "ITEM-DEMO-001",
+            customerId = activeDemoRole.demoUserId,
+            quotationId = "QUO-DEMO-001",
+            quotationVersionNumber = 1,
+            commercialCommitmentId = null,
+            planningId = "PLAN-DEMO-$orderId",
+            planningVersion = 1,
+            title = "Commercial Job for $orderId",
+            priority = "NORMAL",
+            status = "IN_PROGRESS",
+            specification = com.sucharu.sucharupro.data.api.model.productionplanning.ProductionJobSpecificationDto(
+                specId = "SPEC-DEMO-$orderId",
+                jobTitle = "Demo Print Job",
+                productType = "PRINT_COMMERCIAL",
+                orderedQuantity = 1000L,
+                plannedQuantity = 1050L,
+                finishedWidthMm = "210.0000",
+                finishedHeightMm = "297.0000",
+                substrateType = "ART_PAPER",
+                substrateGsm = 150,
+                substrateBrand = null,
+                parentSheetWidthMm = "640.0000",
+                parentSheetHeightMm = "900.0000",
+                pressSheetWidthMm = "640.0000",
+                pressSheetHeightMm = "450.0000",
+                printingMethod = "OFFSET",
+                colorsFront = 4,
+                colorsBack = 4,
+                coatingFront = "NONE",
+                coatingBack = "NONE",
+                impositionUps = 1,
+                lamination = "NONE",
+                bindingMethod = "NONE",
+                foldingType = "NONE",
+                cuttingRequired = true,
+                dieCuttingRequired = false,
+                packagingMethod = "CARTON_BOX",
+                artworkUrl = null,
+                specialInstructions = null,
+                specFingerprint = "FINGERPRINT-DEMO"
+            ),
+            plannedQuantity = "1050.0000",
+            startedQuantity = "0.0000",
+            completedQuantity = "0.0000",
+            rejectedQuantity = "0.0000",
+            wastageQuantity = "0.0000",
+            reworkQuantity = "0.0000",
+            remainingQuantity = "1050.0000",
+            workOrders = emptyList(),
+            currentHold = null,
+            currentStageType = "DESIGN",
+            isCompleted = false,
+            completedAt = null,
+            completionSummary = null,
+            progressFraction = 0.0f,
+            jobFingerprint = "FINGERPRINT-DEMO",
+            integrityHash = "HASH-DEMO",
+            version = 1,
+            createdAt = now,
+            createdBy = activeDemoRole.demoUserId,
+            updatedAt = now,
+            updatedBy = null
+        )
+        return ApiResult.Success(dummyJob)
+    }
+
+    override suspend fun getProductionJobByOrder(orderId: String): ApiResult<List<com.sucharu.sucharupro.data.api.model.productionexecution.ProductionJobExecutionDto>> {
+        val createRes = createProductionJobFromOrder(orderId)
+        return if (createRes is ApiResult.Success) {
+            ApiResult.Success(listOf(createRes.data))
+        } else {
+            ApiResult.Success(emptyList())
+        }
+    }
+
     override suspend fun checkHealthLive(): ApiResult<Map<String, String>> {
         return ApiResult.Success(mapOf("status" to "UP", "mode" to "DEVELOPMENT_DEMO", "activeRole" to activeDemoRole.name))
     }

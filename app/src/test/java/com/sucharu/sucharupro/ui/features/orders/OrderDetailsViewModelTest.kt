@@ -188,4 +188,135 @@ class OrderDetailsViewModelTest {
         assertTrue("State should be Error, got $state", state is OrderDetailsUiState.Error)
         assertEquals("SQL timeout", (state as OrderDetailsUiState.Error).errorMessage)
     }
+
+    @Test
+    fun createProductionJob_successfulCreation_updatesProductionJobInState() {
+        val order = sampleOrder("ord-101")
+        val repo = createFakeRepo(order)
+        val sampleExecution = com.sucharu.sucharupro.domain.model.productionexecution.ProductionJobExecution(
+            executionJobId = "job-999",
+            tenantId = "tenant-test",
+            projectId = "cus-001",
+            orderId = "ord-101",
+            orderNumber = "ORD-2026-0001",
+            orderItemId = "ord-item-01",
+            customerId = "cus-001",
+            quotationId = "quo-101",
+            quotationVersionNumber = 1,
+            commercialCommitmentId = null,
+            planningId = "plan-101",
+            planningVersion = 1,
+            title = "Commercial Job for ORD-2026-0001",
+            priority = com.sucharu.sucharupro.domain.model.order.OrderPriority.URGENT,
+            status = com.sucharu.sucharupro.domain.model.productionexecution.ProductionJobExecutionStatus.IN_PROGRESS,
+            specification = com.sucharu.sucharupro.domain.model.productionplanning.ProductionJobSpecification(
+                specId = "spec-101",
+                jobTitle = "Commercial Job",
+                productType = "PRINT_COMMERCIAL",
+                orderedQuantity = 2500L,
+                plannedQuantity = 2600L,
+                finishedWidthMm = java.math.BigDecimal("210"),
+                finishedHeightMm = java.math.BigDecimal("297"),
+                substrateType = "ART_PAPER",
+                substrateGsm = 150,
+                parentSheetWidthMm = java.math.BigDecimal("640"),
+                parentSheetHeightMm = java.math.BigDecimal("900"),
+                pressSheetWidthMm = java.math.BigDecimal("640"),
+                pressSheetHeightMm = java.math.BigDecimal("450"),
+                printingMethod = "OFFSET",
+                colorsFront = 4,
+                colorsBack = 4,
+                impositionUps = 1,
+                specFingerprint = "fp-101"
+            ),
+            plannedQuantity = java.math.BigDecimal("2500"),
+            jobFingerprint = "fp-101",
+            integrityHash = "hash-101",
+            createdAt = System.currentTimeMillis(),
+            createdBy = "Finance Team",
+            updatedAt = System.currentTimeMillis()
+        )
+
+        val integrationService = object : com.sucharu.sucharupro.domain.service.production.OrderProductionIntegrationService {
+            override suspend fun evaluateOrderEligibility(
+                tenantId: String,
+                orderId: String
+            ): DomainResult<List<com.sucharu.sucharupro.domain.model.productionexecution.ProductionExecutionDiagnostic>> = DomainResult.Success(emptyList())
+
+            override suspend fun createProductionJobFromOrder(
+                tenantId: String,
+                orderId: String,
+                requestedBy: String,
+                idempotencyKey: String?
+            ): DomainResult<com.sucharu.sucharupro.domain.model.productionexecution.ProductionJobExecution> {
+                return DomainResult.Success(sampleExecution)
+            }
+
+            override suspend fun getProductionJobForOrder(
+                tenantId: String,
+                orderId: String
+            ): DomainResult<com.sucharu.sucharupro.domain.model.productionexecution.ProductionJobExecution?> {
+                return DomainResult.Success(null)
+            }
+        }
+
+        val vm = OrderDetailsViewModel(
+            orderId = "ord-101",
+            repository = repo,
+            productionService = integrationService,
+            externalScope = CoroutineScope(Dispatchers.Unconfined)
+        )
+
+        var state = vm.uiState.value as OrderDetailsUiState.Success
+        assertEquals(null, state.productionJob)
+
+        vm.createProductionJob()
+
+        state = vm.uiState.value as OrderDetailsUiState.Success
+        assertNotNull(state.productionJob)
+        assertEquals("job-999", state.productionJob?.jobId)
+        assertEquals("JOB-ORD-2026-0001", state.productionJob?.jobNumber)
+        assertEquals(false, state.isActionInProgress)
+    }
+
+    @Test
+    fun createProductionJob_error_setsErrorMessageInState() {
+        val order = sampleOrder("ord-101")
+        val repo = createFakeRepo(order)
+        val failingService = object : com.sucharu.sucharupro.domain.service.production.OrderProductionIntegrationService {
+            override suspend fun evaluateOrderEligibility(
+                tenantId: String,
+                orderId: String
+            ): DomainResult<List<com.sucharu.sucharupro.domain.model.productionexecution.ProductionExecutionDiagnostic>> = DomainResult.Success(emptyList())
+
+            override suspend fun createProductionJobFromOrder(
+                tenantId: String,
+                orderId: String,
+                requestedBy: String,
+                idempotencyKey: String?
+            ): DomainResult<com.sucharu.sucharupro.domain.model.productionexecution.ProductionJobExecution> {
+                return DomainResult.Error(message = "Order must be confirmed before production handoff")
+            }
+
+            override suspend fun getProductionJobForOrder(
+                tenantId: String,
+                orderId: String
+            ): DomainResult<com.sucharu.sucharupro.domain.model.productionexecution.ProductionJobExecution?> {
+                return DomainResult.Success(null)
+            }
+        }
+
+        val vm = OrderDetailsViewModel(
+            orderId = "ord-101",
+            repository = repo,
+            productionService = failingService,
+            externalScope = CoroutineScope(Dispatchers.Unconfined)
+        )
+
+        vm.createProductionJob()
+
+        val state = vm.uiState.value as OrderDetailsUiState.Success
+        assertEquals("Order must be confirmed before production handoff", state.actionError)
+        assertEquals(false, state.isActionInProgress)
+    }
 }

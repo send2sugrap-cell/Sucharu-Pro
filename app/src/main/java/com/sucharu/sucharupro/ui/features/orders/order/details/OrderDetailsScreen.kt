@@ -173,11 +173,14 @@ fun OrderDetailsScreen(
                 is OrderDetailsUiState.Success -> {
                     val order = state.order
                     val handoff = state.handoff
+                    val productionJob = state.productionJob
                     var showCreateHandoffDialog by remember { mutableStateOf(false) }
+                    var showCreateJobDialog by remember { mutableStateOf(false) }
 
                     OrderDetailsContent(
                         order = order,
                         handoff = handoff,
+                        productionJob = productionJob,
                         isActionInProgress = state.isActionInProgress,
                         activityRepository = viewModel.activityRepository,
                         onConfirmOrderClick = { viewModel.confirmOrder() },
@@ -190,11 +193,23 @@ fun OrderDetailsScreen(
                         onInitiateHandoff = { showCreateHandoffDialog = true },
                         onConfirmHandoff = { handoffId -> viewModel.confirmHandoff(handoffId) },
                         onMarkReadyForProduction = { handoffId -> viewModel.markHandoffReadyForProduction(handoffId) },
+                        onCreateProductionJob = { showCreateJobDialog = true },
                         onNavigateToCustomer = onNavigateToCustomer,
                         onNavigateToQuotation = onNavigateToQuotation
                     )
 
                     // ── Dialogs ──
+
+                    if (showCreateJobDialog) {
+                        com.sucharu.sucharupro.ui.features.orders.order.details.components.CreateProductionJobDialog(
+                            order = order,
+                            onDismiss = { showCreateJobDialog = false },
+                            onConfirm = {
+                                showCreateJobDialog = false
+                                viewModel.createProductionJob()
+                            }
+                        )
+                    }
 
                     if (showCreateHandoffDialog) {
                         OrderJobHandoffConfirmationDialog(
@@ -284,6 +299,7 @@ fun OrderDetailsScreen(
 private fun OrderDetailsContent(
     order: Order,
     handoff: com.sucharu.sucharupro.domain.model.handoff.OrderJobHandoff? = null,
+    productionJob: com.sucharu.sucharupro.domain.model.job.ProductionJob? = null,
     isActionInProgress: Boolean,
     activityRepository: CommercialActivityRepository,
     onConfirmOrderClick: () -> Unit,
@@ -296,6 +312,7 @@ private fun OrderDetailsContent(
     onInitiateHandoff: () -> Unit = {},
     onConfirmHandoff: (String) -> Unit = {},
     onMarkReadyForProduction: (String) -> Unit = {},
+    onCreateProductionJob: () -> Unit = {},
     onNavigateToCustomer: (String) -> Unit = {},
     onNavigateToQuotation: (String) -> Unit = {},
     modifier: Modifier = Modifier
@@ -394,9 +411,11 @@ private fun OrderDetailsContent(
             OrderHandoffSummaryCard(
                 order = order,
                 handoff = handoff,
+                productionJob = productionJob,
                 onInitiateHandoff = onInitiateHandoff,
                 onConfirmHandoff = onConfirmHandoff,
-                onMarkReadyForProduction = onMarkReadyForProduction
+                onMarkReadyForProduction = onMarkReadyForProduction,
+                onCreateProductionJob = onCreateProductionJob
             )
 
             // ── Activity Timeline ──

@@ -42,6 +42,7 @@ class OrderDetailsViewModel(
     val handoffRepository: com.sucharu.sucharupro.domain.repository.OrderJobHandoffRepository = com.sucharu.sucharupro.data.repository.OrderJobHandoffRepositoryImpl(
         com.sucharu.sucharupro.data.datasource.FakeOrderJobHandoffDataSource()
     ),
+    val productionService: com.sucharu.sucharupro.domain.service.production.OrderProductionIntegrationService? = null,
     private val externalScope: CoroutineScope? = null
 ) : ViewModel() {
 
@@ -54,12 +55,27 @@ class OrderDetailsViewModel(
     private val actionInProgressFlow = MutableStateFlow(false)
     private val actionErrorFlow = MutableStateFlow<String?>(null)
     private val actionMessageFlow = MutableStateFlow<String?>(null)
+    private val productionJobFlow = MutableStateFlow<com.sucharu.sucharupro.domain.model.job.ProductionJob?>(null)
 
     /** Guards against recording VIEWED more than once per screen entry. */
     private var viewedEventRecorded = false
 
     init {
         loadOrder()
+        fetchExistingProductionJob()
+    }
+
+    private fun fetchExistingProductionJob() {
+        val service = productionService ?: return
+        scope.launch {
+            val res = service.getProductionJobForOrder("TENANT-001", orderId)
+            if (res is DomainResult.Success) {
+                val data = res.data
+                if (data != null) {
+                    productionJobFlow.value = convertExecutionToProductionJob(data)
+                }
+            }
+        }
     }
 
     /** Observes the reactive order stream by ID, handoff record, and action feedback. */
@@ -68,11 +84,18 @@ class OrderDetailsViewModel(
             combine(
                 repository.getOrderById(orderId),
                 handoffRepository.getHandoffForOrder(orderId),
+                productionJobFlow,
                 actionInProgressFlow,
                 actionErrorFlow,
                 actionMessageFlow
-            ) { order, handoff, inProgress, error, message ->
-                DataHolder(order, handoff, inProgress, error, message)
+            ) { flows: Array<Any?> ->
+                val order = flows[0] as com.sucharu.sucharupro.domain.model.order.Order?
+                val handoff = flows[1] as com.sucharu.sucharupro.domain.model.handoff.OrderJobHandoff?
+                val prodJob = flows[2] as com.sucharu.sucharupro.domain.model.job.ProductionJob?
+                val inProgress = flows[3] as Boolean
+                val error = flows[4] as String?
+                val message = flows[5] as String?
+                DataHolder(order, handoff, prodJob, inProgress, error, message)
             }
                 .onStart {
                     _uiState.value = OrderDetailsUiState.Loading
@@ -87,6 +110,7 @@ class OrderDetailsViewModel(
                         _uiState.value = OrderDetailsUiState.Success(
                             order = data.order,
                             handoff = data.handoff,
+                            productionJob = data.productionJob,
                             isActionInProgress = data.inProgress,
                             actionError = data.error,
                             actionMessage = data.message
@@ -485,9 +509,117 @@ class OrderDetailsViewModel(
         )
     }
 
+    /** Creates a Production Job across 13 canonical stages for the current order. */
+    fun createProductionJob(
+        actorId: String? = null,
+        actorName: String? = null,
+        onSuccess: (com.sucharu.sucharupro.domain.model.job.ProductionJob) -> Unit = {}
+    ) {
+        val currentOrder = (_uiState.value as? OrderDetailsUiState.Success)?.order
+        if (currentOrder == null) {
+            actionErrorFlow.value = "Cannot create production job: Order data not loaded."
+            return
+        }
+
+        performAction(
+            action = {
+                val service = productionService
+                if (service != null) {
+                    when (val res = service.createProductionJobFromOrder(
+                        tenantId = "TENANT-001",
+                        orderId = orderId,
+                        requestedBy = actorName ?: "Production Desk"
+                    )) {
+                        is DomainResult.Success -> {
+                            val execution = res.data
+                            val job = convertExecutionToProductionJob(execution)
+                            productionJobFlow.value = job
+                            DomainResult.Success(job)
+                        }
+                        is DomainResult.Error -> DomainResult.Error(message = res.message)
+                        DomainResult.Loading -> DomainResult.Loading
+                    }
+                } else {
+                    val jobId = "job-${UUID.randomUUID().toString().take(8)}"
+                    val jobNumber = "JOB-${currentOrder.orderNumber}"
+                    val handoff = (_uiState.value as? OrderDetailsUiState.Success)?.handoff
+                        ?: com.sucharu.sucharupro.domain.model.handoff.OrderJobHandoff.fromOrder(
+                            handoffId = "hnd-${UUID.randomUUID().toString().take(8)}",
+                            order = currentOrder,
+                            timestamp = Instant.now().toString()
+                        )
+                    val job = com.sucharu.sucharupro.domain.model.job.ProductionJob.fromHandoff(
+                        jobId = jobId,
+                        jobNumber = jobNumber,
+                        handoff = handoff,
+                        createdBy = actorName ?: "Production Desk",
+                        timestamp = Instant.now().toString()
+                    )
+                    productionJobFlow.value = job
+                    DomainResult.Success(job)
+                }
+            },
+            successMessage = "Production Job created successfully across 13 stages.",
+            onSuccess = {
+                val job = productionJobFlow.value
+                if (job != null) {
+                    scope.launch {
+                        activityRepository.recordActivity(
+                            buildEvent(
+                                activityType = CommercialActivityType.STATUS_CHANGED,
+                                actorId = actorId,
+                                actorName = actorName,
+                                previousStatus = "Ready for Production",
+                                newStatus = "In Production (${job.jobNumber})",
+                                note = "Production Job '${job.jobId}' initialized with 13 stages."
+                            )
+                        )
+                    }
+                    onSuccess(job)
+                }
+            }
+        )
+    }
+
+    private fun convertExecutionToProductionJob(execution: com.sucharu.sucharupro.domain.model.productionexecution.ProductionJobExecution): com.sucharu.sucharupro.domain.model.job.ProductionJob {
+        val stages = com.sucharu.sucharupro.domain.model.job.ProductionJobStage.createInitialStages(execution.executionJobId)
+        val specString = "${execution.specification.substrateType} ${execution.specification.substrateGsm} GSM | ${execution.specification.printingMethod} ${execution.specification.colorsFront}+${execution.specification.colorsBack}"
+        val items = listOf(
+            com.sucharu.sucharupro.domain.model.job.ProductionJobItem(
+                itemId = execution.orderItemId,
+                description = execution.title,
+                specification = specString,
+                quantity = execution.plannedQuantity.toInt(),
+                unit = "Pcs"
+            )
+        )
+        return com.sucharu.sucharupro.domain.model.job.ProductionJob(
+            jobId = execution.executionJobId,
+            jobNumber = "JOB-${execution.orderNumber}",
+            orderId = execution.orderId,
+            orderNumber = execution.orderNumber,
+            customerId = execution.customerId,
+            handoffId = "hnd-${execution.orderId}",
+            quotationId = execution.quotationId,
+            title = execution.title,
+            priority = execution.priority,
+            status = com.sucharu.sucharupro.domain.model.job.ProductionJobStatus.READY_FOR_PRODUCTION,
+            quantity = execution.plannedQuantity.toInt(),
+            unit = "Pcs",
+            specification = specString,
+            items = items,
+            stages = stages,
+            createdAt = Instant.ofEpochMilli(execution.createdAt).toString(),
+            createdBy = execution.createdBy,
+            updatedAt = Instant.ofEpochMilli(execution.updatedAt).toString(),
+            updatedBy = execution.updatedBy
+        )
+    }
+
     private data class DataHolder(
         val order: com.sucharu.sucharupro.domain.model.order.Order?,
         val handoff: com.sucharu.sucharupro.domain.model.handoff.OrderJobHandoff?,
+        val productionJob: com.sucharu.sucharupro.domain.model.job.ProductionJob?,
         val inProgress: Boolean,
         val error: String?,
         val message: String?

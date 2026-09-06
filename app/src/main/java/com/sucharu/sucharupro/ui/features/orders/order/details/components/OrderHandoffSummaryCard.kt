@@ -48,9 +48,11 @@ import com.sucharu.sucharupro.ui.theme.spacing
 fun OrderHandoffSummaryCard(
     order: Order,
     handoff: OrderJobHandoff? = null,
+    productionJob: com.sucharu.sucharupro.domain.model.job.ProductionJob? = null,
     onInitiateHandoff: () -> Unit = {},
     onConfirmHandoff: (String) -> Unit = {},
     onMarkReadyForProduction: (String) -> Unit = {},
+    onCreateProductionJob: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val isHandoffReady = order.jobHandoffStatus == JobHandoffStatus.READY_FOR_JOB
@@ -73,12 +75,12 @@ fun OrderHandoffSummaryCard(
                     Icon(
                         imageVector = Icons.Default.AssignmentTurnedIn,
                         contentDescription = null,
-                        tint = if (handoff != null || isHandoffReady) MaterialTheme.colorScheme.primary
+                        tint = if (productionJob != null || handoff != null || isHandoffReady) MaterialTheme.colorScheme.primary
                         else MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(20.dp)
                     )
                     Text(
-                        text = if (handoff != null) "Job Handoff Snapshot" else "Handoff Readiness Summary",
+                        text = if (productionJob != null) "Active Production Job" else if (handoff != null) "Job Handoff Snapshot" else "Handoff Readiness Summary",
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold
                     )
@@ -92,8 +94,33 @@ fun OrderHandoffSummaryCard(
 
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
 
-            // ── Snapshot Details (If Handoff Exists) ──
-            if (handoff != null) {
+            // ── Linked Production Job Section (If Present) ──
+            if (productionJob != null) {
+                HandoffInfoRow(
+                    label = "Production Job ID",
+                    value = productionJob.jobId
+                )
+                HandoffInfoRow(
+                    label = "Job Number",
+                    value = productionJob.jobNumber
+                )
+                HandoffInfoRow(
+                    label = "Job Status",
+                    value = productionJob.status.defaultLabel
+                )
+                HandoffInfoRow(
+                    label = "Manufacturing Progress",
+                    value = "${productionJob.completedStagesCount}/13 stages (${(productionJob.progressFraction * 100).toInt()}%)"
+                )
+                productionJob.currentStage?.let { currentStage ->
+                    HandoffInfoRow(
+                        label = "Current Stage",
+                        value = currentStage.stageType.defaultLabel,
+                        icon = Icons.Default.PlayArrow
+                    )
+                }
+            } else if (handoff != null) {
+                // ── Snapshot Details (If Handoff Exists) ──
                 HandoffInfoRow(
                     label = "Handoff ID",
                     value = handoff.handoffId
@@ -122,20 +149,6 @@ fun OrderHandoffSummaryCard(
                         label = "Confirmed By",
                         value = "${handoff.confirmedBy} (${handoff.confirmedAt?.take(10) ?: ""})",
                         icon = Icons.Default.CheckCircle
-                    )
-                }
-                val jobRef = handoff.jobReferenceId
-                if (!jobRef.isNullOrBlank()) {
-                    HandoffInfoRow(
-                        label = "Job Reference",
-                        value = jobRef
-                    )
-                }
-                val hNotes = handoff.notes
-                if (!hNotes.isNullOrBlank()) {
-                    HandoffInfoRow(
-                        label = "Handoff Notes",
-                        value = hNotes
                     )
                 }
             } else {
@@ -192,14 +205,22 @@ fun OrderHandoffSummaryCard(
                 passed = !isCancelled
             )
             ReadinessCheckRow(
-                label = "Job Handoff Ready",
-                passed = isHandoffReady || handoff != null
+                label = "Production Job Created",
+                passed = productionJob != null
             )
 
             // ── Action Buttons ──
             if (!isCancelled && !isDelivered) {
                 Spacer(modifier = Modifier.height(4.dp))
                 when {
+                    productionJob != null -> {
+                        Text(
+                            text = "✓ Order successfully integrated with Production Job ${productionJob.jobNumber}.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
                     handoff == null && isHandoffReady -> {
                         Button(
                             onClick = onInitiateHandoff,
@@ -230,13 +251,18 @@ fun OrderHandoffSummaryCard(
                             Text("Mark Ready for Production")
                         }
                     }
-                    handoff != null && handoff.handoffStatus == OrderJobHandoffStatus.READY_FOR_PRODUCTION -> {
-                        Text(
-                            text = "✓ Handoff sealed and ready for production intake.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.SemiBold
-                        )
+                    (handoff != null && handoff.handoffStatus == OrderJobHandoffStatus.READY_FOR_PRODUCTION) || (order.status == OrderStatusType.CONFIRMED && productionJob == null) -> {
+                        Button(
+                            onClick = onCreateProductionJob,
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary
+                            )
+                        ) {
+                            Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.size(8.dp))
+                            Text("Create Production Job (13 Stages)")
+                        }
                     }
                 }
             }

@@ -2016,6 +2016,20 @@ class BackendRouter(
             HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
         }
 
+        request.path.matches(Regex("^/api/v1/orders/[^/]+/production$")) && request.method == "POST" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val orderId = request.path.removePrefix("/api/v1/orders/").removeSuffix("/production")
+            val res = useCases.createProductionJobFromOrder(principal, orderId)
+            HttpResponse(201, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/orders/[^/]+/production$")) && request.method == "GET" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val orderId = request.path.removePrefix("/api/v1/orders/").removeSuffix("/production")
+            val res = useCases.listProductionJobsByOrder(principal, orderId)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
         request.path == "/api/v1/production-jobs" && request.method == "POST" -> {
             val principal = securityContext.authenticate(request.authorizationHeader)
             val req = parseCreateProductionJobRequest(request.body)

@@ -333,6 +333,14 @@ class HttpBackendApiClient(
         return request("GET", "/api/v1/printing-calculator/calculations", typeToken = object : TypeToken<List<com.sucharu.sucharupro.data.api.model.printingcalculator.PrintingCalculationResponseDto>>() {}.type)
     }
 
+    override suspend fun createProductionJobFromOrder(orderId: String): ApiResult<com.sucharu.sucharupro.data.api.model.productionexecution.ProductionJobExecutionDto> {
+        return request("POST", "/api/v1/orders/$orderId/production", typeToken = object : TypeToken<com.sucharu.sucharupro.data.api.model.productionexecution.ProductionJobExecutionDto>() {}.type)
+    }
+
+    override suspend fun getProductionJobByOrder(orderId: String): ApiResult<List<com.sucharu.sucharupro.data.api.model.productionexecution.ProductionJobExecutionDto>> {
+        return request("GET", "/api/v1/orders/$orderId/production", typeToken = object : TypeToken<List<com.sucharu.sucharupro.data.api.model.productionexecution.ProductionJobExecutionDto>>() {}.type)
+    }
+
     override suspend fun checkHealthLive(): ApiResult<Map<String, String>> {
         return request("GET", "/health/live", typeToken = object : TypeToken<Map<String, String>>() {}.type)
     }

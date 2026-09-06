@@ -16309,6 +16309,19 @@ class BackendUseCases(
         }
     }
 
+    suspend fun createProductionJobFromOrder(
+        principal: AuthenticatedPrincipal,
+        orderId: String
+    ): ProductionJobExecutionDto {
+        BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF)
+        val service = repositoryFactory.createOrderProductionIntegrationService(principal.projectId)
+        return when (val res = service.createProductionJobFromOrder(principal.projectId, orderId, principal.username)) {
+            is DomainResult.Success -> res.data.toDto()
+            is DomainResult.Error -> throw IllegalArgumentException(res.message ?: "Failed to create production job from order")
+            DomainResult.Loading -> throw IllegalStateException("Unexpected loading state")
+        }
+    }
+
     suspend fun getProductionJob(
         principal: AuthenticatedPrincipal,
         executionJobId: String
@@ -16327,9 +16340,9 @@ class BackendUseCases(
         orderId: String
     ): List<ProductionJobExecutionDto> {
         BackendAuthorizationPolicy.requireRole(principal, UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.AI_AGENT)
-        val service = repositoryFactory.createProductionExecutionService(principal.projectId)
-        return when (val res = service.listJobExecutionsByOrder(principal.projectId, orderId)) {
-            is DomainResult.Success -> res.data.map { it.toDto() }
+        val service = repositoryFactory.createOrderProductionIntegrationService(principal.projectId)
+        return when (val res = service.getProductionJobForOrder(principal.projectId, orderId)) {
+            is DomainResult.Success -> listOfNotNull(res.data?.toDto())
             is DomainResult.Error -> throw IllegalArgumentException(res.message ?: "Failed to list production jobs")
             DomainResult.Loading -> throw IllegalStateException("Unexpected loading state")
         }
