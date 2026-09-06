@@ -31,3 +31,17 @@ CREATE INDEX IF NOT EXISTS idx_finished_product_receipts_product ON finished_pro
 
 ALTER TABLE finished_product_inventory_receipts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE finished_product_inventory_receipts FORCE ROW LEVEL SECURITY;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies
+        WHERE tablename = 'finished_product_inventory_receipts'
+          AND policyname = 'finished_product_inventory_receipts_tenant_isolation'
+    ) THEN
+        CREATE POLICY finished_product_inventory_receipts_tenant_isolation ON finished_product_inventory_receipts
+            FOR ALL
+            USING (project_id = current_setting('app.current_tenant_id', true))
+            WITH CHECK (project_id = current_setting('app.current_tenant_id', true));
+    END IF;
+END $$;

@@ -7,7 +7,6 @@ import java.math.BigDecimal
 data class ReceiveFinishedGoodsRequestDto(
     val warehouseId: String,
     val binId: String? = null,
-    val overrideQuantity: BigDecimal? = null,
     val notes: String? = null
 )
 

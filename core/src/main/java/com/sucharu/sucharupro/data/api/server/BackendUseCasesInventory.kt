@@ -42,7 +42,6 @@ suspend fun BackendUseCases.receiveFinishedGoodsFromProduction(
         executionJobId = executionJobId,
         warehouseId = reqDto.warehouseId,
         binId = reqDto.binId,
-        overrideQuantity = reqDto.overrideQuantity,
         actor = principal.username
     )
     return when (res) {

@@ -4,20 +4,16 @@ import com.sucharu.sucharupro.data.api.model.ApiSuccessResponse
 import com.sucharu.sucharupro.data.api.model.ValidationException
 import com.sucharu.sucharupro.data.api.model.inventory.ReceiveFinishedGoodsRequestDto
 import com.sucharu.sucharupro.data.event.serialization.EventSerializationHelper
-import java.math.BigDecimal
 
 fun parseReceiveFinishedGoodsRequest(body: Any?): ReceiveFinishedGoodsRequestDto {
     val map = EventSerializationHelper.parseJsonObject(body?.toString() ?: "{}")
     val warehouseId = map["warehouseId"]?.toString()
         ?: throw ValidationException("Field 'warehouseId' is required.")
     val binId = map["binId"]?.toString()
-    val overrideQuantityStr = map["overrideQuantity"]?.toString()
-    val overrideQuantity = overrideQuantityStr?.takeIf { it.isNotBlank() }?.let { BigDecimal(it) }
     val notes = map["notes"]?.toString()
     return ReceiveFinishedGoodsRequestDto(
         warehouseId = warehouseId,
         binId = binId,
-        overrideQuantity = overrideQuantity,
         notes = notes
     )
 }

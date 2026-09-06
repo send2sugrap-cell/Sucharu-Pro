@@ -118,7 +118,6 @@ class ProductionInventoryIntegrationServiceImpl(
         executionJobId: String,
         warehouseId: String,
         binId: String?,
-        overrideQuantity: BigDecimal?,
         actor: String,
         idempotencyKey: String?
     ): DomainResult<FinishedProductInventoryReceipt> {
@@ -156,7 +155,8 @@ class ProductionInventoryIntegrationServiceImpl(
             )
         }
 
-        val finalQuantity = overrideQuantity ?: eligibility.eligibleQuantity
+        // Derive received quantity strictly from authoritative Final QC inspection / release data
+        val finalQuantity = eligibility.eligibleQuantity
         if (finalQuantity <= BigDecimal.ZERO) {
             return DomainResult.Error(message = "Received quantity must be greater than zero.")
         }
