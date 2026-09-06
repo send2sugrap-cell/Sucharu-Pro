@@ -12,7 +12,6 @@ import com.sucharu.sucharupro.data.auth.provider.DemoAuthenticationProvider
 import com.sucharu.sucharupro.data.auth.security.FirebaseTokenVerifier
 import com.sucharu.sucharupro.data.auth.security.JwtTokenProvider
 import com.sucharu.sucharupro.data.auth.service.AuthenticationService
-import com.sucharu.sucharupro.data.composition.DevelopmentDemoRuntimeComposition
 import com.sucharu.sucharupro.data.composition.DemoRole
 import com.sucharu.sucharupro.data.composition.ProductionRuntimeComposition
 import com.sucharu.sucharupro.data.persistence.postgres.DefaultPostgresTransactionManager
@@ -283,45 +282,6 @@ class FirebaseAuthPortabilityTest {
             ex.message!!.contains("prohibited") ||
             ex.message!!.contains("requires a concrete AuthenticationProvider")
         )
-    }
-
-    /**
-     * SECURITY TEST: DevelopmentDemoRuntimeComposition without AuthenticationProvider
-     * must throw IllegalStateException (fail-fast). DemoAuthenticationProvider must NOT
-     * be silently selected in any runtime composition.
-     */
-    @Test
-    fun testDevelopmentDemoRuntimeComposition_failsFast_whenNoAuthProviderInjected() {
-        val composition = DevelopmentDemoRuntimeComposition(
-            initialRole = DemoRole.CUSTOMER,
-            authenticationProvider = null
-        )
-        val ex = assertThrows(IllegalStateException::class.java) {
-            composition.createAuthenticationProvider()
-        }
-        assertTrue(
-            "Error must mention FirebaseAuthenticationProvider or prohibited fallback",
-            ex.message!!.contains("FirebaseAuthenticationProvider") ||
-            ex.message!!.contains("prohibited") ||
-            ex.message!!.contains("requires an explicit AuthenticationProvider")
-        )
-    }
-
-    /**
-     * SECURITY TEST: DemoAuthenticationProvider injected explicitly into a composition
-     * must work (test-only pattern) and must NOT leak into production.
-     * This verifies DemoAuthenticationProvider is still usable when explicitly supplied.
-     */
-    @Test
-    fun testDemoAuthenticationProvider_usableWhenExplicitlyInjected() {
-        val testProvider = DemoAuthenticationProvider(mockOtpCode = "654321")
-        val composition = DevelopmentDemoRuntimeComposition(
-            initialRole = DemoRole.STAFF,
-            authenticationProvider = testProvider
-        )
-        val provider = composition.createAuthenticationProvider()
-        assertNotNull("Explicitly injected DemoAuthenticationProvider must be returned", provider)
-        assertSame("Must be the exact same instance that was injected", testProvider, provider)
     }
 
     /**

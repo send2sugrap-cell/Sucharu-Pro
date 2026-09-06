@@ -405,7 +405,7 @@ open class PostgresRepositoryFactory(
         return PostgresProductionQcDataSource(transactionManager, tenantId)
     }
 
-    fun createInventoryProductDataSource(tenantId: String = defaultTenantId): PostgresInventoryProductDataSource {
+    open fun createInventoryProductDataSource(tenantId: String = defaultTenantId): com.sucharu.sucharupro.data.datasource.InventoryProductDataSource {
         return PostgresInventoryProductDataSource(transactionManager, tenantId)
     }
 
@@ -1872,6 +1872,26 @@ open class PostgresRepositoryFactory(
         val repo = createFinalQcPackagingRepository(tenantId)
         return com.sucharu.sucharupro.domain.service.finalqc.FinalQcPackagingServiceImpl(
             repository = repo
+        )
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // PHASE 06 STEP 01 — FINISHED PRODUCT INVENTORY INTEGRATION
+    // ─────────────────────────────────────────────────────────────
+
+    open fun createFinishedProductInventoryDataSource(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.data.datasource.FinishedProductInventoryDataSource {
+        return PostgresFinishedProductInventoryDataSource(transactionManager)
+    }
+
+    open fun createProductionInventoryIntegrationService(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.domain.service.inventory.ProductionInventoryIntegrationService {
+        return com.sucharu.sucharupro.domain.service.inventory.ProductionInventoryIntegrationServiceImpl(
+            finishedProductInventoryDataSource = createFinishedProductInventoryDataSource(tenantId),
+            finalQcPackagingDataSource = createFinalQcPackagingDataSource(tenantId),
+            inventoryProductDataSource = createInventoryProductDataSource(tenantId)
         )
     }
 

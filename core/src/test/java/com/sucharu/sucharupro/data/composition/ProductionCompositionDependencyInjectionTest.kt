@@ -9,12 +9,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * PHASE 00 STEP 03 - Production Dependency Injection & Fake Isolation Unit Test Suite.
- *
- * Verifies that:
- * 1. ProductionRuntimeComposition resolves real HTTP-backed repositories (HttpCustomerRepository, HttpOrderRepository, etc.)
- * 2. ProductionRuntimeComposition does NOT resolve FakeDataSources.
- * 3. DevelopmentDemoRuntimeComposition resolves explicitly isolated demo repositories.
+ * PHASE 00 STEP 03 - Production Dependency Injection Unit Test Suite.
  */
 class ProductionCompositionDependencyInjectionTest {
 
@@ -45,15 +40,5 @@ class ProductionCompositionDependencyInjectionTest {
             "Production dashboard repository must be HttpDashboardRepository",
             prodComposition.dashboardRepository is HttpDashboardRepository
         )
-    }
-
-    @Test
-    fun testDevelopmentDemoRuntimeComposition_resolvesIsolatedDemoRepositories() {
-        val demoComposition = DevelopmentDemoRuntimeComposition()
-
-        assertNotNull("Demo customer repository must be provided", demoComposition.customerRepository)
-        assertNotNull("Demo order repository must be provided", demoComposition.orderRepository)
-        assertNotNull("Demo affiliate repository must be provided", demoComposition.affiliateRepository)
-        assertNotNull("Demo dashboard repository must be provided", demoComposition.dashboardRepository)
     }
 }

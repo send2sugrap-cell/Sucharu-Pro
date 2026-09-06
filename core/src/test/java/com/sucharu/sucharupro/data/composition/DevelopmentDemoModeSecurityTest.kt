@@ -215,37 +215,6 @@ class DevelopmentDemoModeSecurityTest {
     }
 
     @Test
-    fun testDevelopmentDemoRuntimeComposition_endToEndLifecycle() = runBlocking {
-        val demoComposition = DevelopmentDemoRuntimeComposition()
-        assertEquals(AppRuntimeMode.DEVELOPMENT, demoComposition.mode)
-
-        val sessionManager = demoComposition.createSessionManager()
-
-        // Initial state is Public
-        val initialState = sessionManager.restoreSession()
-        assertEquals(AppEntryState.Public, initialState)
-
-        // Verification with valid non-hardcoded OTP
-        val confirmRes = sessionManager.confirmVerification("654321", VerificationType.PHONE)
-        assertTrue(confirmRes is ApiResult.Success)
-
-        // Login as demo user
-        val loginRes = sessionManager.login(LoginRequestDto(identifier = "demo", password = "demoPassword123!"))
-        assertTrue(loginRes is ApiResult.Success)
-
-        // Entry state is Authenticated with CUSTOMER role
-        val state = sessionManager.entryState.value
-        assertTrue(state is AppEntryState.Authenticated)
-        val principal = (state as AppEntryState.Authenticated).principal
-        assertEquals("USER-DEMO-001", principal.userId)
-        assertEquals(UserRole.CUSTOMER, principal.role)
-
-        // Logout clears demo state
-        sessionManager.logout()
-        assertEquals(AppEntryState.Public, sessionManager.entryState.value)
-    }
-
-    @Test
     fun testDemoBackendApiClient_returnsRichDemoOrders() = runBlocking {
         val demoClient = DemoBackendApiClient()
         val ordersRes = demoClient.getCustomerOrders()

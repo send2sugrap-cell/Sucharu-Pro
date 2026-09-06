@@ -18,8 +18,6 @@ import com.sucharu.sucharupro.data.persistence.postgres.PostgresConnectionConfig
 import kotlinx.coroutines.runBlocking
 import java.sql.Connection
 
-import com.sucharu.sucharupro.data.datasource.DemoOrderFixtures
-import com.sucharu.sucharupro.data.datasource.FakeOrderDataSource
 import com.sucharu.sucharupro.data.persistence.postgres.PostgresAffiliateDataSource
 import com.sucharu.sucharupro.data.persistence.postgres.PostgresCustomerDataSource
 import com.sucharu.sucharupro.data.persistence.postgres.PostgresOrderDataSource
@@ -177,7 +175,8 @@ class PostgresRuntimeComposition(
  */
 class ProductionRuntimeComposition(
     private val apiGatewayUrl: String? = System.getenv("SUCHARU_API_GATEWAY_URL")
-        ?: System.getProperty("sucharu.api.gateway.url"),
+        ?: System.getProperty("sucharu.api.gateway.url")
+        ?: "http://192.168.1.102:8080", // Local PC Server Default for Mobile Demo
     private val tokenStorage: AuthTokenStorage = InMemoryAuthTokenStorage(),
     private val authenticationProvider: com.sucharu.sucharupro.data.auth.provider.AuthenticationProvider? = null
 ) : AppRuntimeComposition {
@@ -224,60 +223,5 @@ class ProductionRuntimeComposition(
 
     override val printingCalculatorService: com.sucharu.sucharupro.domain.service.printingcalculator.PrintingCalculatorService by lazy {
         com.sucharu.sucharupro.data.repository.printingcalculator.HttpPrintingCalculatorService(client = client)
-    }
-}
-
-/**
- * Isolated Development Demo Runtime Composition (DEVELOPMENT ONLY).
- *
- * Provides a self-contained, in-memory client runtime for evaluating UI/UX workflows.
- * MUST NOT be loaded by the Android application in production.
- */
-class DevelopmentDemoRuntimeComposition(
-    val initialRole: DemoRole = DemoRole.CUSTOMER,
-    val demoTenantId: String = "TENANT-DEMO-001",
-    val demoProjectId: String = "PROJECT-DEMO-001",
-    val authenticationProvider: com.sucharu.sucharupro.data.auth.provider.AuthenticationProvider? = null
-) : AppRuntimeComposition {
-
-    override val mode: AppRuntimeMode = AppRuntimeMode.DEVELOPMENT
-
-    val demoClient: DemoBackendApiClient by lazy {
-        DemoBackendApiClient(
-            initialRole = initialRole,
-            demoTenantId = demoTenantId,
-            demoProjectId = demoProjectId
-        )
-    }
-
-    override fun createSessionManager(): AuthenticationSessionManager {
-        return AuthenticationSessionManager(client = demoClient)
-    }
-
-    override fun createAuthenticationProvider(): com.sucharu.sucharupro.data.auth.provider.AuthenticationProvider {
-        return authenticationProvider
-            ?: throw IllegalStateException(
-                "DevelopmentDemoRuntimeComposition requires an explicit AuthenticationProvider."
-            )
-    }
-
-    override val customerRepository: CustomerRepository by lazy {
-        FakeCustomerRepository()
-    }
-
-    override val orderRepository: OrderRepository by lazy {
-        OrderRepositoryImpl(FakeOrderDataSource(DemoOrderFixtures.demoOrders()))
-    }
-
-    override val affiliateRepository: AffiliateRepository by lazy {
-        HttpAffiliateRepository(client = demoClient)
-    }
-
-    override val dashboardRepository: DashboardRepository by lazy {
-        HttpDashboardRepository(client = demoClient)
-    }
-
-    override val printingCalculatorService: com.sucharu.sucharupro.domain.service.printingcalculator.PrintingCalculatorService by lazy {
-        com.sucharu.sucharupro.data.repository.printingcalculator.HttpPrintingCalculatorService(client = demoClient)
     }
 }
