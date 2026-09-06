@@ -464,33 +464,20 @@ fun InternalWorkspaceShell(
             currentDestination == AppDestination.Manager.AffiliateManagement ||
             currentDestination == AppDestination.Admin.AffiliateManagement
         ) {
-            val txManager = remember {
-                com.sucharu.sucharupro.data.persistence.postgres.DefaultPostgresTransactionManager(
-                    connectionProvider = com.sucharu.sucharupro.data.persistence.postgres.DefaultPostgresConnectionProvider(
-                        config = com.sucharu.sucharupro.data.persistence.postgres.PostgresConnectionConfig()
+            Surface(
+                color = Color(0xFF1C2541),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth().weight(1f)
+            ) {
+                Box(modifier = Modifier.fillMaxSize().padding(20.dp), contentAlignment = Alignment.Center) {
+                    Text(
+                        text = "Affiliate Management requires a real API boundary in production (INFRA-05). Direct database access is disabled.",
+                        color = Color(0xFFB7C8D8),
+                        fontSize = 14.sp,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
                     )
-                )
+                }
             }
-            val repoFactory = remember(txManager) {
-                com.sucharu.sucharupro.data.persistence.postgres.PostgresRepositoryFactory(
-                    transactionManager = txManager
-                )
-            }
-            val affUseCases = remember(txManager, repoFactory) {
-                com.sucharu.sucharupro.data.api.server.BackendUseCases(
-                    transactionManager = txManager,
-                    repositoryFactory = repoFactory
-                )
-            }
-            com.sucharu.sucharupro.ui.features.affiliate.AffiliateManagementCommandCenterScreen(
-                viewModel = viewModel(key = principal.userId) {
-                    com.sucharu.sucharupro.ui.features.affiliate.AffiliateManagementViewModel(
-                        useCases = affUseCases,
-                        principal = principal
-                    )
-                },
-                modifier = modifier
-            )
         } else {
             Surface(
                 color = Color(0xFF1C2541),

@@ -13,6 +13,8 @@ import com.sucharu.sucharupro.data.auth.session.AuthenticationSessionManager
 import com.sucharu.sucharupro.data.persistence.postgres.DefaultPostgresTransactionManager
 import com.sucharu.sucharupro.data.persistence.postgres.PostgresConnectionProvider
 import com.sucharu.sucharupro.data.persistence.postgres.PostgresRepositoryFactory
+import com.sucharu.sucharupro.data.persistence.postgres.DefaultPostgresConnectionProvider
+import com.sucharu.sucharupro.data.persistence.postgres.PostgresConnectionConfig
 import kotlinx.coroutines.runBlocking
 import java.sql.Connection
 
@@ -132,14 +134,9 @@ class PostgresRuntimeComposition(
     }
 
     override fun createAuthenticationProvider(): com.sucharu.sucharupro.data.auth.provider.AuthenticationProvider {
-        // PostgresRuntimeComposition is a server-side / integration-test only composition.
-        // It has no Android Activity context and therefore cannot use FirebaseAuthenticationProvider.
-        // Any caller requiring an AuthenticationProvider must supply one explicitly.
-        // Returning DemoAuthenticationProvider is PROHIBITED — it would allow unverified authentication.
         throw IllegalStateException(
             "PostgresRuntimeComposition does not supply an AuthenticationProvider. " +
-            "This composition is for server-side and integration test use only. " +
-            "Inject a concrete AuthenticationProvider at the call site."
+            "This composition is for server-side and integration test use only."
         )
     }
 
@@ -198,12 +195,6 @@ class ProductionRuntimeComposition(
         HttpBackendApiClient(baseUrl = endpoint, tokenStorage = tokenStorage)
     }
 
-    /**
-     * Initializes the authenticated session manager via the secure HTTPS API Gateway.
-     *
-     * Fails fast if the mandatory gateway URL is missing.
-     * No fallback to local databases is permitted.
-     */
     override fun createSessionManager(): AuthenticationSessionManager {
         return AuthenticationSessionManager(client = client)
     }
@@ -211,9 +202,7 @@ class ProductionRuntimeComposition(
     override fun createAuthenticationProvider(): com.sucharu.sucharupro.data.auth.provider.AuthenticationProvider {
         return authenticationProvider
             ?: throw IllegalStateException(
-                "ProductionRuntimeComposition requires a concrete AuthenticationProvider. " +
-                "Pass FirebaseAuthenticationProvider(activity) from MainActivity. " +
-                "Silent fallback to DemoAuthenticationProvider is strictly prohibited in production."
+                "ProductionRuntimeComposition requires a concrete AuthenticationProvider."
             )
     }
 
@@ -241,14 +230,8 @@ class ProductionRuntimeComposition(
 /**
  * Isolated Development Demo Runtime Composition (DEVELOPMENT ONLY).
  *
- * Provides a self-contained, in-memory client runtime for evaluating complete
- * UI/UX workflows on physical Android devices without requiring live PostgreSQL or API Gateway.
- *
- * Absolute Invariants:
- * 1. MUST NOT connect to PostgreSQL or hold DB credentials.
- * 2. MUST NOT invoke production API Gateway or live SMS services.
- * 3. MUST NOT affect or mutate production authentication accounts.
- * 4. Real Firebase OTP or session-based provider required across all runtimes.
+ * Provides a self-contained, in-memory client runtime for evaluating UI/UX workflows.
+ * MUST NOT be loaded by the Android application in production.
  */
 class DevelopmentDemoRuntimeComposition(
     val initialRole: DemoRole = DemoRole.CUSTOMER,
@@ -274,10 +257,7 @@ class DevelopmentDemoRuntimeComposition(
     override fun createAuthenticationProvider(): com.sucharu.sucharupro.data.auth.provider.AuthenticationProvider {
         return authenticationProvider
             ?: throw IllegalStateException(
-                "DevelopmentDemoRuntimeComposition requires an explicit AuthenticationProvider. " +
-                "Pass FirebaseAuthenticationProvider(activity) from the host Activity. " +
-                "Silent fallback to DemoAuthenticationProvider is prohibited: " +
-                "it would allow real runtime users to bypass Firebase authentication."
+                "DevelopmentDemoRuntimeComposition requires an explicit AuthenticationProvider."
             )
     }
 

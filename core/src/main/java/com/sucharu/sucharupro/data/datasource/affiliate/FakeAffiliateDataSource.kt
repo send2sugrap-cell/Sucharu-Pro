@@ -85,12 +85,16 @@ class FakeAffiliateDataSource : AffiliateDataSource {
 
     override suspend fun listAuditRecords(tenantId: String, affiliateId: String): List<AffiliateAuditRecord> {
         val key = "$tenantId|$affiliateId"
-        return auditMap[key]?.sortedBy { it.timestamp } ?: emptyList()
+        synchronized(lock) {
+            return auditMap[key]?.toList()?.sortedBy { it.timestamp } ?: emptyList()
+        }
     }
 
     override suspend fun findLatestAuditRecord(tenantId: String, affiliateId: String): AffiliateAuditRecord? {
         val key = "$tenantId|$affiliateId"
-        return auditMap[key]?.maxByOrNull { it.timestamp }
+        synchronized(lock) {
+            return auditMap[key]?.toList()?.maxByOrNull { it.timestamp }
+        }
     }
 
     override suspend fun appendOutboxEvent(event: AffiliateOutboxEvent): AffiliateOutboxEvent {

@@ -73,6 +73,22 @@ class OrderProductionIntegrationTest {
         assertEquals("ORD-2026-001", job.orderNumber)
         assertEquals("CUST-100", job.customerId)
         assertEquals(13, job.workOrders.size)
+        val expectedStages = listOf(
+            com.sucharu.sucharupro.domain.model.production.ProductionStageType.DESIGN,
+            com.sucharu.sucharupro.domain.model.production.ProductionStageType.APPROVAL,
+            com.sucharu.sucharupro.domain.model.production.ProductionStageType.QC,
+            com.sucharu.sucharupro.domain.model.production.ProductionStageType.ITEM_APPROVAL,
+            com.sucharu.sucharupro.domain.model.production.ProductionStageType.CTP,
+            com.sucharu.sucharupro.domain.model.production.ProductionStageType.PRINTING,
+            com.sucharu.sucharupro.domain.model.production.ProductionStageType.LAMINATION,
+            com.sucharu.sucharupro.domain.model.production.ProductionStageType.FOLDING,
+            com.sucharu.sucharupro.domain.model.production.ProductionStageType.BINDING,
+            com.sucharu.sucharupro.domain.model.production.ProductionStageType.FINAL_QC,
+            com.sucharu.sucharupro.domain.model.production.ProductionStageType.PACKAGING,
+            com.sucharu.sucharupro.domain.model.production.ProductionStageType.READY,
+            com.sucharu.sucharupro.domain.model.production.ProductionStageType.DELIVERED
+        )
+        assertEquals(expectedStages, job.workOrders.map { it.stageType })
     }
 
     @Test
@@ -98,7 +114,7 @@ class OrderProductionIntegrationTest {
     }
 
     @Test
-    fun testCancelledOrderFailsProductionCreation() = runBlocking {
+    fun testUnconfirmedOrCancelledOrderFailsProductionCreation() = runBlocking {
         val cancelledOrderId = "ORD-CANCELLED-01"
         orderDataSource.insertOrder(
             Order(
@@ -119,15 +135,41 @@ class OrderProductionIntegrationTest {
             )
         )
 
-        val result = integrationService.createProductionJobFromOrder(
+        val result1 = integrationService.createProductionJobFromOrder(
             tenantId = tenantId,
             orderId = cancelledOrderId,
             requestedBy = "TestAdmin"
         )
 
-        assertTrue(result is DomainResult.Error)
-        val errorMsg = (result as DomainResult.Error).message
-        assertTrue(errorMsg.contains("CANCELLED"))
+        assertTrue(result1 is DomainResult.Error)
+
+        val pendingOrderId = "ORD-PENDING-01"
+        orderDataSource.insertOrder(
+            Order(
+                orderId = pendingOrderId,
+                orderNumber = "ORD-2026-888",
+                customerId = "CUST-100",
+                status = OrderStatusType.PENDING,
+                items = listOf(
+                    OrderItem(
+                        itemId = "ITEM-888",
+                        description = "Pending Item",
+                        quantity = 100,
+                        unitPrice = Money(BigDecimal("10.00"))
+                    )
+                ),
+                createdAt = "2026-09-06T12:00:00Z",
+                updatedAt = "2026-09-06T12:00:00Z"
+            )
+        )
+
+        val result2 = integrationService.createProductionJobFromOrder(
+            tenantId = tenantId,
+            orderId = pendingOrderId,
+            requestedBy = "TestAdmin"
+        )
+
+        assertTrue(result2 is DomainResult.Error)
     }
 
     @Test

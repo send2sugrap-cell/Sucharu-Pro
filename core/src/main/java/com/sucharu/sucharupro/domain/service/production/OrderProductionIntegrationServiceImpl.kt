@@ -33,14 +33,14 @@ class OrderProductionIntegrationServiceImpl(
             DomainResult.Loading -> return DomainResult.Error(message = "Loading order data.")
         }
 
-        if (order.status == OrderStatusType.CANCELLED) {
+        if (order.status != OrderStatusType.CONFIRMED && order.status != OrderStatusType.IN_PRODUCTION) {
             return DomainResult.Success(
                 listOf(
                     ProductionExecutionDiagnostic(
-                        code = "ORDER_CANCELLED",
-                        message = "Order '${order.orderNumber}' is CANCELLED. Cannot create production job.",
+                        code = "ORDER_STATUS_NOT_ELIGIBLE",
+                        message = "Order '${order.orderNumber}' has status ${order.status.name}. Only CONFIRMED or IN_PRODUCTION orders can enter production.",
                         isBlocking = true,
-                        recommendedAction = "Verify order status."
+                        recommendedAction = "Confirm the commercial order before creating a production job."
                     )
                 )
             )
@@ -68,8 +68,8 @@ class OrderProductionIntegrationServiceImpl(
             DomainResult.Loading -> return DomainResult.Error(message = "Loading order data.")
         }
 
-        if (order.status == OrderStatusType.CANCELLED) {
-            return DomainResult.Error(message = "Cannot create production job for CANCELLED order '${order.orderNumber}'.")
+        if (order.status != OrderStatusType.CONFIRMED && order.status != OrderStatusType.IN_PRODUCTION) {
+            return DomainResult.Error(message = "Cannot create production job for order '${order.orderNumber}' with status ${order.status.name}. Order must be CONFIRMED or IN_PRODUCTION.")
         }
 
         // Check if a job already exists for this order (Duplicate Job Prevention)
