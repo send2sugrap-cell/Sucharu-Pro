@@ -18,11 +18,11 @@ import java.util.concurrent.Executors
 
 /**
  * Real PostgreSQL Persistence, Testcontainers, Flyway Migration, Transaction Rollback,
- * RLS Isolation, Exact-One Idempotency Concurrency, and Optimistic Locking Test Suite (Phase 08 v4.2.1).
+ * RLS Isolation, Exact-One Idempotency Concurrency, and Optimistic Locking Test Suite (Phase 08 v4.2.2).
  *
  * MANDATORY REQUIREMENT:
- * - Instantiates [PostgreSQLContainer] with dynamic container JDBC configuration.
- * - NO localhost / DATABASE_* environment variable fallbacks in real test suite.
+ * - Instantiates non-nullable [PostgreSQLContainer] with dynamic container JDBC configuration.
+ * - NO external localhost / DATABASE_* environment variable connection fallbacks.
  * - NO silent skips (`if (!postgresAvailable) return` is FORBIDDEN).
  * - NO fake data sources or mock JDBC proxies in this suite.
  * - NO `baselineOnMigrate(true)` in clean container path.
@@ -31,22 +31,6 @@ import java.util.concurrent.Executors
  *   against a real PostgreSQL database engine.
  */
 class PostgresCustomerInvoicePaymentRealDatabaseTest {
-
-    companion object {
-        private var containerException: Throwable? = null
-
-        val postgresContainer: PostgreSQLContainer<*>? = try {
-            PostgreSQLContainer("postgres:16-alpine").apply {
-                withDatabaseName("sucharu_pro_db")
-                withUsername("postgres")
-                withPassword("postgres")
-                start()
-            }
-        } catch (t: Throwable) {
-            containerException = t
-            null
-        }
-    }
 
     private lateinit var config: PostgresConnectionConfig
     private lateinit var connectionProvider: DefaultPostgresConnectionProvider
@@ -61,9 +45,15 @@ class PostgresCustomerInvoicePaymentRealDatabaseTest {
 
     @Before
     fun setUp() {
-        val container = postgresContainer
-        if (container == null) {
-            fail("MANDATORY REAL POSTGRESQL TESTCONTAINER FAILED TO START: ${containerException?.message ?: "Container unavailable"}")
+        val container = try {
+            PostgreSQLContainer("postgres:16-alpine").apply {
+                withDatabaseName("sucharu_pro_db")
+                withUsername("postgres")
+                withPassword("postgres")
+                start()
+            }
+        } catch (e: Exception) {
+            fail("MANDATORY REAL POSTGRESQL TESTCONTAINER FAILED TO START: ${e.message}")
             return
         }
 
@@ -357,7 +347,7 @@ class PostgresCustomerInvoicePaymentRealDatabaseTest {
 
     @Test
     fun testRealPostgresIdempotencyReplayAndConcurrency_ExactOneProof() = runBlocking {
-        val sameIdempotencyKey = "idemp-concurrent-race-v421"
+        val sameIdempotencyKey = "idemp-concurrent-race-v422"
         val startLatch = CountDownLatch(1)
         val doneLatch = CountDownLatch(2)
         val results = mutableListOf<DomainResult<CustomerPayment>>()
@@ -369,10 +359,10 @@ class PostgresCustomerInvoicePaymentRealDatabaseTest {
                 try {
                     startLatch.await()
                     val payment = CustomerPayment(
-                        paymentId = "PAY-RACE-421-$i",
+                        paymentId = "PAY-RACE-422-$i",
                         tenantId = tenantA,
                         projectId = projectId,
-                        paymentNumber = "PAY-RACE-421-$i",
+                        paymentNumber = "PAY-RACE-422-$i",
                         customerId = "CUST-REAL-01",
                         customerFinancialAccountId = "ACC-REAL-01",
                         amount = BigDecimal("500.0000"),
