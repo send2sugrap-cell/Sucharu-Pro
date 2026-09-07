@@ -18,9 +18,10 @@ import java.util.concurrent.Executors
 
 /**
  * Real PostgreSQL Persistence, Testcontainers, Flyway Migration, Transaction Rollback,
- * RLS Isolation, Exact-One Idempotency Concurrency, and Optimistic Locking Test Suite (Phase 08 v4.1).
+ * RLS Isolation, Exact-One Idempotency Concurrency, and Optimistic Locking Test Suite (Phase 08 v4.2).
  *
  * MANDATORY REQUIREMENT:
+ * - Instantiates [PostgreSQLContainer] with dynamic JDBC configuration.
  * - NO silent skips (`if (!postgresAvailable) return` is FORBIDDEN).
  * - NO fake data sources or mock JDBC proxies in this suite.
  * - NO `baselineOnMigrate(true)` in clean container path.
@@ -29,6 +30,17 @@ import java.util.concurrent.Executors
  *   against a real PostgreSQL database engine.
  */
 class PostgresCustomerInvoicePaymentRealDatabaseTest {
+
+    companion object {
+        private val postgresContainer: PostgreSQLContainer<*>? = runCatching {
+            PostgreSQLContainer("postgres:16-alpine").apply {
+                withDatabaseName("sucharu_pro_db")
+                withUsername("postgres")
+                withPassword("postgres")
+                start()
+            }
+        }.getOrNull()
+    }
 
     private lateinit var config: PostgresConnectionConfig
     private lateinit var connectionProvider: DefaultPostgresConnectionProvider
@@ -43,12 +55,13 @@ class PostgresCustomerInvoicePaymentRealDatabaseTest {
 
     @Before
     fun setUp() {
-        val host = System.getenv("DATABASE_HOST") ?: "localhost"
-        val port = System.getenv("DATABASE_PORT")?.toIntOrNull() ?: 5432
-        val dbName = System.getenv("DATABASE_NAME") ?: "sucharu_pro_db"
-        val user = System.getenv("DATABASE_USER") ?: "postgres"
-        val password = System.getenv("DATABASE_PASSWORD") ?: "postgres"
-        val jdbcUrl = "jdbc:postgresql://$host:$port/$dbName?sslmode=prefer"
+        val container = postgresContainer
+        val host = container?.host ?: (System.getenv("DATABASE_HOST") ?: "localhost")
+        val port = container?.firstMappedPort ?: (System.getenv("DATABASE_PORT")?.toIntOrNull() ?: 5432)
+        val dbName = container?.databaseName ?: (System.getenv("DATABASE_NAME") ?: "sucharu_pro_db")
+        val user = container?.username ?: (System.getenv("DATABASE_USER") ?: "postgres")
+        val password = container?.password ?: (System.getenv("DATABASE_PASSWORD") ?: "postgres")
+        val jdbcUrl = container?.jdbcUrl ?: "jdbc:postgresql://$host:$port/$dbName?sslmode=prefer"
 
         config = PostgresConnectionConfig(
             host = host,
@@ -74,13 +87,13 @@ class PostgresCustomerInvoicePaymentRealDatabaseTest {
                 flyway.migrate()
             }
 
-            connectionProvider = DefaultPostgresConnectionProvider(config)
+            connectionProvider = DefaultPostgresConnectionProvider(config, jdbcUrl)
             transactionManager = DefaultPostgresTransactionManager(connectionProvider)
             invoiceDataSource = PostgresCustomerInvoiceDataSource(transactionManager, tenantA)
             paymentDataSource = PostgresCustomerPaymentDataSource(transactionManager, tenantA)
             allocationDataSource = PostgresCustomerPaymentAllocationDataSource(transactionManager, tenantA)
         } catch (e: Exception) {
-            fail("MANDATORY REAL POSTGRESQL INSTANCE REQUIRED at $host:$port/$dbName. Connection failed: ${e.message}")
+            fail("MANDATORY REAL POSTGRESQL INSTANCE / TESTCONTAINER REQUIRED at $host:$port/$dbName. Connection failed: ${e.message}")
         }
     }
 
@@ -335,7 +348,7 @@ class PostgresCustomerInvoicePaymentRealDatabaseTest {
 
     @Test
     fun testRealPostgresIdempotencyReplayAndConcurrency_ExactOneProof() = runBlocking {
-        val sameIdempotencyKey = "idemp-concurrent-race-v41"
+        val sameIdempotencyKey = "idemp-concurrent-race-v42"
         val startLatch = CountDownLatch(1)
         val doneLatch = CountDownLatch(2)
         val results = mutableListOf<DomainResult<CustomerPayment>>()
@@ -347,10 +360,10 @@ class PostgresCustomerInvoicePaymentRealDatabaseTest {
                 try {
                     startLatch.await()
                     val payment = CustomerPayment(
-                        paymentId = "PAY-RACE-41-$i",
+                        paymentId = "PAY-RACE-42-$i",
                         tenantId = tenantA,
                         projectId = projectId,
-                        paymentNumber = "PAY-RACE-41-$i",
+                        paymentNumber = "PAY-RACE-42-$i",
                         customerId = "CUST-REAL-01",
                         customerFinancialAccountId = "ACC-REAL-01",
                         amount = BigDecimal("500.0000"),
