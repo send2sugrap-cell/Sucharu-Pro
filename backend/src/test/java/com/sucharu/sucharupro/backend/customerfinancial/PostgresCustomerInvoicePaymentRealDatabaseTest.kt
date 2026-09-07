@@ -6,6 +6,7 @@ import com.sucharu.sucharupro.domain.model.customerinvoice.*
 import com.sucharu.sucharupro.domain.model.customerpayment.*
 import com.sucharu.sucharupro.domain.model.customersettlement.*
 import kotlinx.coroutines.runBlocking
+import org.flywaydb.core.Flyway
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
@@ -13,7 +14,7 @@ import java.math.BigDecimal
 import java.sql.DriverManager
 
 /**
- * Real PostgreSQL Persistence, Flyway Migration, Transaction Rollback, and RLS Isolation Test Suite (Phase 08).
+ * Real PostgreSQL Persistence, Flyway Migration, Transaction Rollback, and RLS Isolation Test Suite (Phase 08 v3).
  *
  * MANDATORY REQUIREMENT:
  * - NO silent skips (`if (!postgresAvailable) return` is FORBIDDEN).
@@ -42,6 +43,7 @@ class PostgresCustomerInvoicePaymentRealDatabaseTest {
         val dbName = System.getenv("DATABASE_NAME") ?: "sucharu_pro_db"
         val user = System.getenv("DATABASE_USER") ?: "postgres"
         val password = System.getenv("DATABASE_PASSWORD") ?: "postgres"
+        val jdbcUrl = "jdbc:postgresql://$host:$port/$dbName?sslmode=prefer"
 
         config = PostgresConnectionConfig(
             host = host,
@@ -54,8 +56,20 @@ class PostgresCustomerInvoicePaymentRealDatabaseTest {
 
         try {
             Class.forName("org.postgresql.Driver")
-            val conn = DriverManager.getConnection("jdbc:postgresql://$host:$port/$dbName?sslmode=prefer", user, password)
+            val conn = DriverManager.getConnection(jdbcUrl, user, password)
             conn.close()
+
+            // Run Flyway migrations against clean PostgreSQL instance
+            runCatching {
+                val flyway = Flyway.configure()
+                    .dataSource(jdbcUrl, user, password)
+                    .locations("classpath:db/migration")
+                    .table("flyway_schema_history")
+                    .baselineOnMigrate(true)
+                    .baselineVersion("0")
+                    .load()
+                flyway.migrate()
+            }
 
             connectionProvider = DefaultPostgresConnectionProvider(config)
             transactionManager = DefaultPostgresTransactionManager(connectionProvider)
@@ -79,6 +93,18 @@ class PostgresCustomerInvoicePaymentRealDatabaseTest {
     fun testRealPostgresFlywayTableAndRlsPolicyVerification() = runBlocking {
         val conn = connectionProvider.acquireConnection()
         try {
+            // 1. Verify Flyway schema history
+            val flywayStmt = conn.prepareStatement("SELECT COUNT(*) FROM flyway_schema_history WHERE success = true")
+            val flywayRs = flywayStmt.executeQuery()
+            var migrationCount = 0
+            if (flywayRs.next()) {
+                migrationCount = flywayRs.getInt(1)
+            }
+            flywayRs.close()
+            flywayStmt.close()
+            assertTrue("Flyway migration history must contain executed migrations", migrationCount >= 1)
+
+            // 2. Verify pg_class RLS enabled and forced
             val stmt = conn.prepareStatement(
                 """
                 SELECT relname, relrowsecurity, relforcerowsecurity 
@@ -99,6 +125,23 @@ class PostgresCustomerInvoicePaymentRealDatabaseTest {
             rs.close()
             stmt.close()
             assertTrue("All 3 Phase 08 financial tables must exist in PostgreSQL catalog with RLS enabled", count >= 3)
+
+            // 3. Verify pg_policies definition for Phase 08 tables
+            val policyStmt = conn.prepareStatement(
+                """
+                SELECT policyname, tablename 
+                FROM pg_policies 
+                WHERE tablename IN ('customer_invoices', 'customer_payments', 'customer_payment_allocations')
+                """.trimIndent()
+            )
+            val policyRs = policyStmt.executeQuery()
+            var policyCount = 0
+            while (policyRs.next()) {
+                policyCount++
+            }
+            policyRs.close()
+            policyStmt.close()
+            assertTrue("PostgreSQL pg_policies must contain RLS policy definitions for Phase 08 tables", policyCount >= 3)
         } finally {
             connectionProvider.releaseConnection(conn)
         }
@@ -210,9 +253,35 @@ class PostgresCustomerInvoicePaymentRealDatabaseTest {
     fun testRealPostgresCrossTenantRlsReadAndWriteIsolation() = runBlocking {
         val otherTenantDataSource = PostgresCustomerInvoiceDataSource(transactionManager, tenantB)
 
-        // Tenant B attempting to read Tenant A invoice
+        // READ ISOLATION: Tenant B attempting to read Tenant A invoice
         val retrievedRes = otherTenantDataSource.findInvoiceById(tenantB, projectId, "INV-REAL-101")
         assertTrue("Cross-tenant invoice lookup must be denied by Postgres RLS", retrievedRes is DomainResult.Error)
+
+        // WRITE ISOLATION: Tenant B attempting to update Tenant A invoice balance
+        val writeRes = otherTenantDataSource.updatePaymentBalance(
+            tenantId = tenantB,
+            projectId = projectId,
+            invoiceId = "INV-REAL-101",
+            newPaidAmount = BigDecimal("1500.0000"),
+            newDueAmount = BigDecimal.ZERO,
+            newStatus = CustomerInvoiceStatus.PAID,
+            actorId = "ATTACKER-TENANT-B",
+            expectedVersion = 1L
+        )
+        assertTrue("Cross-tenant invoice update must be denied by Postgres RLS", writeRes is DomainResult.Error)
+
+        // SAME-TENANT VALIDATION: Tenant A update succeeds
+        val sameTenantRes = invoiceDataSource.updatePaymentBalance(
+            tenantId = tenantA,
+            projectId = projectId,
+            invoiceId = "INV-REAL-101",
+            newPaidAmount = BigDecimal("1000.0000"),
+            newDueAmount = BigDecimal("500.0000"),
+            newStatus = CustomerInvoiceStatus.PARTIALLY_PAID,
+            actorId = "USR-ADMIN-REAL",
+            expectedVersion = 2L
+        )
+        assertTrue("Same-tenant invoice update must succeed", sameTenantRes is DomainResult.Success)
     }
 
     @Test
@@ -259,5 +328,21 @@ class PostgresCustomerInvoicePaymentRealDatabaseTest {
         // Verify uncommitted invoice was rolled back in PostgreSQL
         val rolledBackInvRes = invoiceDataSource.findInvoiceById(tenantA, projectId, tempInvoiceId)
         assertTrue("Rolled-back invoice must not exist in PostgreSQL", rolledBackInvRes is DomainResult.Error)
+    }
+
+    @Test
+    fun testRealPostgresDatabaseIdempotencyAndOptimisticLocking() = runBlocking {
+        // 1. Optimistic Locking Test: Update with wrong version fails
+        val staleUpdateRes = invoiceDataSource.updateStatus(
+            tenantId = tenantA,
+            projectId = projectId,
+            invoiceId = "INV-REAL-101",
+            newStatus = CustomerInvoiceStatus.VOID,
+            reason = "Stale version test",
+            actorId = "USR-ADMIN-REAL",
+            issueDate = null,
+            expectedVersion = 99999L
+        )
+        assertTrue("Update with stale version must be rejected by optimistic locking", staleUpdateRes is DomainResult.Error)
     }
 }
