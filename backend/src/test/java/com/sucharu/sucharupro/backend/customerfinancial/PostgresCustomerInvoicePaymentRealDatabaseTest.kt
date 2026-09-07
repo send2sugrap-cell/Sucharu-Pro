@@ -10,19 +10,20 @@ import org.flywaydb.core.Flyway
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
+import org.testcontainers.containers.PostgreSQLContainer
 import java.math.BigDecimal
 import java.sql.DriverManager
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
-import java.util.concurrent.atomic.AtomicInteger
 
 /**
- * Real PostgreSQL Persistence, Testcontainers / JDBC, Flyway Migration, Transaction Rollback,
- * RLS Isolation, Idempotency Concurrency, and Optimistic Locking Test Suite (Phase 08 v4).
+ * Real PostgreSQL Persistence, Testcontainers, Flyway Migration, Transaction Rollback,
+ * RLS Isolation, Exact-One Idempotency Concurrency, and Optimistic Locking Test Suite (Phase 08 v4.1).
  *
  * MANDATORY REQUIREMENT:
  * - NO silent skips (`if (!postgresAvailable) return` is FORBIDDEN).
  * - NO fake data sources or mock JDBC proxies in this suite.
+ * - NO `baselineOnMigrate(true)` in clean container path.
  * - Exercises production [PostgresCustomerInvoiceDataSource], [PostgresCustomerPaymentDataSource],
  *   [PostgresCustomerPaymentAllocationDataSource], and [DefaultPostgresTransactionManager]
  *   against a real PostgreSQL database engine.
@@ -63,14 +64,12 @@ class PostgresCustomerInvoicePaymentRealDatabaseTest {
             val conn = DriverManager.getConnection(jdbcUrl, user, password)
             conn.close()
 
-            // Run Flyway migrations against clean PostgreSQL instance
+            // Run Flyway migrations from clean database (WITHOUT baselineOnMigrate)
             runCatching {
                 val flyway = Flyway.configure()
                     .dataSource(jdbcUrl, user, password)
                     .locations("classpath:db/migration")
                     .table("flyway_schema_history")
-                    .baselineOnMigrate(true)
-                    .baselineVersion("0")
                     .load()
                 flyway.migrate()
             }
@@ -335,11 +334,12 @@ class PostgresCustomerInvoicePaymentRealDatabaseTest {
     }
 
     @Test
-    fun testRealPostgresIdempotencyReplayAndConcurrency_ParallelCountDownLatch() = runBlocking {
-        val sameIdempotencyKey = "idemp-concurrent-race-100"
+    fun testRealPostgresIdempotencyReplayAndConcurrency_ExactOneProof() = runBlocking {
+        val sameIdempotencyKey = "idemp-concurrent-race-v41"
         val startLatch = CountDownLatch(1)
         val doneLatch = CountDownLatch(2)
-        val successCount = AtomicInteger(0)
+        val results = mutableListOf<DomainResult<CustomerPayment>>()
+        val errors = mutableListOf<Throwable>()
         val executor = Executors.newFixedThreadPool(2)
 
         for (i in 1..2) {
@@ -347,10 +347,10 @@ class PostgresCustomerInvoicePaymentRealDatabaseTest {
                 try {
                     startLatch.await()
                     val payment = CustomerPayment(
-                        paymentId = "PAY-RACE-10$i",
+                        paymentId = "PAY-RACE-41-$i",
                         tenantId = tenantA,
                         projectId = projectId,
-                        paymentNumber = "PAY-RACE-10$i",
+                        paymentNumber = "PAY-RACE-41-$i",
                         customerId = "CUST-REAL-01",
                         customerFinancialAccountId = "ACC-REAL-01",
                         amount = BigDecimal("500.0000"),
@@ -360,11 +360,10 @@ class PostgresCustomerInvoicePaymentRealDatabaseTest {
                     )
                     runBlocking {
                         val res = paymentDataSource.insertPayment(payment)
-                        if (res is DomainResult.Success) {
-                            successCount.incrementAndGet()
-                        }
+                        synchronized(results) { results.add(res) }
                     }
-                } catch (_: Exception) {
+                } catch (t: Throwable) {
+                    synchronized(errors) { errors.add(t) }
                 } finally {
                     doneLatch.countDown()
                 }
@@ -375,9 +374,23 @@ class PostgresCustomerInvoicePaymentRealDatabaseTest {
         doneLatch.await()
         executor.shutdown()
 
-        val idempLookupRes = paymentDataSource.findByIdempotencyKey(tenantA, projectId, sameIdempotencyKey)
-        assertTrue("Idempotency lookup in PostgreSQL must succeed", idempLookupRes is DomainResult.Success)
-        assertNotNull("Payment with idempotency key must exist in PostgreSQL", (idempLookupRes as DomainResult.Success).data)
+        // Verify exact database row count == 1 for the idempotency key directly in PostgreSQL
+        val conn = connectionProvider.acquireConnection()
+        try {
+            val stmt = conn.prepareStatement("SELECT COUNT(*) FROM customer_payments WHERE tenant_id = ? AND idempotency_key = ?")
+            stmt.setString(1, tenantA)
+            stmt.setString(2, sameIdempotencyKey)
+            val rs = stmt.executeQuery()
+            var count = 0
+            if (rs.next()) {
+                count = rs.getInt(1)
+            }
+            rs.close()
+            stmt.close()
+            assertEquals("EXACTLY ONE canonical payment row must exist in PostgreSQL for idempotency key", 1, count)
+        } finally {
+            connectionProvider.releaseConnection(conn)
+        }
     }
 
     @Test
