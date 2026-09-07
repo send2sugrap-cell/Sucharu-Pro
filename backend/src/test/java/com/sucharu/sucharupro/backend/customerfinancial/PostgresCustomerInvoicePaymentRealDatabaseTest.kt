@@ -13,15 +13,17 @@ import java.math.BigDecimal
 import java.sql.DriverManager
 
 /**
- * Real PostgreSQL Persistence, Migration, RLS, and Security Verification Test Suite (Phase 08).
+ * Real PostgreSQL Persistence, Flyway Migration, Transaction Rollback, and RLS Isolation Test Suite (Phase 08).
  *
- * This test suite exercises the actual production [PostgresCustomerInvoiceDataSource],
- * [PostgresCustomerPaymentDataSource], [PostgresCustomerPaymentAllocationDataSource],
- * and [DefaultPostgresTransactionManager] against a real PostgreSQL JDBC connection.
+ * MANDATORY REQUIREMENT:
+ * - NO silent skips (`if (!postgresAvailable) return` is FORBIDDEN).
+ * - NO fake data sources or mock JDBC proxies in this suite.
+ * - Exercises production [PostgresCustomerInvoiceDataSource], [PostgresCustomerPaymentDataSource],
+ *   [PostgresCustomerPaymentAllocationDataSource], and [DefaultPostgresTransactionManager]
+ *   against a real PostgreSQL database engine.
  */
 class PostgresCustomerInvoicePaymentRealDatabaseTest {
 
-    private var postgresAvailable = false
     private lateinit var config: PostgresConnectionConfig
     private lateinit var connectionProvider: DefaultPostgresConnectionProvider
     private lateinit var transactionManager: DefaultPostgresTransactionManager
@@ -54,7 +56,6 @@ class PostgresCustomerInvoicePaymentRealDatabaseTest {
             Class.forName("org.postgresql.Driver")
             val conn = DriverManager.getConnection("jdbc:postgresql://$host:$port/$dbName?sslmode=prefer", user, password)
             conn.close()
-            postgresAvailable = true
 
             connectionProvider = DefaultPostgresConnectionProvider(config)
             transactionManager = DefaultPostgresTransactionManager(connectionProvider)
@@ -62,18 +63,12 @@ class PostgresCustomerInvoicePaymentRealDatabaseTest {
             paymentDataSource = PostgresCustomerPaymentDataSource(transactionManager, tenantA)
             allocationDataSource = PostgresCustomerPaymentAllocationDataSource(transactionManager, tenantA)
         } catch (e: Exception) {
-            postgresAvailable = false
-            println("[PostgresRealDbTest] Real PostgreSQL instance at $host:$port/$dbName not reachable: ${e.message}. Executing connection validation assertions.")
+            fail("MANDATORY REAL POSTGRESQL INSTANCE REQUIRED at $host:$port/$dbName. Connection failed: ${e.message}")
         }
     }
 
     @Test
     fun testRealPostgresConnectivityAndHealthCheck() = runBlocking {
-        if (!postgresAvailable) {
-            println("[INFO] Skipping PostgreSQL-dependent assertions because local PostgreSQL server is offline.")
-            return@runBlocking
-        }
-
         val healthChecker = DatabaseHealthChecker(connectionProvider)
         val health = healthChecker.checkReadiness()
         assertTrue("Real PostgreSQL health check must report READY", health.isReady)
@@ -82,8 +77,6 @@ class PostgresCustomerInvoicePaymentRealDatabaseTest {
 
     @Test
     fun testRealPostgresFlywayTableAndRlsPolicyVerification() = runBlocking {
-        if (!postgresAvailable) return@runBlocking
-
         val conn = connectionProvider.acquireConnection()
         try {
             val stmt = conn.prepareStatement(
@@ -113,8 +106,6 @@ class PostgresCustomerInvoicePaymentRealDatabaseTest {
 
     @Test
     fun testRealPostgresInvoicePaymentAllocationPersistence_EndToEnd() = runBlocking {
-        if (!postgresAvailable) return@runBlocking
-
         // 1. Insert Customer Invoice via Real Postgres DataSource
         val invoice = CustomerInvoice(
             invoiceId = "INV-REAL-101",
@@ -217,12 +208,56 @@ class PostgresCustomerInvoicePaymentRealDatabaseTest {
 
     @Test
     fun testRealPostgresCrossTenantRlsReadAndWriteIsolation() = runBlocking {
-        if (!postgresAvailable) return@runBlocking
-
         val otherTenantDataSource = PostgresCustomerInvoiceDataSource(transactionManager, tenantB)
 
         // Tenant B attempting to read Tenant A invoice
         val retrievedRes = otherTenantDataSource.findInvoiceById(tenantB, projectId, "INV-REAL-101")
-        assertTrue(retrievedRes is DomainResult.Error)
+        assertTrue("Cross-tenant invoice lookup must be denied by Postgres RLS", retrievedRes is DomainResult.Error)
+    }
+
+    @Test
+    fun testRealPostgresTransactionRollback_RevertsUncommittedFinancialData() = runBlocking {
+        val tempInvoiceId = "INV-ROLLBACK-999"
+        val tenantContext = TenantContext(projectId = projectId)
+
+        try {
+            transactionManager.inTransaction(tenantContext) { tx ->
+                val sql = """
+                    INSERT INTO customer_invoices (
+                        invoice_id, tenant_id, project_id, customer_id, customer_financial_account_id,
+                        invoice_number, subtotal, grand_total, paid_amount, due_amount, status,
+                        created_at, created_by, updated_at, updated_by, version
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """.trimIndent()
+                tx.connection.prepareStatement(sql).use { stmt ->
+                    stmt.setString(1, tempInvoiceId)
+                    stmt.setString(2, tenantA)
+                    stmt.setString(3, projectId)
+                    stmt.setString(4, "CUST-ROLLBACK")
+                    stmt.setString(5, "ACC-ROLLBACK")
+                    stmt.setString(6, "INV-ROLLBACK-01")
+                    stmt.setBigDecimal(7, BigDecimal("500.0000"))
+                    stmt.setBigDecimal(8, BigDecimal("500.0000"))
+                    stmt.setBigDecimal(9, BigDecimal.ZERO)
+                    stmt.setBigDecimal(10, BigDecimal("500.0000"))
+                    stmt.setString(11, "DRAFT")
+                    stmt.setLong(12, System.currentTimeMillis())
+                    stmt.setString(13, "system")
+                    stmt.setLong(14, System.currentTimeMillis())
+                    stmt.setString(15, "system")
+                    stmt.setLong(16, 1L)
+                    stmt.executeUpdate()
+                }
+
+                // Deliberately fail transaction to trigger rollback
+                throw IllegalStateException("Controlled transaction failure for rollback verification")
+            }
+        } catch (_: Exception) {
+            // Expected transaction failure
+        }
+
+        // Verify uncommitted invoice was rolled back in PostgreSQL
+        val rolledBackInvRes = invoiceDataSource.findInvoiceById(tenantA, projectId, tempInvoiceId)
+        assertTrue("Rolled-back invoice must not exist in PostgreSQL", rolledBackInvRes is DomainResult.Error)
     }
 }
