@@ -25,6 +25,8 @@ dependencies {
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.core)
+    testImplementation(libs.testcontainers.postgresql)
+    testImplementation(libs.testcontainers.core)
 }
 
 tasks.jar {

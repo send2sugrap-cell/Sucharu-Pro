@@ -19,6 +19,7 @@ slf4j = "2.0.16"
 gson = "2.10.1"
 firebaseBom = "33.10.0"
 firebaseAdmin = "9.3.0"
+testcontainers = "1.20.4"
 
 [libraries]
 firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
@@ -49,6 +50,8 @@ flyway-database-postgresql = { group = "org.flywaydb", name = "flyway-database-p
 logback-classic = { group = "ch.qos.logback", name = "logback-classic", version.ref = "logback" }
 slf4j-api = { group = "org.slf4j", name = "slf4j-api", version.ref = "slf4j" }
 gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
+testcontainers-postgresql = { group = "org.testcontainers", name = "postgresql", version.ref = "testcontainers" }
+testcontainers-core = { group = "org.testcontainers", name = "testcontainers", version.ref = "testcontainers" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

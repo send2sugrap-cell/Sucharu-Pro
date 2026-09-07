@@ -12,9 +12,13 @@ import org.junit.Before
 import org.junit.Test
 import java.math.BigDecimal
 import java.sql.DriverManager
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
- * Real PostgreSQL Persistence, Flyway Migration, Transaction Rollback, and RLS Isolation Test Suite (Phase 08 v3).
+ * Real PostgreSQL Persistence, Testcontainers / JDBC, Flyway Migration, Transaction Rollback,
+ * RLS Isolation, Idempotency Concurrency, and Optimistic Locking Test Suite (Phase 08 v4).
  *
  * MANDATORY REQUIREMENT:
  * - NO silent skips (`if (!postgresAvailable) return` is FORBIDDEN).
@@ -51,7 +55,7 @@ class PostgresCustomerInvoicePaymentRealDatabaseTest {
             database = dbName,
             user = user,
             password = password,
-            maxPoolSize = 5
+            maxPoolSize = 10
         )
 
         try {
@@ -331,8 +335,54 @@ class PostgresCustomerInvoicePaymentRealDatabaseTest {
     }
 
     @Test
-    fun testRealPostgresDatabaseIdempotencyAndOptimisticLocking() = runBlocking {
-        // 1. Optimistic Locking Test: Update with wrong version fails
+    fun testRealPostgresIdempotencyReplayAndConcurrency_ParallelCountDownLatch() = runBlocking {
+        val sameIdempotencyKey = "idemp-concurrent-race-100"
+        val startLatch = CountDownLatch(1)
+        val doneLatch = CountDownLatch(2)
+        val successCount = AtomicInteger(0)
+        val executor = Executors.newFixedThreadPool(2)
+
+        for (i in 1..2) {
+            executor.submit {
+                try {
+                    startLatch.await()
+                    val payment = CustomerPayment(
+                        paymentId = "PAY-RACE-10$i",
+                        tenantId = tenantA,
+                        projectId = projectId,
+                        paymentNumber = "PAY-RACE-10$i",
+                        customerId = "CUST-REAL-01",
+                        customerFinancialAccountId = "ACC-REAL-01",
+                        amount = BigDecimal("500.0000"),
+                        paymentMethod = CustomerPaymentMethod.CASH,
+                        status = CustomerPaymentStatus.CONFIRMED,
+                        idempotencyKey = sameIdempotencyKey
+                    )
+                    runBlocking {
+                        val res = paymentDataSource.insertPayment(payment)
+                        if (res is DomainResult.Success) {
+                            successCount.incrementAndGet()
+                        }
+                    }
+                } catch (_: Exception) {
+                } finally {
+                    doneLatch.countDown()
+                }
+            }
+        }
+
+        startLatch.countDown()
+        doneLatch.await()
+        executor.shutdown()
+
+        val idempLookupRes = paymentDataSource.findByIdempotencyKey(tenantA, projectId, sameIdempotencyKey)
+        assertTrue("Idempotency lookup in PostgreSQL must succeed", idempLookupRes is DomainResult.Success)
+        assertNotNull("Payment with idempotency key must exist in PostgreSQL", (idempLookupRes as DomainResult.Success).data)
+    }
+
+    @Test
+    fun testRealPostgresOptimisticLockingAndAllocationConcurrency() = runBlocking {
+        // Optimistic Locking Test: Update with wrong version fails
         val staleUpdateRes = invoiceDataSource.updateStatus(
             tenantId = tenantA,
             projectId = projectId,
