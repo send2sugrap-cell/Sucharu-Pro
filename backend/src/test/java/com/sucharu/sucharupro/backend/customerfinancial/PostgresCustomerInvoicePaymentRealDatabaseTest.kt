@@ -18,10 +18,11 @@ import java.util.concurrent.Executors
 
 /**
  * Real PostgreSQL Persistence, Testcontainers, Flyway Migration, Transaction Rollback,
- * RLS Isolation, Exact-One Idempotency Concurrency, and Optimistic Locking Test Suite (Phase 08 v4.2).
+ * RLS Isolation, Exact-One Idempotency Concurrency, and Optimistic Locking Test Suite (Phase 08 v4.2.1).
  *
  * MANDATORY REQUIREMENT:
- * - Instantiates [PostgreSQLContainer] with dynamic JDBC configuration.
+ * - Instantiates [PostgreSQLContainer] with dynamic container JDBC configuration.
+ * - NO localhost / DATABASE_* environment variable fallbacks in real test suite.
  * - NO silent skips (`if (!postgresAvailable) return` is FORBIDDEN).
  * - NO fake data sources or mock JDBC proxies in this suite.
  * - NO `baselineOnMigrate(true)` in clean container path.
@@ -32,14 +33,19 @@ import java.util.concurrent.Executors
 class PostgresCustomerInvoicePaymentRealDatabaseTest {
 
     companion object {
-        private val postgresContainer: PostgreSQLContainer<*>? = runCatching {
+        private var containerException: Throwable? = null
+
+        val postgresContainer: PostgreSQLContainer<*>? = try {
             PostgreSQLContainer("postgres:16-alpine").apply {
                 withDatabaseName("sucharu_pro_db")
                 withUsername("postgres")
                 withPassword("postgres")
                 start()
             }
-        }.getOrNull()
+        } catch (t: Throwable) {
+            containerException = t
+            null
+        }
     }
 
     private lateinit var config: PostgresConnectionConfig
@@ -56,12 +62,17 @@ class PostgresCustomerInvoicePaymentRealDatabaseTest {
     @Before
     fun setUp() {
         val container = postgresContainer
-        val host = container?.host ?: (System.getenv("DATABASE_HOST") ?: "localhost")
-        val port = container?.firstMappedPort ?: (System.getenv("DATABASE_PORT")?.toIntOrNull() ?: 5432)
-        val dbName = container?.databaseName ?: (System.getenv("DATABASE_NAME") ?: "sucharu_pro_db")
-        val user = container?.username ?: (System.getenv("DATABASE_USER") ?: "postgres")
-        val password = container?.password ?: (System.getenv("DATABASE_PASSWORD") ?: "postgres")
-        val jdbcUrl = container?.jdbcUrl ?: "jdbc:postgresql://$host:$port/$dbName?sslmode=prefer"
+        if (container == null) {
+            fail("MANDATORY REAL POSTGRESQL TESTCONTAINER FAILED TO START: ${containerException?.message ?: "Container unavailable"}")
+            return
+        }
+
+        val jdbcUrl = container.jdbcUrl
+        val user = container.username
+        val password = container.password
+        val host = container.host
+        val port = container.firstMappedPort
+        val dbName = container.databaseName
 
         config = PostgresConnectionConfig(
             host = host,
@@ -77,15 +88,13 @@ class PostgresCustomerInvoicePaymentRealDatabaseTest {
             val conn = DriverManager.getConnection(jdbcUrl, user, password)
             conn.close()
 
-            // Run Flyway migrations from clean database (WITHOUT baselineOnMigrate)
-            runCatching {
-                val flyway = Flyway.configure()
-                    .dataSource(jdbcUrl, user, password)
-                    .locations("classpath:db/migration")
-                    .table("flyway_schema_history")
-                    .load()
-                flyway.migrate()
-            }
+            // Run Flyway migrations against clean PostgreSQL container (WITHOUT baselineOnMigrate)
+            val flyway = Flyway.configure()
+                .dataSource(jdbcUrl, user, password)
+                .locations("classpath:db/migration")
+                .table("flyway_schema_history")
+                .load()
+            flyway.migrate()
 
             connectionProvider = DefaultPostgresConnectionProvider(config, jdbcUrl)
             transactionManager = DefaultPostgresTransactionManager(connectionProvider)
@@ -93,7 +102,7 @@ class PostgresCustomerInvoicePaymentRealDatabaseTest {
             paymentDataSource = PostgresCustomerPaymentDataSource(transactionManager, tenantA)
             allocationDataSource = PostgresCustomerPaymentAllocationDataSource(transactionManager, tenantA)
         } catch (e: Exception) {
-            fail("MANDATORY REAL POSTGRESQL INSTANCE / TESTCONTAINER REQUIRED at $host:$port/$dbName. Connection failed: ${e.message}")
+            fail("MANDATORY REAL POSTGRESQL TESTCONTAINER INITIALIZATION FAILED at $host:$port/$dbName: ${e.message}")
         }
     }
 
@@ -348,7 +357,7 @@ class PostgresCustomerInvoicePaymentRealDatabaseTest {
 
     @Test
     fun testRealPostgresIdempotencyReplayAndConcurrency_ExactOneProof() = runBlocking {
-        val sameIdempotencyKey = "idemp-concurrent-race-v42"
+        val sameIdempotencyKey = "idemp-concurrent-race-v421"
         val startLatch = CountDownLatch(1)
         val doneLatch = CountDownLatch(2)
         val results = mutableListOf<DomainResult<CustomerPayment>>()
@@ -360,10 +369,10 @@ class PostgresCustomerInvoicePaymentRealDatabaseTest {
                 try {
                     startLatch.await()
                     val payment = CustomerPayment(
-                        paymentId = "PAY-RACE-42-$i",
+                        paymentId = "PAY-RACE-421-$i",
                         tenantId = tenantA,
                         projectId = projectId,
-                        paymentNumber = "PAY-RACE-42-$i",
+                        paymentNumber = "PAY-RACE-421-$i",
                         customerId = "CUST-REAL-01",
                         customerFinancialAccountId = "ACC-REAL-01",
                         amount = BigDecimal("500.0000"),
@@ -386,6 +395,9 @@ class PostgresCustomerInvoicePaymentRealDatabaseTest {
         startLatch.countDown()
         doneLatch.await()
         executor.shutdown()
+
+        // Surface all errors if any unhandled error occurred
+        assertTrue("Concurrent execution errors should be handled safely by idempotency logic", errors.isEmpty())
 
         // Verify exact database row count == 1 for the idempotency key directly in PostgreSQL
         val conn = connectionProvider.acquireConnection()
