@@ -592,7 +592,10 @@ class AuthenticationService(
             email = trimmedEmail,
             phone = normalizedPhone ?: trimmedPhone
         )
-        profileDataSource?.createOrUpdateProfile(newProfile)
+        val createProfRes = profileDataSource?.createOrUpdateProfile(newProfile)
+        if (createProfRes is DomainResult.Error) {
+            throw ConflictException(message = createProfRes.message)
+        }
 
         // Issue Verification Token if verificationDataSource is provided
         var deliveryAccepted = true
@@ -617,7 +620,10 @@ class AuthenticationService(
                 tokenState = VerificationTokenState.PENDING,
                 expiresAt = System.currentTimeMillis() + (900 * 1000L)
             )
-            verificationDataSource.createVerificationToken(token)
+            val createTokenRes = verificationDataSource.createVerificationToken(token)
+            if (createTokenRes is DomainResult.Error) {
+                throw ConflictException(message = createTokenRes.message)
+            }
 
             // Dispatch token via notification provider abstraction
             val deliveryResult = notificationProvider.sendVerificationNotification(

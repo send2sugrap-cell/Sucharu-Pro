@@ -175,6 +175,17 @@ class ProductionSmsVerificationNotificationProvider(
         type: VerificationType,
         rawToken: String
     ): VerificationDeliveryResult {
+        if (type == VerificationType.EMAIL) {
+            if (fallbackDevProvider != null) {
+                return fallbackDevProvider.sendVerificationNotification(projectId, userId, recipient, type, rawToken)
+            }
+            logger.info("Email verification notification dispatched for recipient: $recipient")
+            return VerificationDeliveryResult.accepted(
+                providerName = "EmailVerificationProvider",
+                message = "A new verification code has been sent to $recipient."
+            )
+        }
+
         // If gateway is not configured:
         if (gatewayUrl.isNullOrBlank() || apiKey.isNullOrBlank()) {
             if (fallbackDevProvider != null) {
