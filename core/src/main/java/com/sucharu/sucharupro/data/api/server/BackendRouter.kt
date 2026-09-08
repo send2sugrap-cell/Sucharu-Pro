@@ -173,8 +173,7 @@ class BackendRouter(
 
                 // Authentication API (INFRA-03 Step 01 & Step 04)
                 request.path == "/api/v1/auth/register" && request.method == "POST" -> {
-                    val regReq = request.body as? RegisterRequestDto
-                        ?: throw ValidationException("Request body must be a valid RegisterRequestDto.")
+                    val regReq = parseRegisterRequestDto(request.body)
                     val userAgent = request.headers["User-Agent"] ?: request.headers["user-agent"]
                     if (authService == null) {
                         throw UnauthenticatedException("Authentication service is not configured.")
@@ -184,8 +183,7 @@ class BackendRouter(
                 }
 
                 request.path == "/api/v1/auth/password/recovery/request" && request.method == "POST" -> {
-                    val recReq = request.body as? PasswordRecoveryRequestDto
-                        ?: throw ValidationException("Request body must be a valid PasswordRecoveryRequestDto.")
+                    val recReq = parsePasswordRecoveryRequestDto(request.body)
                     val userAgent = request.headers["User-Agent"] ?: request.headers["user-agent"]
                     val resp = if (authService != null) {
                         authService.requestPasswordRecovery(recReq, correlationId, request.clientIp, userAgent)
@@ -196,8 +194,7 @@ class BackendRouter(
                 }
 
                 request.path == "/api/v1/auth/password/recovery/confirm" && request.method == "POST" -> {
-                    val confirmReq = request.body as? PasswordRecoveryConfirmDto
-                        ?: throw ValidationException("Request body must be a valid PasswordRecoveryConfirmDto.")
+                    val confirmReq = parsePasswordRecoveryConfirmDto(request.body)
                     val userAgent = request.headers["User-Agent"] ?: request.headers["user-agent"]
                     if (authService == null) {
                         throw UnauthenticatedException("Authentication service is not configured.")
@@ -16754,6 +16751,94 @@ private fun parseFirebaseAuthRequest(body: Any?): FirebaseAuthRequestDto {
         )
     }
     throw ValidationException("Request body must be a valid FirebaseAuthRequestDto.")
+}
+
+private fun parseRegisterRequestDto(body: Any?): RegisterRequestDto {
+    if (body is RegisterRequestDto) return body
+    if (body is Map<*, *>) {
+        val displayName = (body["displayName"] as? String)
+            ?: throw ValidationException("Missing 'displayName' parameter.")
+        val password = (body["password"] as? String)
+            ?: throw ValidationException("Missing 'password' parameter.")
+        val username = body["username"] as? String
+        val email = body["email"] as? String
+        val phone = body["phone"] as? String
+        val acceptedTermsVersion = (body["acceptedTermsVersion"] as? String) ?: "1.0"
+        val affiliateReferralCode = body["affiliateReferralCode"] as? String
+        val requestedProjectId = body["requestedProjectId"] as? String
+        val requestedRoleStr = body["requestedRole"] as? String
+        val requestedRole = requestedRoleStr?.let {
+            try { UserRole.valueOf(it.uppercase()) } catch (_: Exception) { null }
+        }
+
+        return RegisterRequestDto(
+            displayName = displayName,
+            username = username,
+            email = email,
+            phone = phone,
+            password = password,
+            acceptedTermsVersion = acceptedTermsVersion,
+            affiliateReferralCode = affiliateReferralCode,
+            requestedProjectId = requestedProjectId,
+            requestedRole = requestedRole
+        )
+    }
+    if (body is String) {
+        val map = try {
+            com.google.gson.Gson().fromJson(body, Map::class.java) as? Map<*, *>
+        } catch (_: Exception) {
+            null
+        }
+        if (map != null) {
+            return parseRegisterRequestDto(map)
+        }
+        val dto = try {
+            com.google.gson.Gson().fromJson(body, RegisterRequestDto::class.java)
+        } catch (_: Exception) {
+            null
+        }
+        if (dto != null) return dto
+    }
+    throw ValidationException("Request body must be a valid RegisterRequestDto.")
+}
+
+private fun parsePasswordRecoveryRequestDto(body: Any?): PasswordRecoveryRequestDto {
+    if (body is PasswordRecoveryRequestDto) return body
+    if (body is Map<*, *>) {
+        val identifier = (body["identifier"] as? String)
+            ?: (body["email"] as? String)
+            ?: (body["phone"] as? String)
+            ?: throw ValidationException("Missing recovery identifier.")
+        return PasswordRecoveryRequestDto(identifier = identifier)
+    }
+    if (body is String) {
+        val map = try { com.google.gson.Gson().fromJson(body, Map::class.java) as? Map<*, *> } catch (_: Exception) { null }
+        if (map != null) return parsePasswordRecoveryRequestDto(map)
+    }
+    throw ValidationException("Request body must be a valid PasswordRecoveryRequestDto.")
+}
+
+private fun parsePasswordRecoveryConfirmDto(body: Any?): PasswordRecoveryConfirmDto {
+    if (body is PasswordRecoveryConfirmDto) return body
+    if (body is Map<*, *>) {
+        val token = (body["token"] as? String)
+            ?: (body["recoveryToken"] as? String)
+            ?: throw ValidationException("Missing recovery token.")
+        val newPassword = (body["newPassword"] as? String)
+            ?: (body["password"] as? String)
+            ?: throw ValidationException("Missing new password.")
+        val revokeSessions = (body["revokeSessions"] as? Boolean) ?: true
+        return PasswordRecoveryConfirmDto(
+            token = token,
+            newPassword = newPassword,
+            revokeSessions = revokeSessions
+        )
+    }
+    if (body is String) {
+        val map = try { com.google.gson.Gson().fromJson(body, Map::class.java) as? Map<*, *> } catch (_: Exception) { null }
+        if (map != null) return parsePasswordRecoveryConfirmDto(map)
+    }
+    throw ValidationException("Request body must be a valid PasswordRecoveryConfirmDto.")
 }
 
 
