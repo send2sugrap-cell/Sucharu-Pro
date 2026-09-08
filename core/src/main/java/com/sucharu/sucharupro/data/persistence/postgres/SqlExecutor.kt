@@ -22,7 +22,7 @@ class SqlExecutor(
         params.forEachIndexed { index, param ->
             val paramIndex = index + 1
             when (param) {
-                null -> stmt.setNull(paramIndex, Types.NULL)
+                null -> stmt.setObject(paramIndex, null)
                 is String -> stmt.setString(paramIndex, param)
                 is Int -> stmt.setInt(paramIndex, param)
                 is Long -> stmt.setLong(paramIndex, param)

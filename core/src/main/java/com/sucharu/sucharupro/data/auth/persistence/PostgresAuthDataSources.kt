@@ -55,7 +55,7 @@ class PostgresAuthAccountDataSource(
                 WHERE project_id = ? AND (username = ? OR email = ? OR phone = ? OR phone = ?)
             """.trimIndent()
 
-            ctx.sqlExecutor.querySingleOrNull(sql, listOf(projectId, trimmed, trimmed, trimmed, normalizedPhone)) { rs ->
+            ctx.sqlExecutor.querySingleOrNull(sql, listOf(projectId, trimmed, trimmed, trimmed, normalizedPhone ?: trimmed)) { rs ->
                 mapAccount(rs)
             }
         }
