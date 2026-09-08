@@ -55,6 +55,8 @@ class LogoutBackStackSecurityTest {
             override suspend fun setCustomerStatus(customerId: String, request: SetCustomerStatusRequestDto): ApiResult<CustomerDto> = err
             override suspend fun loginWithFirebase(request: FirebaseAuthRequestDto): ApiResult<AuthResponseDto> = err
             override suspend fun listPrintingCalculations(): ApiResult<List<com.sucharu.sucharupro.data.api.model.printingcalculator.PrintingCalculationResponseDto>> = err
+            override suspend fun createProductionJobFromOrder(orderId: String): ApiResult<com.sucharu.sucharupro.data.api.model.productionexecution.ProductionJobExecutionDto> = err
+            override suspend fun getProductionJobByOrder(orderId: String): ApiResult<List<com.sucharu.sucharupro.data.api.model.productionexecution.ProductionJobExecutionDto>> = ApiResult.Success(emptyList())
         }
 
         sessionManager = AuthenticationSessionManager(client = stubClient, sessionStore = store)

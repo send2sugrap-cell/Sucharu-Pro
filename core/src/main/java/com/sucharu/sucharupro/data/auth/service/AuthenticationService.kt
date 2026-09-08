@@ -9,6 +9,7 @@ import com.sucharu.sucharupro.data.api.model.ValidationException
 import com.sucharu.sucharupro.data.auth.datasource.*
 import com.sucharu.sucharupro.data.auth.model.*
 import com.sucharu.sucharupro.data.auth.security.*
+import com.sucharu.sucharupro.domain.model.common.DomainResult
 import java.util.UUID
 
 /**
@@ -579,7 +580,10 @@ class AuthenticationService(
             accountStatus = AccountStatus.PENDING
         )
 
-        accountDataSource.createAccount(newAccount)
+        val createAccRes = accountDataSource.createAccount(newAccount)
+        if (createAccRes is DomainResult.Error) {
+            throw ConflictException(message = createAccRes.message)
+        }
 
         val newProfile = UserProfile(
             projectId = projectId,

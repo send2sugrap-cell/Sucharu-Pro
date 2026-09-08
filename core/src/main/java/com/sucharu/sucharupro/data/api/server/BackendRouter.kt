@@ -1504,6 +1504,11 @@ class BackendRouter(
             }
             HttpResponse(status, e.errorResponse.copy(correlationId = correlationId), correlationId)
         } catch (e: Throwable) {
+            java.util.logging.Logger.getLogger("BackendRouter").log(
+                java.util.logging.Level.SEVERE,
+                "UNHANDLED EXCEPTION in ${request.method} ${request.path} [correlationId=$correlationId]: ${e.javaClass.name} - ${e.message}",
+                e
+            )
             // Sanitized internal error: never leak raw stack trace or database errors
             HttpResponse(500, ApiErrorResponse(errorCode = ErrorCode.INTERNAL_ERROR, message = "An internal server error occurred.", correlationId = correlationId), correlationId)
         }
@@ -15413,22 +15418,28 @@ private fun parseBodyMap(body: Any?): Map<String, Any?> {
         is Map<*, *> -> @Suppress("UNCHECKED_CAST") (body as Map<String, Any?>)
         is String -> {
             try {
-                val regex = "\"([^\"]+)\"\\s*:\\s*(\"[^\"]*\"|\\d+(?:\\.\\d+)?|true|false|null)".toRegex()
-                val map = mutableMapOf<String, Any?>()
-                regex.findAll(body).forEach { match ->
-                    val key = match.groupValues[1]
-                    val rawVal = match.groupValues[2]
-                    val value = when {
-                        rawVal.startsWith("\"") && rawVal.endsWith("\"") -> rawVal.substring(1, rawVal.length - 1)
-                        rawVal == "true" -> true
-                        rawVal == "false" -> false
-                        rawVal == "null" -> null
-                        rawVal.contains(".") -> rawVal.toDoubleOrNull()
-                        else -> rawVal.toLongOrNull()
+                val mapType = object : com.google.gson.reflect.TypeToken<Map<String, Any?>>() {}.type
+                val parsed: Map<String, Any?>? = com.google.gson.Gson().fromJson(body, mapType)
+                if (parsed != null && parsed.isNotEmpty()) {
+                    parsed
+                } else {
+                    val regex = "\"([^\"]+)\"\\s*:\\s*(\"[^\"]*\"|\\d+(?:\\.\\d+)?|true|false|null)".toRegex()
+                    val map = mutableMapOf<String, Any?>()
+                    regex.findAll(body).forEach { match ->
+                        val key = match.groupValues[1]
+                        val rawVal = match.groupValues[2]
+                        val value = when {
+                            rawVal.startsWith("\"") && rawVal.endsWith("\"") -> rawVal.substring(1, rawVal.length - 1)
+                            rawVal == "true" -> true
+                            rawVal == "false" -> false
+                            rawVal == "null" -> null
+                            rawVal.contains(".") -> rawVal.toDoubleOrNull()
+                            else -> rawVal.toLongOrNull()
+                        }
+                        map[key] = value
                     }
-                    map[key] = value
+                    map
                 }
-                map
             } catch (_: Exception) {
                 emptyMap()
             }
@@ -16755,18 +16766,19 @@ private fun parseFirebaseAuthRequest(body: Any?): FirebaseAuthRequestDto {
 
 private fun parseRegisterRequestDto(body: Any?): RegisterRequestDto {
     if (body is RegisterRequestDto) return body
-    if (body is Map<*, *>) {
-        val displayName = (body["displayName"] as? String)
+    val map = parseBodyMap(body)
+    if (map.isNotEmpty()) {
+        val displayName = (map["displayName"] as? String)?.trim()?.ifBlank { null }
             ?: throw ValidationException("Missing 'displayName' parameter.")
-        val password = (body["password"] as? String)
+        val password = (map["password"] as? String)
             ?: throw ValidationException("Missing 'password' parameter.")
-        val username = body["username"] as? String
-        val email = body["email"] as? String
-        val phone = body["phone"] as? String
-        val acceptedTermsVersion = (body["acceptedTermsVersion"] as? String) ?: "1.0"
-        val affiliateReferralCode = body["affiliateReferralCode"] as? String
-        val requestedProjectId = body["requestedProjectId"] as? String
-        val requestedRoleStr = body["requestedRole"] as? String
+        val username = (map["username"] as? String)?.trim()?.ifBlank { null }
+        val email = (map["email"] as? String)?.trim()?.ifBlank { null }
+        val phone = (map["phone"] as? String)?.trim()?.ifBlank { null }
+        val acceptedTermsVersion = (map["acceptedTermsVersion"] as? String)?.ifBlank { null } ?: "1.0"
+        val affiliateReferralCode = (map["affiliateReferralCode"] as? String)?.trim()?.ifBlank { null }
+        val requestedProjectId = (map["requestedProjectId"] as? String)?.trim()?.ifBlank { null }
+        val requestedRoleStr = map["requestedRole"] as? String
         val requestedRole = requestedRoleStr?.let {
             try { UserRole.valueOf(it.uppercase()) } catch (_: Exception) { null }
         }
@@ -16782,22 +16794,6 @@ private fun parseRegisterRequestDto(body: Any?): RegisterRequestDto {
             requestedProjectId = requestedProjectId,
             requestedRole = requestedRole
         )
-    }
-    if (body is String) {
-        val map = try {
-            com.google.gson.Gson().fromJson(body, Map::class.java) as? Map<*, *>
-        } catch (_: Exception) {
-            null
-        }
-        if (map != null) {
-            return parseRegisterRequestDto(map)
-        }
-        val dto = try {
-            com.google.gson.Gson().fromJson(body, RegisterRequestDto::class.java)
-        } catch (_: Exception) {
-            null
-        }
-        if (dto != null) return dto
     }
     throw ValidationException("Request body must be a valid RegisterRequestDto.")
 }
