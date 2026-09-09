@@ -24,6 +24,11 @@ CREATE TABLE tenants (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- Seed Default Tenant
+INSERT INTO tenants (project_id, tenant_name, company_code, status, currency, created_at, updated_at)
+VALUES ('TENANT-001', 'Sucharu Pro Enterprise Tenant', 'SUCHARU-001', 'ACTIVE', 'BDT', NOW(), NOW())
+ON CONFLICT (project_id) DO NOTHING;
+
 CREATE TABLE users (
     user_id VARCHAR(50) NOT NULL,
     project_id VARCHAR(36) NOT NULL REFERENCES tenants(project_id) ON DELETE RESTRICT,

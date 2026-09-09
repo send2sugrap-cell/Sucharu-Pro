@@ -69,7 +69,7 @@ class ReleaseGateEnforcementTest {
         val filenames = files.map { it.name }
 
         // Critical RLS, auth, jobs, and webhook migrations
-        assertTrue(filenames.contains("V1__canonical_postgresql_schema.sql"))
+        assertTrue(filenames.contains("V20260801__canonical_postgresql_schema.sql") || filenames.contains("V1__canonical_postgresql_schema.sql"))
         assertTrue(filenames.contains("V20260830__create_auth_and_session_tables.sql"))
         assertTrue(filenames.contains("V20260907__create_background_job_execution_tables.sql"))
         assertTrue(filenames.contains("V20260913__force_row_level_security.sql"))

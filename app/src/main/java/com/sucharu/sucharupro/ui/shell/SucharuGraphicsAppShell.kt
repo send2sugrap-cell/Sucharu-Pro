@@ -285,8 +285,17 @@ fun SucharuGraphicsAppShell(
                                 val res = sessionManager.register(req)
                                 isLoading = false
                                 if (res is com.sucharu.sucharupro.data.api.model.ApiResult.Success) {
-                                    pendingVerificationIdentifier = res.data.userId
-                                    pendingVerificationType = VerificationType.PHONE
+                                    val recipientContact = res.data.email?.ifBlank { null }
+                                        ?: res.data.phone?.ifBlank { null }
+                                        ?: req.email?.ifBlank { null }
+                                        ?: req.phone?.ifBlank { null }
+                                        ?: res.data.username
+                                    pendingVerificationIdentifier = recipientContact
+                                    pendingVerificationType = if (!req.email.isNullOrBlank() || !res.data.email.isNullOrBlank()) {
+                                        VerificationType.EMAIL
+                                    } else {
+                                        VerificationType.PHONE
+                                    }
                                     successMessage = res.data.message
                                     activeAuthScreenOverride = "verification"
                                 } else if (res is com.sucharu.sucharupro.data.api.model.ApiResult.Error) {

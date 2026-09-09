@@ -41,6 +41,8 @@ tasks.jar {
     archiveClassifier.set("")
     archiveVersion.set("")
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from(sourceSets.main.get().output)
+    from(project(":core").file("src/main/resources"))
     from({
         configurations.runtimeClasspath.get().filter { it.name.endsWith("jar") }.map { zipTree(it) }
     })

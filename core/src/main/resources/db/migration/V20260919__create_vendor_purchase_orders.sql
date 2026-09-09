@@ -33,6 +33,7 @@ CREATE TABLE IF NOT EXISTS vendor_purchase_orders (
     updated_by VARCHAR(64) NOT NULL DEFAULT 'system',
     version BIGINT NOT NULL DEFAULT 1,
     CONSTRAINT pk_vendor_purchase_orders PRIMARY KEY (project_id, purchase_order_id),
+    CONSTRAINT uq_vendor_purchase_order_id UNIQUE (purchase_order_id),
     CONSTRAINT uq_vendor_purchase_order_number UNIQUE (project_id, order_number),
     CONSTRAINT fk_vendor_purchase_orders_vendor FOREIGN KEY (project_id, vendor_id)
         REFERENCES vendors(project_id, vendor_id) ON DELETE CASCADE

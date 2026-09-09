@@ -204,11 +204,7 @@ class BackendRouter(
                 }
 
                 request.path == "/api/v1/auth/login" && request.method == "POST" -> {
-                    val loginReq = when (val b = request.body) {
-                        is LoginRequestDto -> b
-                        is LoginRequest -> LoginRequestDto(identifier = b.usernameOrEmail, password = b.password, requestedProjectId = b.requestedProjectId)
-                        else -> throw ValidationException("Request body must be a valid LoginRequestDto.")
-                    }
+                    val loginReq = parseLoginRequestDto(request.body)
                     val userAgent = request.headers["User-Agent"] ?: request.headers["user-agent"]
                     val resp = if (authService != null) {
                         authService.login(loginReq, correlationId, request.clientIp, userAgent)
@@ -358,8 +354,7 @@ class BackendRouter(
                 }
 
                 (request.path == "/api/v1/auth/verification/confirm" || request.path == "/api/v1/auth/verify") && request.method == "POST" -> {
-                    val confirmDto = request.body as? ConfirmVerificationRequestDto
-                        ?: throw ValidationException("Request body must be a valid ConfirmVerificationRequestDto.")
+                    val confirmDto = parseConfirmVerificationRequestDto(request.body)
                     val userAgent = request.headers["User-Agent"] ?: request.headers["user-agent"]
 
                     val authHeader = request.authorizationHeader
@@ -380,8 +375,9 @@ class BackendRouter(
                 }
 
                 request.path == "/api/v1/auth/verification/resend" && request.method == "POST" -> {
+                    val bodyMap = parseBodyMap(request.body)
                     val resendReq = (request.body as? ResendVerificationRequestDto)?.identifier
-                        ?: (request.body as? Map<*, *>)?.get("identifier") as? String
+                        ?: bodyMap["identifier"] as? String
                         ?: throw ValidationException("Identifier (email or phone) is required to resend verification.")
                     val userAgent = request.headers["User-Agent"] ?: request.headers["user-agent"]
                     val resp = if (authService != null) {
@@ -16796,6 +16792,52 @@ private fun parseRegisterRequestDto(body: Any?): RegisterRequestDto {
         )
     }
     throw ValidationException("Request body must be a valid RegisterRequestDto.")
+}
+
+private fun parseConfirmVerificationRequestDto(body: Any?): ConfirmVerificationRequestDto {
+    if (body is ConfirmVerificationRequestDto) return body
+    val map = parseBodyMap(body)
+    if (map.isNotEmpty()) {
+        val token = (map["token"] as? String)?.trim()?.ifBlank { null }
+            ?: throw ValidationException("Missing 'token' parameter.")
+        val identifier = (map["identifier"] as? String)?.trim()?.ifBlank { null }
+        val verifTypeStr = (map["verificationType"] as? String)?.uppercase()
+        val verificationType = try {
+            if (verifTypeStr != null) VerificationType.valueOf(verifTypeStr) else VerificationType.PHONE
+        } catch (_: Exception) {
+            VerificationType.PHONE
+        }
+        return ConfirmVerificationRequestDto(
+            verificationType = verificationType,
+            token = token,
+            identifier = identifier
+        )
+    }
+    throw ValidationException("Request body must be a valid ConfirmVerificationRequestDto.")
+}
+
+private fun parseLoginRequestDto(body: Any?): LoginRequestDto {
+    if (body is LoginRequestDto) return body
+    if (body is LoginRequest) return LoginRequestDto(identifier = body.usernameOrEmail, password = body.password, requestedProjectId = body.requestedProjectId)
+    val map = parseBodyMap(body)
+    if (map.isNotEmpty()) {
+        val identifier = (map["identifier"] as? String)
+            ?: (map["usernameOrEmail"] as? String)
+            ?: (map["username"] as? String)
+            ?: (map["email"] as? String)
+            ?: throw ValidationException("Missing 'identifier' parameter.")
+        val password = (map["password"] as? String)
+            ?: throw ValidationException("Missing 'password' parameter.")
+        val deviceName = map["deviceName"] as? String
+        val requestedProjectId = map["requestedProjectId"] as? String
+        return LoginRequestDto(
+            identifier = identifier,
+            password = password,
+            deviceName = deviceName,
+            requestedProjectId = requestedProjectId
+        )
+    }
+    throw ValidationException("Request body must be a valid LoginRequestDto.")
 }
 
 private fun parsePasswordRecoveryRequestDto(body: Any?): PasswordRecoveryRequestDto {

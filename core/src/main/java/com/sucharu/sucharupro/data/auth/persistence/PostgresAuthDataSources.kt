@@ -82,6 +82,16 @@ class PostgresAuthAccountDataSource(
         val tenant = TenantContext(account.projectId)
         return try {
             transactionManager.inTransaction(tenant) { ctx ->
+                val ensureTenantSql = """
+                    INSERT INTO tenants (project_id, tenant_name, company_code, status, currency, created_at, updated_at)
+                    VALUES (?, ?, ?, 'ACTIVE', 'BDT', NOW(), NOW())
+                    ON CONFLICT (project_id) DO NOTHING
+                """.trimIndent()
+                ctx.sqlExecutor.executeUpdate(
+                    ensureTenantSql,
+                    listOf(account.projectId, "Tenant ${account.projectId}", "CMP-${account.projectId}")
+                )
+
                 val sql = """
                     INSERT INTO auth_accounts (
                         project_id, user_id, username, email, phone, password_hash, password_salt,

@@ -23,7 +23,7 @@ object PostgresErrorTranslator {
             val cleanMessage = when {
                 sqlState == "23505" -> "A record with this identifier or unique attribute already exists."
                 sqlState == "23503" -> "Foreign key relationship error: Referenced record not found or cannot be deleted."
-                sqlState == "23514" -> "Data validation failed: Check constraint violated."
+                sqlState == "23514" -> "Data validation failed: Check constraint violated. Detail: ${throwable.message}"
                 sqlState == "P0001" -> {
                     // PL/pgSQL RAISE EXCEPTION (e.g., Journal imbalance)
                     val rawMsg = throwable.message ?: "Business rule constraint violated."

@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS vendors (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     version BIGINT NOT NULL DEFAULT 1,
     CONSTRAINT pk_vendors PRIMARY KEY (project_id, vendor_id),
+    CONSTRAINT uq_vendors_vendor_id UNIQUE (vendor_id),
     CONSTRAINT uq_vendors_code UNIQUE (project_id, vendor_code)
 );
 
