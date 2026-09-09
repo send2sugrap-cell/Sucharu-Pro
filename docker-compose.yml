@@ -1,0 +1,90 @@
+# ==============================================================================
+# SUCHARU PRO — DOCKER COMPOSE CONFIGURATION (PRODUCTION & VPS READY)
+# ==============================================================================
+
+services:
+  # --------------------------------01. BACKEND APP SERVICE --------------------
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: sucharu-backend:1.0.0
+    container_name: sucharu_app
+    restart: unless-stopped
+    ports:
+      - "${PORT:-8080}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT:-production}
+      PORT: 8080
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_NAME: ${DATABASE_NAME:-sucharu_pro_db}
+      DATABASE_USER: ${DATABASE_USER:-sucharu_app}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD}
+      DATABASE_URL: jdbc:postgresql://postgres:5432/${DATABASE_NAME:-sucharu_pro_db}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_ENABLED: "true"
+      JWT_SIGNING_SECRET: ${JWT_SIGNING_SECRET}
+      FLYWAY_ENABLED: "true"
+      MIGRATION_MODE: "AUTO_APPLY"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/ready || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    networks:
+      - sucharu_internal
+
+  # --------------------------------02. POSTGRESQL DATABASE --------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: sucharu_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DATABASE_NAME:-sucharu_pro_db}
+      POSTGRES_USER: ${DATABASE_USER:-sucharu_app}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER:-sucharu_app} -d ${DATABASE_NAME:-sucharu_pro_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sucharu_internal
+    # Pinned internal ONLY: No host ports exposed to external internet.
+
+  # --------------------------------03. REDIS CACHE SERVICE --------------------
+  redis:
+    image: redis:7-alpine
+    container_name: sucharu_redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    networks:
+      - sucharu_internal
+    # Pinned internal ONLY: No host ports exposed to external internet.
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  sucharu_internal:
+    driver: bridge
