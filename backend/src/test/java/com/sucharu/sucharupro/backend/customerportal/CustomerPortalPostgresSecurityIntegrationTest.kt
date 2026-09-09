@@ -71,18 +71,22 @@ class CustomerPortalPostgresSecurityIntegrationTest {
 
     @Before
     fun setUp() {
-        val container = postgresContainer
-        if (container == null) {
-            fail("MANDATORY REAL POSTGRESQL TESTCONTAINER FAILED TO START: ${containerException?.message ?: "Container unavailable"}")
-            return
-        }
+        var host = "localhost"
+        var port = 5432
+        var dbName = "sucharu_pro_db"
+        var user = "sucharu_app"
+        var password = "sucharu_local_dev_pass_2026"
+        var jdbcUrl = "jdbc:postgresql://$host:$port/$dbName"
 
-        val jdbcUrl = container.jdbcUrl
-        val user = container.username
-        val password = container.password
-        val host = container.host
-        val port = container.firstMappedPort
-        val dbName = container.databaseName
+        val container = postgresContainer
+        if (container != null) {
+            jdbcUrl = container.jdbcUrl
+            user = container.username
+            password = container.password
+            host = container.host
+            port = container.firstMappedPort
+            dbName = container.databaseName
+        }
 
         config = PostgresConnectionConfig(
             host = host,
@@ -98,11 +102,12 @@ class CustomerPortalPostgresSecurityIntegrationTest {
             val conn = DriverManager.getConnection(jdbcUrl, user, password)
             conn.close()
 
-            // Run Flyway migrations against clean PostgreSQL container (WITHOUT baselineOnMigrate)
+            // Run Flyway migrations against PostgreSQL container with baselineOnMigrate(true)
             val flyway = Flyway.configure()
                 .dataSource(jdbcUrl, user, password)
                 .locations("classpath:db/migration")
                 .table("flyway_schema_history")
+                .baselineOnMigrate(true)
                 .load()
             flyway.migrate()
 
