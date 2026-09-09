@@ -30,6 +30,7 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_ENABLED: "true"
+      REDIS_URL: redis://redis:6379/0
       JWT_SIGNING_SECRET: ${JWT_SIGNING_SECRET}
       FLYWAY_ENABLED: "true"
       MIGRATION_MODE: "AUTO_APPLY"
