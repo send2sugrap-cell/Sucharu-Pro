@@ -18,11 +18,12 @@ data class MachineRegistryUiState(
 ) {
     val filteredMachines: List<MachineEquipment>
         get() = machines.filter { m ->
+            val manuf = m.manufacturer
             (selectedTypeFilter == null || m.type == selectedTypeFilter) &&
             (selectedStatusFilter == null || m.status == selectedStatusFilter) &&
             (searchQuery.isBlank() ||
                     m.name.contains(searchQuery, ignoreCase = true) ||
                     m.assetCode.contains(searchQuery, ignoreCase = true) ||
-                    (m.manufacturer != null && m.manufacturer.contains(searchQuery, ignoreCase = true)))
+                    (manuf != null && manuf.contains(searchQuery, ignoreCase = true)))
         }
 }
