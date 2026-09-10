@@ -2403,6 +2403,29 @@ open class PostgresRepositoryFactory(
             repository = createMachineRegistryRepository(tenantId)
         )
     }
+
+    open fun createMachineTelemetryIngestionDataSource(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.data.datasource.machine.telemetry.MachineTelemetryDataSource {
+        return PostgresMachineTelemetryDataSource(transactionManager)
+    }
+
+    open fun createMachineTelemetryIngestionRepository(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.domain.repository.machine.telemetry.MachineTelemetryRepository {
+        return com.sucharu.sucharupro.data.repository.machine.telemetry.MachineTelemetryRepositoryImpl(
+            dataSource = createMachineTelemetryIngestionDataSource(tenantId)
+        )
+    }
+
+    open fun createMachineTelemetryIngestionService(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.domain.service.machine.telemetry.MachineTelemetryIngestionService {
+        return com.sucharu.sucharupro.domain.service.machine.telemetry.MachineTelemetryIngestionServiceImpl(
+            telemetryRepository = createMachineTelemetryIngestionRepository(tenantId),
+            machineRegistryRepository = createMachineRegistryRepository(tenantId)
+        )
+    }
 }
 
 

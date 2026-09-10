@@ -1,6 +1,9 @@
 package com.sucharu.sucharupro.data.api.server
 
 import com.sucharu.sucharupro.data.api.model.*
+import com.sucharu.sucharupro.data.api.model.machine.telemetry.*
+import com.sucharu.sucharupro.domain.machine.telemetry.*
+import com.sucharu.sucharupro.data.persistence.postgres.PostgresRepositoryFactory
 import com.sucharu.sucharupro.data.api.model.businesscostcontrol.*
 import com.sucharu.sucharupro.data.api.model.businessreconciliation.*
 import com.sucharu.sucharupro.data.api.model.businessfinancialadjustment.*
@@ -79,7 +82,8 @@ class BackendRouter(
     private val healthRegistry: com.sucharu.sucharupro.data.observability.health.HealthRegistry? = null,
     private val securityEventRecorder: com.sucharu.sucharupro.data.observability.event.SecurityEventRecorder? = null,
     private val operationalEventRecorder: com.sucharu.sucharupro.data.observability.event.OperationalEventRecorder? = null,
-    private val slowRequestThresholdMs: Long = 1000L
+    private val slowRequestThresholdMs: Long = 1000L,
+    val repositoryFactory: PostgresRepositoryFactory? = null
 ) {
 
     suspend fun handleRequest(request: HttpRequest): HttpResponse {
@@ -2393,6 +2397,27 @@ class BackendRouter(
             val reqDto = parseLogMachineTelemetryRequest(request.body)
             val res = useCases.logMachineTelemetry(principal, machineId, reqDto)
             HttpResponse(201, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        // Module 21 Step 02 - Machine Telemetry Ingestion Endpoints
+        request.path.matches(Regex("^/api/v1/machines/[^/]+/telemetry$")) && request.method == "POST" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val machineId = request.path.removePrefix("/api/v1/machines/").removeSuffix("/telemetry")
+            val reqDto = parseIngestTelemetryRequest(request.body)
+            val rf = repositoryFactory ?: throw IllegalStateException("RepositoryFactory is required")
+            val res = useCases.ingestTelemetry(principal, machineId, reqDto, rf)
+            HttpResponse(201, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/machines/[^/]+/telemetry$")) && request.method == "GET" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val machineId = request.path.removePrefix("/api/v1/machines/").removeSuffix("/telemetry")
+            val queryParams = parseQueryParams(request.path)
+            val metricTypeStr = queryParams["metricType"]
+            val limit = queryParams["limit"]?.toIntOrNull() ?: 100
+            val rf = repositoryFactory ?: throw IllegalStateException("RepositoryFactory is required")
+            val res = useCases.listMachineTelemetry(principal, machineId, metricTypeStr, limit, rf)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
         }
 
         request.path.matches(Regex("^/api/v1/shop-floor-tracking/jobs/[^/]+/telemetry$")) && request.method == "GET" -> {
@@ -16838,6 +16863,37 @@ private fun parseLoginRequestDto(body: Any?): LoginRequestDto {
         )
     }
     throw ValidationException("Request body must be a valid LoginRequestDto.")
+}
+
+private fun parseIngestTelemetryRequest(body: Any?): IngestTelemetryRequestDto {
+    if (body is IngestTelemetryRequestDto) return body
+    val map = parseBodyMap(body)
+    if (map.isNotEmpty()) {
+        val metricTypeStr = (map["metricType"] as? String)?.uppercase()
+            ?: throw ValidationException("Missing 'metricType' parameter.")
+        val metricType = try { TelemetryMetricType.valueOf(metricTypeStr) } catch (_: Exception) { TelemetryMetricType.OTHER }
+        val metricValueNum = map["metricValue"]
+            ?: throw ValidationException("Missing 'metricValue' parameter.")
+        val metricValue = try { java.math.BigDecimal(metricValueNum.toString()) } catch (_: Exception) { java.math.BigDecimal.ZERO }
+
+        val unit = map["unit"] as? String
+        val eventTimestamp = (map["eventTimestamp"] as? Number)?.toLong()
+            ?: (map["eventTimestamp"] as? String)?.toLongOrNull()
+        val sourceDeviceId = map["sourceDeviceId"] as? String
+        val metadataJson = map["metadataJson"] as? String
+        val idempotencyKey = map["idempotencyKey"] as? String
+
+        return IngestTelemetryRequestDto(
+            metricType = metricType,
+            metricValue = metricValue,
+            unit = unit,
+            eventTimestamp = eventTimestamp,
+            sourceDeviceId = sourceDeviceId,
+            metadataJson = metadataJson,
+            idempotencyKey = idempotencyKey
+        )
+    }
+    throw ValidationException("Request body must be a valid IngestTelemetryRequestDto.")
 }
 
 private fun parsePasswordRecoveryRequestDto(body: Any?): PasswordRecoveryRequestDto {
