@@ -2426,6 +2426,15 @@ open class PostgresRepositoryFactory(
             machineRegistryRepository = createMachineRegistryRepository(tenantId)
         )
     }
+
+    open fun createMachineStatusMonitoringService(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.domain.service.machine.health.MachineStatusMonitoringService {
+        return com.sucharu.sucharupro.domain.service.machine.health.MachineStatusMonitoringServiceImpl(
+            machineRegistryRepository = createMachineRegistryRepository(tenantId),
+            machineTelemetryRepository = createMachineTelemetryIngestionRepository(tenantId)
+        )
+    }
 }
 
 

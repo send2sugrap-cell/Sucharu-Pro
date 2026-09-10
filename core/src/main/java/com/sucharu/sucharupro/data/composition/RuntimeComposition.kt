@@ -56,6 +56,7 @@ interface AppRuntimeComposition {
     val machineRegistryRepository: com.sucharu.sucharupro.domain.repository.machine.MachineRegistryRepository
     val machineRegistryService: com.sucharu.sucharupro.domain.service.machine.MachineRegistryService
     val machineTelemetryIngestionService: com.sucharu.sucharupro.domain.service.machine.telemetry.MachineTelemetryIngestionService
+    val machineStatusMonitoringService: com.sucharu.sucharupro.domain.service.machine.health.MachineStatusMonitoringService
 }
 
 /**
@@ -191,6 +192,16 @@ class PostgresRuntimeComposition(
             machineRegistryRepository = machineRegistryRepository
         )
     }
+
+    override val machineStatusMonitoringService: com.sucharu.sucharupro.domain.service.machine.health.MachineStatusMonitoringService by lazy {
+        val tm = DefaultPostgresTransactionManager(connectionProvider)
+        com.sucharu.sucharupro.domain.service.machine.health.MachineStatusMonitoringServiceImpl(
+            machineRegistryRepository = machineRegistryRepository,
+            machineTelemetryRepository = com.sucharu.sucharupro.data.repository.machine.telemetry.MachineTelemetryRepositoryImpl(
+                dataSource = com.sucharu.sucharupro.data.persistence.postgres.PostgresMachineTelemetryDataSource(tm)
+            )
+        )
+    }
 }
 
 /**
@@ -269,6 +280,15 @@ class ProductionRuntimeComposition(
                 dataSource = com.sucharu.sucharupro.data.datasource.machine.telemetry.FakeMachineTelemetryDataSource()
             ),
             machineRegistryRepository = machineRegistryRepository
+        )
+    }
+
+    override val machineStatusMonitoringService: com.sucharu.sucharupro.domain.service.machine.health.MachineStatusMonitoringService by lazy {
+        com.sucharu.sucharupro.domain.service.machine.health.MachineStatusMonitoringServiceImpl(
+            machineRegistryRepository = machineRegistryRepository,
+            machineTelemetryRepository = com.sucharu.sucharupro.data.repository.machine.telemetry.MachineTelemetryRepositoryImpl(
+                dataSource = com.sucharu.sucharupro.data.datasource.machine.telemetry.FakeMachineTelemetryDataSource()
+            )
         )
     }
 }

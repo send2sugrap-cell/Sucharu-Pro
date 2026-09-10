@@ -2420,6 +2420,25 @@ class BackendRouter(
             HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
         }
 
+        // Module 21 Step 03 - Machine Status & Health Monitoring Endpoints
+        (request.path == "/api/v1/machines/health" || request.path.startsWith("/api/v1/machines/health?")) && request.method == "GET" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val queryParams = parseQueryParams(request.path)
+            val typeStr = queryParams["type"]
+            val stateStr = queryParams["state"]
+            val rf = repositoryFactory ?: throw IllegalStateException("RepositoryFactory is required")
+            val res = useCases.listMachinesHealth(principal, typeStr, stateStr, rf)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/machines/[^/]+/health$")) && request.method == "GET" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val machineId = request.path.removePrefix("/api/v1/machines/").removeSuffix("/health")
+            val rf = repositoryFactory ?: throw IllegalStateException("RepositoryFactory is required")
+            val res = useCases.evaluateMachineHealth(principal, machineId, rf)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
         request.path.matches(Regex("^/api/v1/shop-floor-tracking/jobs/[^/]+/telemetry$")) && request.method == "GET" -> {
             val principal = securityContext.authenticate(request.authorizationHeader)
             val jobId = request.path.removePrefix("/api/v1/shop-floor-tracking/jobs/").removeSuffix("/telemetry")
