@@ -2439,6 +2439,29 @@ open class PostgresRepositoryFactory(
             machineTelemetryRepository = createMachineTelemetryIngestionRepository(tenantId)
         )
     }
+
+    open fun createMachineMaintenanceDataSource(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.data.datasource.machine.maintenance.MachineMaintenanceDataSource {
+        return PostgresMachineMaintenanceDataSource(transactionManager)
+    }
+
+    open fun createMachineMaintenanceRepository(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.domain.repository.machine.maintenance.MachineMaintenanceRepository {
+        return com.sucharu.sucharupro.data.repository.machine.maintenance.MachineMaintenanceRepositoryImpl(
+            dataSource = createMachineMaintenanceDataSource(tenantId)
+        )
+    }
+
+    open fun createMachineMaintenanceService(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.domain.service.machine.maintenance.MachineMaintenanceService {
+        return com.sucharu.sucharupro.domain.service.machine.maintenance.MachineMaintenanceServiceImpl(
+            maintenanceRepository = createMachineMaintenanceRepository(tenantId),
+            machineRegistryRepository = createMachineRegistryRepository(tenantId)
+        )
+    }
 }
 
 

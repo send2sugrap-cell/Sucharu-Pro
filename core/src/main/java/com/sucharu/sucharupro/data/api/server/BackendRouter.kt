@@ -3,6 +3,8 @@ package com.sucharu.sucharupro.data.api.server
 import com.sucharu.sucharupro.data.api.model.*
 import com.sucharu.sucharupro.data.api.model.machine.telemetry.*
 import com.sucharu.sucharupro.domain.machine.telemetry.*
+import com.sucharu.sucharupro.data.api.model.machine.maintenance.*
+import com.sucharu.sucharupro.domain.machine.maintenance.*
 import com.sucharu.sucharupro.data.persistence.postgres.PostgresRepositoryFactory
 import com.sucharu.sucharupro.data.api.model.businesscostcontrol.*
 import com.sucharu.sucharupro.data.api.model.businessreconciliation.*
@@ -2436,6 +2438,85 @@ class BackendRouter(
             val machineId = request.path.removePrefix("/api/v1/machines/").removeSuffix("/health")
             val rf = repositoryFactory ?: throw IllegalStateException("RepositoryFactory is required")
             val res = useCases.evaluateMachineHealth(principal, machineId, rf)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        // Module 21 Step 05 - Machine Maintenance Management Endpoints
+        request.path.matches(Regex("^/api/v1/machines/[^/]+/maintenance/schedules$")) && request.method == "POST" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val machineId = request.path.removePrefix("/api/v1/machines/").removeSuffix("/maintenance/schedules")
+            val reqDto = parseCreateMaintenanceScheduleRequest(request.body)
+            val rf = repositoryFactory ?: throw IllegalStateException("RepositoryFactory is required")
+            val res = useCases.createMaintenanceSchedule(principal, machineId, reqDto, rf)
+            HttpResponse(201, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/machines/[^/]+/maintenance/schedules$")) && request.method == "GET" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val machineId = request.path.removePrefix("/api/v1/machines/").removeSuffix("/maintenance/schedules")
+            val queryParams = parseQueryParams(request.path)
+            val statusStr = queryParams["status"]
+            val rf = repositoryFactory ?: throw IllegalStateException("RepositoryFactory is required")
+            val res = useCases.listMaintenanceSchedules(principal, machineId, statusStr, rf)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/machines/[^/]+/maintenance/records$")) && request.method == "POST" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val machineId = request.path.removePrefix("/api/v1/machines/").removeSuffix("/maintenance/records")
+            val reqDto = parseCreateMaintenanceRecordRequest(request.body)
+            val rf = repositoryFactory ?: throw IllegalStateException("RepositoryFactory is required")
+            val res = useCases.createMaintenanceRecord(principal, machineId, reqDto, rf)
+            HttpResponse(201, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/machines/[^/]+/maintenance/records$")) && request.method == "GET" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val machineId = request.path.removePrefix("/api/v1/machines/").removeSuffix("/maintenance/records")
+            val queryParams = parseQueryParams(request.path)
+            val statusStr = queryParams["status"]
+            val limit = queryParams["limit"]?.toIntOrNull() ?: 100
+            val rf = repositoryFactory ?: throw IllegalStateException("RepositoryFactory is required")
+            val res = useCases.listMaintenanceRecords(principal, machineId, statusStr, limit, rf)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/machines/[^/]+/maintenance/records/[^/]+/start$")) && request.method == "POST" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val machineId = request.path.removePrefix("/api/v1/machines/").substringBefore("/maintenance/")
+            val recordId = request.path.substringAfter("/maintenance/records/").removeSuffix("/start")
+            val rf = repositoryFactory ?: throw IllegalStateException("RepositoryFactory is required")
+            val res = useCases.startMaintenanceRecord(principal, machineId, recordId, rf)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/machines/[^/]+/maintenance/records/[^/]+/complete$")) && request.method == "POST" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val machineId = request.path.removePrefix("/api/v1/machines/").substringBefore("/maintenance/")
+            val recordId = request.path.substringAfter("/maintenance/records/").removeSuffix("/complete")
+            val reqDto = parseCompleteMaintenanceRecordRequest(request.body)
+            val rf = repositoryFactory ?: throw IllegalStateException("RepositoryFactory is required")
+            val res = useCases.completeMaintenanceRecord(principal, machineId, recordId, reqDto, rf)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/machines/[^/]+/maintenance/records/[^/]+/cancel$")) && request.method == "POST" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val machineId = request.path.removePrefix("/api/v1/machines/").substringBefore("/maintenance/")
+            val recordId = request.path.substringAfter("/maintenance/records/").removeSuffix("/cancel")
+            val reqDto = parseCancelMaintenanceRecordRequest(request.body)
+            val rf = repositoryFactory ?: throw IllegalStateException("RepositoryFactory is required")
+            val res = useCases.cancelMaintenanceRecord(principal, machineId, recordId, reqDto, rf)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/machines/[^/]+/maintenance/history$")) && request.method == "GET" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val machineId = request.path.removePrefix("/api/v1/machines/").removeSuffix("/maintenance/history")
+            val queryParams = parseQueryParams(request.path)
+            val limit = queryParams["limit"]?.toIntOrNull() ?: 100
+            val rf = repositoryFactory ?: throw IllegalStateException("RepositoryFactory is required")
+            val res = useCases.listMachineServiceHistory(principal, machineId, limit, rf)
             HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
         }
 
@@ -16913,6 +16994,79 @@ private fun parseIngestTelemetryRequest(body: Any?): IngestTelemetryRequestDto {
         )
     }
     throw ValidationException("Request body must be a valid IngestTelemetryRequestDto.")
+}
+
+private fun parseCreateMaintenanceScheduleRequest(body: Any?): CreateMaintenanceScheduleRequestDto {
+    if (body is CreateMaintenanceScheduleRequestDto) return body
+    val map = parseBodyMap(body)
+    if (map.isNotEmpty()) {
+        val title = (map["title"] as? String)?.trim()?.ifBlank { null }
+            ?: throw ValidationException("Missing 'title' parameter.")
+        val description = map["description"] as? String
+        val typeStr = (map["maintenanceType"] as? String)?.uppercase()
+        val type = try { if (typeStr != null) com.sucharu.sucharupro.domain.machine.maintenance.MaintenanceType.valueOf(typeStr) else com.sucharu.sucharupro.domain.machine.maintenance.MaintenanceType.PREVENTIVE } catch (_: Exception) { com.sucharu.sucharupro.domain.machine.maintenance.MaintenanceType.PREVENTIVE }
+        val plannedDate = (map["plannedDate"] as? Number)?.toLong()
+            ?: (map["plannedDate"] as? String)?.toLongOrNull()
+            ?: throw ValidationException("Missing 'plannedDate' parameter.")
+        val recDays = (map["recurrenceIntervalDays"] as? Number)?.toInt()
+        val techId = map["assignedTechnicianId"] as? String
+        val techName = map["assignedTechnicianName"] as? String
+        val notes = map["notes"] as? String
+
+        return CreateMaintenanceScheduleRequestDto(
+            title = title,
+            description = description,
+            maintenanceType = type,
+            plannedDate = plannedDate,
+            recurrenceIntervalDays = recDays,
+            assignedTechnicianId = techId,
+            assignedTechnicianName = techName,
+            notes = notes
+        )
+    }
+    throw ValidationException("Request body must be a valid CreateMaintenanceScheduleRequestDto.")
+}
+
+private fun parseCreateMaintenanceRecordRequest(body: Any?): CreateMaintenanceRecordRequestDto {
+    if (body is CreateMaintenanceRecordRequestDto) return body
+    val map = parseBodyMap(body)
+    if (map.isNotEmpty()) {
+        val title = (map["title"] as? String)?.trim()?.ifBlank { null }
+            ?: throw ValidationException("Missing 'title' parameter.")
+        val scheduleId = map["scheduleId"] as? String
+        val problemDescription = map["problemDescription"] as? String
+        val typeStr = (map["maintenanceType"] as? String)?.uppercase()
+        val type = try { if (typeStr != null) com.sucharu.sucharupro.domain.machine.maintenance.MaintenanceType.valueOf(typeStr) else com.sucharu.sucharupro.domain.machine.maintenance.MaintenanceType.CORRECTIVE } catch (_: Exception) { com.sucharu.sucharupro.domain.machine.maintenance.MaintenanceType.CORRECTIVE }
+        val performedById = map["performedById"] as? String
+        val performedByName = map["performedByName"] as? String
+        val notes = map["notes"] as? String
+
+        return CreateMaintenanceRecordRequestDto(
+            scheduleId = scheduleId,
+            title = title,
+            problemDescription = problemDescription,
+            maintenanceType = type,
+            performedById = performedById,
+            performedByName = performedByName,
+            notes = notes
+        )
+    }
+    throw ValidationException("Request body must be a valid CreateMaintenanceRecordRequestDto.")
+}
+
+private fun parseCompleteMaintenanceRecordRequest(body: Any?): CompleteMaintenanceRecordRequestDto {
+    if (body is CompleteMaintenanceRecordRequestDto) return body
+    val map = parseBodyMap(body)
+    val res = map["resolutionSummary"] as? String
+    val work = map["workPerformed"] as? String
+    return CompleteMaintenanceRecordRequestDto(resolutionSummary = res, workPerformed = work)
+}
+
+private fun parseCancelMaintenanceRecordRequest(body: Any?): CancelMaintenanceRecordRequestDto {
+    if (body is CancelMaintenanceRecordRequestDto) return body
+    val map = parseBodyMap(body)
+    val reason = map["reason"] as? String
+    return CancelMaintenanceRecordRequestDto(reason = reason)
 }
 
 private fun parsePasswordRecoveryRequestDto(body: Any?): PasswordRecoveryRequestDto {

@@ -68,6 +68,8 @@ object RoleCapabilityMatrix {
         AuthorizationCapability.MANAGE_MACHINES,
         AuthorizationCapability.READ_MACHINE_TELEMETRY,
         AuthorizationCapability.INGEST_MACHINE_TELEMETRY,
+        AuthorizationCapability.READ_MAINTENANCE,
+        AuthorizationCapability.MANAGE_MAINTENANCE,
         AuthorizationCapability.WORKFLOW_VIEW,
         AuthorizationCapability.WORKFLOW_EXECUTE,
         AuthorizationCapability.WORKFLOW_ESCALATE,
