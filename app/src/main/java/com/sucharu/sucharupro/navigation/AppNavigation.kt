@@ -863,6 +863,22 @@ fun AppNavHost(
             automationDataSource = analyticsAutomationDataSource,
             campaignDataSource = analyticsCampaignDataSource
         )
+
+        // Module 21 Step 01 - Machine Registry & Equipment Foundation
+        composable(route = Screen.MachineRegistryCommandCenter.route) {
+            val machineService = composition?.machineRegistryService ?: com.sucharu.sucharupro.domain.service.machine.MachineRegistryServiceImpl(
+                com.sucharu.sucharupro.data.repository.machine.MachineRegistryRepositoryImpl(
+                    com.sucharu.sucharupro.data.datasource.machine.FakeMachineRegistryDataSource()
+                )
+            )
+            val viewModel = remember(machineService) {
+                com.sucharu.sucharupro.ui.features.machine.MachineRegistryViewModel(service = machineService)
+            }
+            com.sucharu.sucharupro.ui.features.machine.MachineRegistryScreen(
+                viewModel = viewModel,
+                onBackClick = { navController.popBackStack() }
+            )
+        }
     }
 }
 

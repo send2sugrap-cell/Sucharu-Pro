@@ -153,6 +153,9 @@ sealed class Screen(val route: String, val title: String) {
     // Module 19 Substrate Stock Auto-Reservation Screen
     data object SubstrateReservationCommandCenter : Screen(route = "inventory/substrate-reservation", title = "Substrate Stock Auto-Reservation")
 
+    // Module 21 Step 01 Machine Registry Screen
+    data object MachineRegistryCommandCenter : Screen(route = "machine/registry", title = "Machine Registry & Equipment")
+
 
     companion object {
         val topLevelDestinations: List<Screen> = listOf(

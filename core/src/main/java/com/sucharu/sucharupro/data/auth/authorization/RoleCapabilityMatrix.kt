@@ -64,6 +64,8 @@ object RoleCapabilityMatrix {
         AuthorizationCapability.STAFF_UPDATE_QC,
         AuthorizationCapability.STAFF_READ_RETURNS,
         AuthorizationCapability.STAFF_UPDATE_RETURNS,
+        AuthorizationCapability.READ_MACHINES,
+        AuthorizationCapability.MANAGE_MACHINES,
         AuthorizationCapability.WORKFLOW_VIEW,
         AuthorizationCapability.WORKFLOW_EXECUTE,
         AuthorizationCapability.WORKFLOW_ESCALATE,

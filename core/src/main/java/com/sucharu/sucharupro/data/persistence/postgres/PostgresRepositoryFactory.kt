@@ -2381,6 +2381,28 @@ open class PostgresRepositoryFactory(
             integrityRepository = integrityRepo
         )
     }
+
+    open fun createMachineRegistryDataSource(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.data.datasource.machine.MachineRegistryDataSource {
+        return PostgresMachineRegistryDataSource(transactionManager)
+    }
+
+    open fun createMachineRegistryRepository(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.domain.repository.machine.MachineRegistryRepository {
+        return com.sucharu.sucharupro.data.repository.machine.MachineRegistryRepositoryImpl(
+            dataSource = createMachineRegistryDataSource(tenantId)
+        )
+    }
+
+    open fun createMachineRegistryService(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.domain.service.machine.MachineRegistryService {
+        return com.sucharu.sucharupro.domain.service.machine.MachineRegistryServiceImpl(
+            repository = createMachineRegistryRepository(tenantId)
+        )
+    }
 }
 
 

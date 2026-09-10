@@ -56,6 +56,10 @@ enum class AuthorizationCapability {
     STAFF_READ_RETURNS,
     STAFF_UPDATE_RETURNS,
 
+    // Machine & Equipment capabilities (Module 21 Step 01)
+    READ_MACHINES,
+    MANAGE_MACHINES,
+
     // Manager capabilities
     MANAGER_APPROVE_ORDER,
     MANAGER_APPROVE_RETURN,

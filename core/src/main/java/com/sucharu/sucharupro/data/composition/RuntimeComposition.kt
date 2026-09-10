@@ -53,6 +53,8 @@ interface AppRuntimeComposition {
     val affiliateRepository: AffiliateRepository
     val dashboardRepository: DashboardRepository
     val printingCalculatorService: com.sucharu.sucharupro.domain.service.printingcalculator.PrintingCalculatorService
+    val machineRegistryRepository: com.sucharu.sucharupro.domain.repository.machine.MachineRegistryRepository
+    val machineRegistryService: com.sucharu.sucharupro.domain.service.machine.MachineRegistryService
 }
 
 /**
@@ -165,6 +167,19 @@ class PostgresRuntimeComposition(
             )
         )
     }
+
+    override val machineRegistryRepository: com.sucharu.sucharupro.domain.repository.machine.MachineRegistryRepository by lazy {
+        val tm = DefaultPostgresTransactionManager(connectionProvider)
+        com.sucharu.sucharupro.data.repository.machine.MachineRegistryRepositoryImpl(
+            com.sucharu.sucharupro.data.persistence.postgres.PostgresMachineRegistryDataSource(tm)
+        )
+    }
+
+    override val machineRegistryService: com.sucharu.sucharupro.domain.service.machine.MachineRegistryService by lazy {
+        com.sucharu.sucharupro.domain.service.machine.MachineRegistryServiceImpl(
+            machineRegistryRepository
+        )
+    }
 }
 
 /**
@@ -223,5 +238,17 @@ class ProductionRuntimeComposition(
 
     override val printingCalculatorService: com.sucharu.sucharupro.domain.service.printingcalculator.PrintingCalculatorService by lazy {
         com.sucharu.sucharupro.data.repository.printingcalculator.HttpPrintingCalculatorService(client = client)
+    }
+
+    override val machineRegistryRepository: com.sucharu.sucharupro.domain.repository.machine.MachineRegistryRepository by lazy {
+        com.sucharu.sucharupro.data.repository.machine.MachineRegistryRepositoryImpl(
+            com.sucharu.sucharupro.data.datasource.machine.FakeMachineRegistryDataSource()
+        )
+    }
+
+    override val machineRegistryService: com.sucharu.sucharupro.domain.service.machine.MachineRegistryService by lazy {
+        com.sucharu.sucharupro.domain.service.machine.MachineRegistryServiceImpl(
+            machineRegistryRepository
+        )
     }
 }
