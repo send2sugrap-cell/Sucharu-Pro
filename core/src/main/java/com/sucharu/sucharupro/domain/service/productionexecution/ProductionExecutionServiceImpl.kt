@@ -21,7 +21,9 @@ class ProductionExecutionServiceImpl(
     private val orderRepository: OrderRepository,
     private val planningRepository: ProductionPlanningRepository,
     private val commitmentRepository: CommercialCommitmentRepository,
-    private val quoteRepository: PrintingQuoteRepository
+    private val quoteRepository: PrintingQuoteRepository,
+    private val machineRegistryRepository: com.sucharu.sucharupro.domain.repository.machine.MachineRegistryRepository? = null,
+    private val machineStatusMonitoringService: com.sucharu.sucharupro.domain.service.machine.health.MachineStatusMonitoringService? = null
 ) : ProductionExecutionService {
 
     private val mutex = Mutex()
@@ -296,6 +298,16 @@ class ProductionExecutionServiceImpl(
             )
             executionRepository.updateWorkOrder(updatedWo)
 
+            val activeMachineId = updatedWo.assignedMachineId
+            if (!activeMachineId.isNullOrBlank()) {
+                machineRegistryRepository?.updateMachineStatus(
+                    tenantId = tenantId,
+                    machineId = activeMachineId,
+                    status = com.sucharu.sucharupro.domain.machine.MachineStatus.IN_USE,
+                    updatedBy = startedBy
+                )
+            }
+
             val newJobStatus = if (job.status == ProductionJobExecutionStatus.READY || job.status == ProductionJobExecutionStatus.RELEASED || job.status == ProductionJobExecutionStatus.SCHEDULED) {
                 ProductionJobExecutionStatus.IN_PROGRESS
             } else {
@@ -440,6 +452,16 @@ class ProductionExecutionServiceImpl(
             )
             executionRepository.updateWorkOrder(updatedWo)
 
+            val finishedMachineId = wo.assignedMachineId
+            if (!finishedMachineId.isNullOrBlank()) {
+                machineRegistryRepository?.updateMachineStatus(
+                    tenantId = tenantId,
+                    machineId = finishedMachineId,
+                    status = com.sucharu.sucharupro.domain.machine.MachineStatus.AVAILABLE,
+                    updatedBy = completedBy
+                )
+            }
+
             // Record actuals
             executionRepository.saveActual(
                 ProductionExecutionActual(
@@ -521,9 +543,41 @@ class ProductionExecutionServiceImpl(
             val wo = job.workOrders.find { it.workOrderId == workOrderId }
                 ?: throw NoSuchElementException("Work order '$workOrderId' not found.")
 
+            var resolvedMachineName = machineName
+
+            // Step 04 Machine Registry & Health Validation
+            if (machineRegistryRepository != null) {
+                val machineRes = machineRegistryRepository.getMachineById(tenantId, machineId)
+                if (machineRes is DomainResult.Error) {
+                    return DomainResult.Error(exception = machineRes.exception, message = machineRes.message)
+                }
+                val machine = (machineRes as? DomainResult.Success)?.data
+                    ?: return DomainResult.Error(message = "Machine '$machineId' not found in registry for tenant '$tenantId'.")
+
+                if (machine.tenantId != tenantId) {
+                    return DomainResult.Error(message = "Cross-tenant machine assignment denied: Machine '$machineId' belongs to tenant '${machine.tenantId}'.")
+                }
+
+                if (machine.status == com.sucharu.sucharupro.domain.machine.MachineStatus.DECOMMISSIONED) {
+                    return DomainResult.Error(message = "Cannot assign machine '$machineId': Machine is decommissioned.")
+                }
+
+                resolvedMachineName = machine.name
+            }
+
+            if (machineStatusMonitoringService != null) {
+                val healthRes = machineStatusMonitoringService.evaluateMachineHealth(tenantId, machineId)
+                if (healthRes is DomainResult.Success) {
+                    val snapshot = healthRes.data
+                    if (snapshot.operationalState == com.sucharu.sucharupro.domain.machine.health.MachineOperationalState.FAULT) {
+                        return DomainResult.Error(message = "Cannot assign machine '$machineId': Machine is in FAULT state.")
+                    }
+                }
+            }
+
             val updatedWo = wo.copy(
                 assignedMachineId = machineId,
-                assignedMachineName = machineName
+                assignedMachineName = resolvedMachineName
             )
             executionRepository.updateWorkOrder(updatedWo)
 
@@ -534,7 +588,7 @@ class ProductionExecutionServiceImpl(
                     workOrderId = workOrderId,
                     tenantId = tenantId,
                     eventType = ProductionExecutionEventType.MACHINE_ASSIGNED,
-                    payload = "Assigned machine '$machineName' ($machineId) to stage '${wo.operationName}'.",
+                    payload = "Assigned machine '$resolvedMachineName' ($machineId) to stage '${wo.operationName}'.",
                     performedBy = assignedBy,
                     performedAt = System.currentTimeMillis()
                 )

@@ -1782,12 +1782,16 @@ open class PostgresRepositoryFactory(
         val planningRepo = createProductionPlanningRepository(tenantId)
         val commitmentRepo = createCommercialCommitmentRepository(tenantId)
         val quoteRepo = createPrintingQuoteRepository(tenantId)
+        val machineRepo = createMachineRegistryRepository(tenantId)
+        val healthSvc = createMachineStatusMonitoringService(tenantId)
         return com.sucharu.sucharupro.domain.service.productionexecution.ProductionExecutionServiceImpl(
             executionRepository = executionRepo,
             orderRepository = orderRepo,
             planningRepository = planningRepo,
             commitmentRepository = commitmentRepo,
-            quoteRepository = quoteRepo
+            quoteRepository = quoteRepo,
+            machineRegistryRepository = machineRepo,
+            machineStatusMonitoringService = healthSvc
         )
     }
 
