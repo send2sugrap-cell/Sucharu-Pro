@@ -19,6 +19,13 @@ enum class NotificationType(val defaultLabel: String, val category: Notification
     PRODUCTION_STAGE_CHANGED("Production Stage Changed", NotificationCategory.PRODUCTION),
     PRODUCTION_COMPLETED("Production Completed", NotificationCategory.PRODUCTION),
 
+    // Machine & Equipment Operational Alerts (Module 21 Step 07)
+    MACHINE_TELEMETRY_ALERT("Abnormal Telemetry Alert", NotificationCategory.PRODUCTION),
+    MACHINE_FAULT_ALERT("Machine Fault Alert", NotificationCategory.PRODUCTION, isMandatory = true),
+    MACHINE_HEALTH_CRITICAL("Machine Critical Condition Alert", NotificationCategory.PRODUCTION, isMandatory = true),
+    MAINTENANCE_DUE_ALERT("Maintenance Due Alert", NotificationCategory.PRODUCTION),
+    MAINTENANCE_OVERDUE_ALERT("Maintenance Overdue Alert", NotificationCategory.PRODUCTION, isMandatory = true),
+
     // Quality
     QUALITY_CHECK_REQUIRED("Quality Check Required", NotificationCategory.QUALITY),
     QUALITY_APPROVED("Quality Approved", NotificationCategory.QUALITY),

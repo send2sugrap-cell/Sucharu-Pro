@@ -7,6 +7,8 @@ import com.sucharu.sucharupro.data.api.model.machine.maintenance.*
 import com.sucharu.sucharupro.domain.machine.maintenance.*
 import com.sucharu.sucharupro.data.api.model.machine.events.*
 import com.sucharu.sucharupro.domain.machine.events.*
+import com.sucharu.sucharupro.data.api.model.machine.alerts.*
+import com.sucharu.sucharupro.domain.machine.alerts.*
 import com.sucharu.sucharupro.data.persistence.postgres.PostgresRepositoryFactory
 import com.sucharu.sucharupro.data.api.model.businesscostcontrol.*
 import com.sucharu.sucharupro.data.api.model.businessreconciliation.*
@@ -2588,6 +2590,56 @@ class BackendRouter(
             val downtimeId = request.path.substringAfter("/downtime/").removeSuffix("/end")
             val rf = repositoryFactory ?: throw IllegalStateException("RepositoryFactory is required")
             val res = useCases.endDowntimeEvent(principal, machineId, downtimeId, rf)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        // Module 21 Step 07 - Machine Alerts & Notifications Endpoints
+        request.path.matches(Regex("^/api/v1/machines/[^/]+/alerts$")) && request.method == "POST" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val machineId = request.path.removePrefix("/api/v1/machines/").removeSuffix("/alerts")
+            val reqDto = parseCreateMachineAlertRequest(request.body)
+            val rf = repositoryFactory ?: throw IllegalStateException("RepositoryFactory is required")
+            val res = useCases.raiseMachineAlert(principal, machineId, reqDto, rf)
+            HttpResponse(201, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/machines/[^/]+/alerts$")) && request.method == "GET" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val machineId = request.path.removePrefix("/api/v1/machines/").removeSuffix("/alerts")
+            val queryParams = parseQueryParams(request.path)
+            val statusStr = queryParams["status"]
+            val limit = queryParams["limit"]?.toIntOrNull() ?: 100
+            val rf = repositoryFactory ?: throw IllegalStateException("RepositoryFactory is required")
+            val res = useCases.listMachineAlerts(principal, machineId, statusStr, limit, rf)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/machines/[^/]+/alerts/[^/]+/acknowledge$")) && request.method == "POST" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val machineId = request.path.removePrefix("/api/v1/machines/").substringBefore("/alerts/")
+            val alertId = request.path.substringAfter("/alerts/").removeSuffix("/acknowledge")
+            val rf = repositoryFactory ?: throw IllegalStateException("RepositoryFactory is required")
+            val res = useCases.acknowledgeMachineAlert(principal, machineId, alertId, rf)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/machines/[^/]+/alerts/[^/]+/resolve$")) && request.method == "POST" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val machineId = request.path.removePrefix("/api/v1/machines/").substringBefore("/alerts/")
+            val alertId = request.path.substringAfter("/alerts/").removeSuffix("/resolve")
+            val reqDto = parseResolveMachineAlertRequest(request.body)
+            val rf = repositoryFactory ?: throw IllegalStateException("RepositoryFactory is required")
+            val res = useCases.resolveMachineAlert(principal, machineId, alertId, reqDto, rf)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/machines/[^/]+/alerts/[^/]+/dismiss$")) && request.method == "POST" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val machineId = request.path.removePrefix("/api/v1/machines/").substringBefore("/alerts/")
+            val alertId = request.path.substringAfter("/alerts/").removeSuffix("/dismiss")
+            val reqDto = parseDismissMachineAlertRequest(request.body)
+            val rf = repositoryFactory ?: throw IllegalStateException("RepositoryFactory is required")
+            val res = useCases.dismissMachineAlert(principal, machineId, alertId, reqDto, rf)
             HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
         }
 
@@ -17200,6 +17252,55 @@ private fun parseStartDowntimeEventRequest(body: Any?): StartDowntimeEventReques
         )
     }
     throw ValidationException("Request body must be a valid StartDowntimeEventRequestDto.")
+}
+
+private fun parseCreateMachineAlertRequest(body: Any?): CreateMachineAlertRequestDto {
+    if (body is CreateMachineAlertRequestDto) return body
+    val map = parseBodyMap(body)
+    if (map.isNotEmpty()) {
+        val title = (map["title"] as? String)?.trim()?.ifBlank { null }
+            ?: throw ValidationException("Missing 'title' parameter.")
+        val description = (map["description"] as? String)?.trim()?.ifBlank { null }
+            ?: throw ValidationException("Missing 'description' parameter.")
+        val alertTypeStr = (map["alertType"] as? String)?.uppercase()
+        val alertType = try { if (alertTypeStr != null) MachineAlertType.valueOf(alertTypeStr) else MachineAlertType.WARNING } catch (_: Exception) { MachineAlertType.WARNING }
+        val severityStr = (map["severity"] as? String)?.uppercase()
+        val severity = try { if (severityStr != null) FaultSeverity.valueOf(severityStr) else FaultSeverity.WARNING } catch (_: Exception) { FaultSeverity.WARNING }
+        val source = (map["source"] as? String) ?: "MANUAL"
+        val telemetryRecordId = map["telemetryRecordId"] as? String
+        val faultEventId = map["faultEventId"] as? String
+        val maintenanceScheduleId = map["maintenanceScheduleId"] as? String
+        val maintenanceRecordId = map["maintenanceRecordId"] as? String
+        val correlationKey = map["correlationKey"] as? String
+
+        return CreateMachineAlertRequestDto(
+            alertType = alertType,
+            severity = severity,
+            source = source,
+            telemetryRecordId = telemetryRecordId,
+            faultEventId = faultEventId,
+            maintenanceScheduleId = maintenanceScheduleId,
+            maintenanceRecordId = maintenanceRecordId,
+            title = title,
+            description = description,
+            correlationKey = correlationKey
+        )
+    }
+    throw ValidationException("Request body must be a valid CreateMachineAlertRequestDto.")
+}
+
+private fun parseResolveMachineAlertRequest(body: Any?): ResolveMachineAlertRequestDto {
+    if (body is ResolveMachineAlertRequestDto) return body
+    val map = parseBodyMap(body)
+    val notes = map["resolutionNotes"] as? String
+    return ResolveMachineAlertRequestDto(resolutionNotes = notes)
+}
+
+private fun parseDismissMachineAlertRequest(body: Any?): DismissMachineAlertRequestDto {
+    if (body is DismissMachineAlertRequestDto) return body
+    val map = parseBodyMap(body)
+    val reason = map["reason"] as? String
+    return DismissMachineAlertRequestDto(reason = reason)
 }
 
 private fun parsePasswordRecoveryRequestDto(body: Any?): PasswordRecoveryRequestDto {

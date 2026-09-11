@@ -2494,6 +2494,37 @@ open class PostgresRepositoryFactory(
             machineRegistryRepository = createMachineRegistryRepository(tenantId)
         )
     }
+
+    open fun createMachineAlertDataSource(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.data.datasource.machine.alerts.MachineAlertDataSource {
+        return PostgresMachineAlertDataSource(transactionManager)
+    }
+
+    open fun createMachineAlertRepository(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.domain.repository.machine.alerts.MachineAlertRepository {
+        return com.sucharu.sucharupro.data.repository.machine.alerts.MachineAlertRepositoryImpl(
+            dataSource = createMachineAlertDataSource(tenantId)
+        )
+    }
+
+    open fun createNotificationRepository(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.domain.repository.notification.NotificationRepository {
+        val dataSource = com.sucharu.sucharupro.data.datasource.FakeNotificationDataSource()
+        return com.sucharu.sucharupro.data.repository.NotificationRepositoryImpl(dataSource)
+    }
+
+    open fun createMachineAlertService(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.domain.service.machine.alerts.MachineAlertService {
+        return com.sucharu.sucharupro.domain.service.machine.alerts.MachineAlertServiceImpl(
+            alertRepository = createMachineAlertRepository(tenantId),
+            machineRegistryRepository = createMachineRegistryRepository(tenantId),
+            notificationRepository = createNotificationRepository(tenantId)
+        )
+    }
 }
 
 

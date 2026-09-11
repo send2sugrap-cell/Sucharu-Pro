@@ -60,6 +60,7 @@ interface AppRuntimeComposition {
     val machineMaintenanceService: com.sucharu.sucharupro.domain.service.machine.maintenance.MachineMaintenanceService
     val machineFaultEventService: com.sucharu.sucharupro.domain.service.machine.events.MachineFaultEventService
     val machineDowntimeService: com.sucharu.sucharupro.domain.service.machine.events.MachineDowntimeService
+    val machineAlertService: com.sucharu.sucharupro.domain.service.machine.alerts.MachineAlertService
 }
 
 /**
@@ -235,6 +236,17 @@ class PostgresRuntimeComposition(
             machineRegistryRepository = machineRegistryRepository
         )
     }
+
+    override val machineAlertService: com.sucharu.sucharupro.domain.service.machine.alerts.MachineAlertService by lazy {
+        val tm = DefaultPostgresTransactionManager(connectionProvider)
+        com.sucharu.sucharupro.domain.service.machine.alerts.MachineAlertServiceImpl(
+            alertRepository = com.sucharu.sucharupro.data.repository.machine.alerts.MachineAlertRepositoryImpl(
+                dataSource = com.sucharu.sucharupro.data.persistence.postgres.PostgresMachineAlertDataSource(tm)
+            ),
+            machineRegistryRepository = machineRegistryRepository,
+            notificationRepository = null
+        )
+    }
 }
 
 /**
@@ -349,6 +361,18 @@ class ProductionRuntimeComposition(
                 dataSource = com.sucharu.sucharupro.data.datasource.machine.events.FakeMachineEventDataSource()
             ),
             machineRegistryRepository = machineRegistryRepository
+        )
+    }
+
+    override val machineAlertService: com.sucharu.sucharupro.domain.service.machine.alerts.MachineAlertService by lazy {
+        com.sucharu.sucharupro.domain.service.machine.alerts.MachineAlertServiceImpl(
+            alertRepository = com.sucharu.sucharupro.data.repository.machine.alerts.MachineAlertRepositoryImpl(
+                dataSource = com.sucharu.sucharupro.data.datasource.machine.alerts.FakeMachineAlertDataSource()
+            ),
+            machineRegistryRepository = machineRegistryRepository,
+            notificationRepository = com.sucharu.sucharupro.data.repository.NotificationRepositoryImpl(
+                notificationDataSource = com.sucharu.sucharupro.data.datasource.FakeNotificationDataSource()
+            )
         )
     }
 }

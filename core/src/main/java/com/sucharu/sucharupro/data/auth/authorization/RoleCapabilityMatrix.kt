@@ -74,6 +74,8 @@ object RoleCapabilityMatrix {
         AuthorizationCapability.MANAGE_MACHINE_EVENTS,
         AuthorizationCapability.READ_MACHINE_DOWNTIME,
         AuthorizationCapability.MANAGE_MACHINE_DOWNTIME,
+        AuthorizationCapability.READ_MACHINE_ALERTS,
+        AuthorizationCapability.MANAGE_MACHINE_ALERTS,
         AuthorizationCapability.WORKFLOW_VIEW,
         AuthorizationCapability.WORKFLOW_EXECUTE,
         AuthorizationCapability.WORKFLOW_ESCALATE,
