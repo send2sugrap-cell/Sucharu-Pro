@@ -5,6 +5,8 @@ import com.sucharu.sucharupro.data.api.model.machine.telemetry.*
 import com.sucharu.sucharupro.domain.machine.telemetry.*
 import com.sucharu.sucharupro.data.api.model.machine.maintenance.*
 import com.sucharu.sucharupro.domain.machine.maintenance.*
+import com.sucharu.sucharupro.data.api.model.machine.events.*
+import com.sucharu.sucharupro.domain.machine.events.*
 import com.sucharu.sucharupro.data.persistence.postgres.PostgresRepositoryFactory
 import com.sucharu.sucharupro.data.api.model.businesscostcontrol.*
 import com.sucharu.sucharupro.data.api.model.businessreconciliation.*
@@ -2517,6 +2519,75 @@ class BackendRouter(
             val limit = queryParams["limit"]?.toIntOrNull() ?: 100
             val rf = repositoryFactory ?: throw IllegalStateException("RepositoryFactory is required")
             val res = useCases.listMachineServiceHistory(principal, machineId, limit, rf)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        // Module 21 Step 06 - Machine Fault & Downtime Event Management Endpoints
+        request.path.matches(Regex("^/api/v1/machines/[^/]+/faults$")) && request.method == "POST" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val machineId = request.path.removePrefix("/api/v1/machines/").removeSuffix("/faults")
+            val reqDto = parseCreateFaultEventRequest(request.body)
+            val rf = repositoryFactory ?: throw IllegalStateException("RepositoryFactory is required")
+            val res = useCases.recordFaultEvent(principal, machineId, reqDto, rf)
+            HttpResponse(201, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/machines/[^/]+/faults$")) && request.method == "GET" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val machineId = request.path.removePrefix("/api/v1/machines/").removeSuffix("/faults")
+            val queryParams = parseQueryParams(request.path)
+            val statusStr = queryParams["status"]
+            val limit = queryParams["limit"]?.toIntOrNull() ?: 100
+            val rf = repositoryFactory ?: throw IllegalStateException("RepositoryFactory is required")
+            val res = useCases.listFaultEvents(principal, machineId, statusStr, limit, rf)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/machines/[^/]+/faults/[^/]+/acknowledge$")) && request.method == "POST" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val machineId = request.path.removePrefix("/api/v1/machines/").substringBefore("/faults/")
+            val faultEventId = request.path.substringAfter("/faults/").removeSuffix("/acknowledge")
+            val rf = repositoryFactory ?: throw IllegalStateException("RepositoryFactory is required")
+            val res = useCases.acknowledgeFaultEvent(principal, machineId, faultEventId, rf)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/machines/[^/]+/faults/[^/]+/resolve$")) && request.method == "POST" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val machineId = request.path.removePrefix("/api/v1/machines/").substringBefore("/faults/")
+            val faultEventId = request.path.substringAfter("/faults/").removeSuffix("/resolve")
+            val reqDto = parseResolveFaultEventRequest(request.body)
+            val rf = repositoryFactory ?: throw IllegalStateException("RepositoryFactory is required")
+            val res = useCases.resolveFaultEvent(principal, machineId, faultEventId, reqDto, rf)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/machines/[^/]+/downtime$")) && request.method == "POST" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val machineId = request.path.removePrefix("/api/v1/machines/").removeSuffix("/downtime")
+            val reqDto = parseStartDowntimeEventRequest(request.body)
+            val rf = repositoryFactory ?: throw IllegalStateException("RepositoryFactory is required")
+            val res = useCases.startDowntimeEvent(principal, machineId, reqDto, rf)
+            HttpResponse(201, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/machines/[^/]+/downtime$")) && request.method == "GET" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val machineId = request.path.removePrefix("/api/v1/machines/").removeSuffix("/downtime")
+            val queryParams = parseQueryParams(request.path)
+            val statusStr = queryParams["status"]
+            val limit = queryParams["limit"]?.toIntOrNull() ?: 100
+            val rf = repositoryFactory ?: throw IllegalStateException("RepositoryFactory is required")
+            val res = useCases.listDowntimeEvents(principal, machineId, statusStr, limit, rf)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/machines/[^/]+/downtime/[^/]+/end$")) && request.method == "POST" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val machineId = request.path.removePrefix("/api/v1/machines/").substringBefore("/downtime/")
+            val downtimeId = request.path.substringAfter("/downtime/").removeSuffix("/end")
+            val rf = repositoryFactory ?: throw IllegalStateException("RepositoryFactory is required")
+            val res = useCases.endDowntimeEvent(principal, machineId, downtimeId, rf)
             HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
         }
 
@@ -17067,6 +17138,68 @@ private fun parseCancelMaintenanceRecordRequest(body: Any?): CancelMaintenanceRe
     val map = parseBodyMap(body)
     val reason = map["reason"] as? String
     return CancelMaintenanceRecordRequestDto(reason = reason)
+}
+
+private fun parseCreateFaultEventRequest(body: Any?): CreateFaultEventRequestDto {
+    if (body is CreateFaultEventRequestDto) return body
+    val map = parseBodyMap(body)
+    if (map.isNotEmpty()) {
+        val description = (map["description"] as? String)?.trim()?.ifBlank { null }
+            ?: throw ValidationException("Missing 'description' parameter.")
+        val faultType = (map["faultType"] as? String)?.trim()?.ifBlank { null } ?: "GENERAL"
+        val faultCode = map["faultCode"] as? String
+        val severityStr = (map["severity"] as? String)?.uppercase()
+        val severity = try { if (severityStr != null) FaultSeverity.valueOf(severityStr) else FaultSeverity.FAULT } catch (_: Exception) { FaultSeverity.FAULT }
+        val source = (map["source"] as? String) ?: "MANUAL"
+        val occurredAt = (map["occurredAt"] as? Number)?.toLong() ?: (map["occurredAt"] as? String)?.toLongOrNull()
+        val maintenanceRecordId = map["maintenanceRecordId"] as? String
+        val metadataJson = map["metadataJson"] as? String
+
+        return CreateFaultEventRequestDto(
+            faultCode = faultCode,
+            faultType = faultType,
+            severity = severity,
+            description = description,
+            source = source,
+            occurredAt = occurredAt,
+            maintenanceRecordId = maintenanceRecordId,
+            metadataJson = metadataJson
+        )
+    }
+    throw ValidationException("Request body must be a valid CreateFaultEventRequestDto.")
+}
+
+private fun parseResolveFaultEventRequest(body: Any?): ResolveFaultEventRequestDto {
+    if (body is ResolveFaultEventRequestDto) return body
+    val map = parseBodyMap(body)
+    val notes = map["resolutionNotes"] as? String
+    val maintId = map["maintenanceRecordId"] as? String
+    return ResolveFaultEventRequestDto(resolutionNotes = notes, maintenanceRecordId = maintId)
+}
+
+private fun parseStartDowntimeEventRequest(body: Any?): StartDowntimeEventRequestDto {
+    if (body is StartDowntimeEventRequestDto) return body
+    val map = parseBodyMap(body)
+    if (map.isNotEmpty()) {
+        val reasonStr = (map["reasonCategory"] as? String)?.uppercase()
+            ?: throw ValidationException("Missing 'reasonCategory' parameter.")
+        val category = try { DowntimeReasonCategory.valueOf(reasonStr) } catch (_: Exception) { DowntimeReasonCategory.OTHER }
+        val faultEventId = map["faultEventId"] as? String
+        val executionJobId = map["executionJobId"] as? String
+        val workOrderId = map["workOrderId"] as? String
+        val details = map["reasonDetails"] as? String
+        val startedAt = (map["startedAt"] as? Number)?.toLong() ?: (map["startedAt"] as? String)?.toLongOrNull()
+
+        return StartDowntimeEventRequestDto(
+            faultEventId = faultEventId,
+            executionJobId = executionJobId,
+            workOrderId = workOrderId,
+            reasonCategory = category,
+            reasonDetails = details,
+            startedAt = startedAt
+        )
+    }
+    throw ValidationException("Request body must be a valid StartDowntimeEventRequestDto.")
 }
 
 private fun parsePasswordRecoveryRequestDto(body: Any?): PasswordRecoveryRequestDto {

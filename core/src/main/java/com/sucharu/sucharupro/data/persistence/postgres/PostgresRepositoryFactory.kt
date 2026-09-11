@@ -2462,6 +2462,38 @@ open class PostgresRepositoryFactory(
             machineRegistryRepository = createMachineRegistryRepository(tenantId)
         )
     }
+
+    open fun createMachineEventDataSource(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.data.datasource.machine.events.MachineEventDataSource {
+        return PostgresMachineEventDataSource(transactionManager)
+    }
+
+    open fun createMachineEventRepository(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.domain.repository.machine.events.MachineEventRepository {
+        return com.sucharu.sucharupro.data.repository.machine.events.MachineEventRepositoryImpl(
+            dataSource = createMachineEventDataSource(tenantId)
+        )
+    }
+
+    open fun createMachineFaultEventService(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.domain.service.machine.events.MachineFaultEventService {
+        return com.sucharu.sucharupro.domain.service.machine.events.MachineFaultEventServiceImpl(
+            eventRepository = createMachineEventRepository(tenantId),
+            machineRegistryRepository = createMachineRegistryRepository(tenantId)
+        )
+    }
+
+    open fun createMachineDowntimeService(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.domain.service.machine.events.MachineDowntimeService {
+        return com.sucharu.sucharupro.domain.service.machine.events.MachineDowntimeServiceImpl(
+            eventRepository = createMachineEventRepository(tenantId),
+            machineRegistryRepository = createMachineRegistryRepository(tenantId)
+        )
+    }
 }
 
 

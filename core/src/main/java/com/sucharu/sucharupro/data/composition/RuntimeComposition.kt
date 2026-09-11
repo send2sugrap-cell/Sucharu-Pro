@@ -58,6 +58,8 @@ interface AppRuntimeComposition {
     val machineTelemetryIngestionService: com.sucharu.sucharupro.domain.service.machine.telemetry.MachineTelemetryIngestionService
     val machineStatusMonitoringService: com.sucharu.sucharupro.domain.service.machine.health.MachineStatusMonitoringService
     val machineMaintenanceService: com.sucharu.sucharupro.domain.service.machine.maintenance.MachineMaintenanceService
+    val machineFaultEventService: com.sucharu.sucharupro.domain.service.machine.events.MachineFaultEventService
+    val machineDowntimeService: com.sucharu.sucharupro.domain.service.machine.events.MachineDowntimeService
 }
 
 /**
@@ -213,6 +215,26 @@ class PostgresRuntimeComposition(
             machineRegistryRepository = machineRegistryRepository
         )
     }
+
+    override val machineFaultEventService: com.sucharu.sucharupro.domain.service.machine.events.MachineFaultEventService by lazy {
+        val tm = DefaultPostgresTransactionManager(connectionProvider)
+        com.sucharu.sucharupro.domain.service.machine.events.MachineFaultEventServiceImpl(
+            eventRepository = com.sucharu.sucharupro.data.repository.machine.events.MachineEventRepositoryImpl(
+                dataSource = com.sucharu.sucharupro.data.persistence.postgres.PostgresMachineEventDataSource(tm)
+            ),
+            machineRegistryRepository = machineRegistryRepository
+        )
+    }
+
+    override val machineDowntimeService: com.sucharu.sucharupro.domain.service.machine.events.MachineDowntimeService by lazy {
+        val tm = DefaultPostgresTransactionManager(connectionProvider)
+        com.sucharu.sucharupro.domain.service.machine.events.MachineDowntimeServiceImpl(
+            eventRepository = com.sucharu.sucharupro.data.repository.machine.events.MachineEventRepositoryImpl(
+                dataSource = com.sucharu.sucharupro.data.persistence.postgres.PostgresMachineEventDataSource(tm)
+            ),
+            machineRegistryRepository = machineRegistryRepository
+        )
+    }
 }
 
 /**
@@ -307,6 +329,24 @@ class ProductionRuntimeComposition(
         com.sucharu.sucharupro.domain.service.machine.maintenance.MachineMaintenanceServiceImpl(
             maintenanceRepository = com.sucharu.sucharupro.data.repository.machine.maintenance.MachineMaintenanceRepositoryImpl(
                 dataSource = com.sucharu.sucharupro.data.datasource.machine.maintenance.FakeMachineMaintenanceDataSource()
+            ),
+            machineRegistryRepository = machineRegistryRepository
+        )
+    }
+
+    override val machineFaultEventService: com.sucharu.sucharupro.domain.service.machine.events.MachineFaultEventService by lazy {
+        com.sucharu.sucharupro.domain.service.machine.events.MachineFaultEventServiceImpl(
+            eventRepository = com.sucharu.sucharupro.data.repository.machine.events.MachineEventRepositoryImpl(
+                dataSource = com.sucharu.sucharupro.data.datasource.machine.events.FakeMachineEventDataSource()
+            ),
+            machineRegistryRepository = machineRegistryRepository
+        )
+    }
+
+    override val machineDowntimeService: com.sucharu.sucharupro.domain.service.machine.events.MachineDowntimeService by lazy {
+        com.sucharu.sucharupro.domain.service.machine.events.MachineDowntimeServiceImpl(
+            eventRepository = com.sucharu.sucharupro.data.repository.machine.events.MachineEventRepositoryImpl(
+                dataSource = com.sucharu.sucharupro.data.datasource.machine.events.FakeMachineEventDataSource()
             ),
             machineRegistryRepository = machineRegistryRepository
         )

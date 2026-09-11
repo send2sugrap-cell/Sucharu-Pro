@@ -56,13 +56,17 @@ enum class AuthorizationCapability {
     STAFF_READ_RETURNS,
     STAFF_UPDATE_RETURNS,
 
-    // Machine & Equipment capabilities (Module 21 Step 01, Step 02 & Step 05)
+    // Machine & Equipment capabilities (Module 21 Step 01, Step 02, Step 05 & Step 06)
     READ_MACHINES,
     MANAGE_MACHINES,
     READ_MACHINE_TELEMETRY,
     INGEST_MACHINE_TELEMETRY,
     READ_MAINTENANCE,
     MANAGE_MAINTENANCE,
+    READ_MACHINE_EVENTS,
+    MANAGE_MACHINE_EVENTS,
+    READ_MACHINE_DOWNTIME,
+    MANAGE_MACHINE_DOWNTIME,
 
     // Manager capabilities
     MANAGER_APPROVE_ORDER,
