@@ -61,6 +61,7 @@ interface AppRuntimeComposition {
     val machineFaultEventService: com.sucharu.sucharupro.domain.service.machine.events.MachineFaultEventService
     val machineDowntimeService: com.sucharu.sucharupro.domain.service.machine.events.MachineDowntimeService
     val machineAlertService: com.sucharu.sucharupro.domain.service.machine.alerts.MachineAlertService
+    val machineOeeService: com.sucharu.sucharupro.domain.service.machine.oee.MachineOeeService
 }
 
 /**
@@ -247,6 +248,20 @@ class PostgresRuntimeComposition(
             notificationRepository = null
         )
     }
+
+    override val machineOeeService: com.sucharu.sucharupro.domain.service.machine.oee.MachineOeeService by lazy {
+        val tm = DefaultPostgresTransactionManager(connectionProvider)
+        com.sucharu.sucharupro.domain.service.machine.oee.MachineOeeServiceImpl(
+            oeeRepository = com.sucharu.sucharupro.data.repository.machine.oee.MachineOeeRepositoryImpl(
+                dataSource = com.sucharu.sucharupro.data.persistence.postgres.PostgresMachineOeeDataSource(tm)
+            ),
+            machineRegistryRepository = machineRegistryRepository,
+            eventRepository = com.sucharu.sucharupro.data.repository.machine.events.MachineEventRepositoryImpl(
+                dataSource = com.sucharu.sucharupro.data.persistence.postgres.PostgresMachineEventDataSource(tm)
+            ),
+            productionExecutionRepository = null
+        )
+    }
 }
 
 /**
@@ -373,6 +388,15 @@ class ProductionRuntimeComposition(
             notificationRepository = com.sucharu.sucharupro.data.repository.NotificationRepositoryImpl(
                 notificationDataSource = com.sucharu.sucharupro.data.datasource.FakeNotificationDataSource()
             )
+        )
+    }
+
+    override val machineOeeService: com.sucharu.sucharupro.domain.service.machine.oee.MachineOeeService by lazy {
+        com.sucharu.sucharupro.domain.service.machine.oee.MachineOeeServiceImpl(
+            oeeRepository = com.sucharu.sucharupro.data.repository.machine.oee.MachineOeeRepositoryImpl(
+                dataSource = com.sucharu.sucharupro.data.datasource.machine.oee.FakeMachineOeeDataSource()
+            ),
+            machineRegistryRepository = machineRegistryRepository
         )
     }
 }

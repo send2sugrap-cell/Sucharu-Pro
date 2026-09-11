@@ -2525,6 +2525,31 @@ open class PostgresRepositoryFactory(
             notificationRepository = createNotificationRepository(tenantId)
         )
     }
+
+    open fun createMachineOeeDataSource(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.data.datasource.machine.oee.MachineOeeDataSource {
+        return PostgresMachineOeeDataSource(transactionManager)
+    }
+
+    open fun createMachineOeeRepository(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.domain.repository.machine.oee.MachineOeeRepository {
+        return com.sucharu.sucharupro.data.repository.machine.oee.MachineOeeRepositoryImpl(
+            dataSource = createMachineOeeDataSource(tenantId)
+        )
+    }
+
+    open fun createMachineOeeService(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.domain.service.machine.oee.MachineOeeService {
+        return com.sucharu.sucharupro.domain.service.machine.oee.MachineOeeServiceImpl(
+            oeeRepository = createMachineOeeRepository(tenantId),
+            machineRegistryRepository = createMachineRegistryRepository(tenantId),
+            eventRepository = createMachineEventRepository(tenantId),
+            productionExecutionRepository = createProductionExecutionRepository(tenantId)
+        )
+    }
 }
 
 

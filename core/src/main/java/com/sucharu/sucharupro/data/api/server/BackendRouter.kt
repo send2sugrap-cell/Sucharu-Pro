@@ -9,6 +9,8 @@ import com.sucharu.sucharupro.data.api.model.machine.events.*
 import com.sucharu.sucharupro.domain.machine.events.*
 import com.sucharu.sucharupro.data.api.model.machine.alerts.*
 import com.sucharu.sucharupro.domain.machine.alerts.*
+import com.sucharu.sucharupro.data.api.model.machine.oee.*
+import com.sucharu.sucharupro.domain.machine.oee.*
 import com.sucharu.sucharupro.data.persistence.postgres.PostgresRepositoryFactory
 import com.sucharu.sucharupro.data.api.model.businesscostcontrol.*
 import com.sucharu.sucharupro.data.api.model.businessreconciliation.*
@@ -2640,6 +2642,24 @@ class BackendRouter(
             val reqDto = parseDismissMachineAlertRequest(request.body)
             val rf = repositoryFactory ?: throw IllegalStateException("RepositoryFactory is required")
             val res = useCases.dismissMachineAlert(principal, machineId, alertId, reqDto, rf)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        // Module 21 Step 08 - Machine Performance & OEE Foundation Endpoints
+        request.path.matches(Regex("^/api/v1/machines/[^/]+/oee/calculate$")) && request.method == "POST" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val machineId = request.path.removePrefix("/api/v1/machines/").substringBefore("/oee/calculate")
+            val reqDto = parseCalculateOeeRequest(request.body)
+            val rf = repositoryFactory ?: throw IllegalStateException("RepositoryFactory is required")
+            val res = useCases.calculateAndSaveOee(principal, machineId, reqDto, rf)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        (request.path.matches(Regex("^/api/v1/machines/[^/]+/oee$")) || request.path.matches(Regex("^/api/v1/machines/[^/]+/performance/summary$"))) && request.method == "GET" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val machineId = request.path.removePrefix("/api/v1/machines/").substringBefore("/oee").substringBefore("/performance/summary")
+            val rf = repositoryFactory ?: throw IllegalStateException("RepositoryFactory is required")
+            val res = useCases.getLatestOeeSummary(principal, machineId, rf)
             HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
         }
 
@@ -17301,6 +17321,31 @@ private fun parseDismissMachineAlertRequest(body: Any?): DismissMachineAlertRequ
     val map = parseBodyMap(body)
     val reason = map["reason"] as? String
     return DismissMachineAlertRequestDto(reason = reason)
+}
+
+private fun parseCalculateOeeRequest(body: Any?): CalculateOeeRequestDto {
+    if (body is CalculateOeeRequestDto) return body
+    val map = parseBodyMap(body)
+    if (map.isNotEmpty()) {
+        val periodStart = (map["periodStart"] as? Number)?.toLong()
+            ?: (map["periodStart"] as? String)?.toLongOrNull()
+            ?: throw ValidationException("Missing 'periodStart' parameter.")
+        val periodEnd = (map["periodEnd"] as? Number)?.toLong()
+            ?: (map["periodEnd"] as? String)?.toLongOrNull()
+            ?: throw ValidationException("Missing 'periodEnd' parameter.")
+        val plannedSec = (map["customPlannedProductionSeconds"] as? Number)?.toLong()
+            ?: (map["customPlannedProductionSeconds"] as? String)?.toLongOrNull()
+        val idealRateStr = map["customIdealRateUnitsPerHour"]?.toString()
+        val idealRate = idealRateStr?.let { runCatching { java.math.BigDecimal(it) }.getOrNull() }
+
+        return CalculateOeeRequestDto(
+            periodStart = periodStart,
+            periodEnd = periodEnd,
+            customPlannedProductionSeconds = plannedSec,
+            customIdealRateUnitsPerHour = idealRate
+        )
+    }
+    throw ValidationException("Request body must be a valid CalculateOeeRequestDto.")
 }
 
 private fun parsePasswordRecoveryRequestDto(body: Any?): PasswordRecoveryRequestDto {
