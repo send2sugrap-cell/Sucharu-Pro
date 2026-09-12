@@ -443,6 +443,11 @@ class ProductionRuntimeComposition(
         registry.registerRule(com.sucharu.sucharupro.domain.preflight.rules.AssetColorProfileRule())
         registry.registerRule(com.sucharu.sucharupro.domain.preflight.rules.AssetIntegrityMissingRule())
         registry.registerRule(com.sucharu.sucharupro.domain.preflight.rules.AssetIntegrityCorruptRule())
+        registry.registerRule(com.sucharu.sucharupro.domain.preflight.rules.FontPresenceAndMissingRule())
+        registry.registerRule(com.sucharu.sucharupro.domain.preflight.rules.FontEmbeddingStatusRule())
+        registry.registerRule(com.sucharu.sucharupro.domain.preflight.rules.FontTypeCompatibilityRule())
+        registry.registerRule(com.sucharu.sucharupro.domain.preflight.rules.FontSubstitutionRule())
+        registry.registerRule(com.sucharu.sucharupro.domain.preflight.rules.FontRequirementComplianceRule())
         com.sucharu.sucharupro.domain.engine.preflight.PreflightEngineImpl(
             ruleRegistry = registry,
             preflightRepository = com.sucharu.sucharupro.data.repository.preflight.PreflightRepositoryImpl(
