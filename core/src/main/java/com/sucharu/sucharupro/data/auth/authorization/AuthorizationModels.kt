@@ -72,6 +72,11 @@ enum class AuthorizationCapability {
     READ_MACHINE_PERFORMANCE,
     READ_MACHINE_OEE,
 
+    // Preflight Engine capabilities (Module 22 Step 01)
+    READ_PREFLIGHT,
+    EXECUTE_PREFLIGHT,
+    MANAGE_PREFLIGHT_RULES,
+
     // Manager capabilities
     MANAGER_APPROVE_ORDER,
     MANAGER_APPROVE_RETURN,

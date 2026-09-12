@@ -62,6 +62,8 @@ interface AppRuntimeComposition {
     val machineDowntimeService: com.sucharu.sucharupro.domain.service.machine.events.MachineDowntimeService
     val machineAlertService: com.sucharu.sucharupro.domain.service.machine.alerts.MachineAlertService
     val machineOeeService: com.sucharu.sucharupro.domain.service.machine.oee.MachineOeeService
+    val preflightEngine: com.sucharu.sucharupro.domain.engine.preflight.PreflightEngine
+    val preflightService: com.sucharu.sucharupro.domain.service.preflight.PreflightService
 }
 
 /**
@@ -262,6 +264,26 @@ class PostgresRuntimeComposition(
             productionExecutionRepository = null
         )
     }
+
+    override val preflightEngine: com.sucharu.sucharupro.domain.engine.preflight.PreflightEngine by lazy {
+        val tm = DefaultPostgresTransactionManager(connectionProvider)
+        com.sucharu.sucharupro.domain.engine.preflight.PreflightEngineImpl(
+            ruleRegistry = com.sucharu.sucharupro.domain.preflight.PreflightRuleRegistry(),
+            preflightRepository = com.sucharu.sucharupro.data.repository.preflight.PreflightRepositoryImpl(
+                dataSource = com.sucharu.sucharupro.data.persistence.postgres.PostgresPreflightDataSource(tm)
+            )
+        )
+    }
+
+    override val preflightService: com.sucharu.sucharupro.domain.service.preflight.PreflightService by lazy {
+        val tm = DefaultPostgresTransactionManager(connectionProvider)
+        com.sucharu.sucharupro.domain.service.preflight.PreflightServiceImpl(
+            preflightEngine = preflightEngine,
+            preflightRepository = com.sucharu.sucharupro.data.repository.preflight.PreflightRepositoryImpl(
+                dataSource = com.sucharu.sucharupro.data.persistence.postgres.PostgresPreflightDataSource(tm)
+            )
+        )
+    }
 }
 
 /**
@@ -397,6 +419,24 @@ class ProductionRuntimeComposition(
                 dataSource = com.sucharu.sucharupro.data.datasource.machine.oee.FakeMachineOeeDataSource()
             ),
             machineRegistryRepository = machineRegistryRepository
+        )
+    }
+
+    override val preflightEngine: com.sucharu.sucharupro.domain.engine.preflight.PreflightEngine by lazy {
+        com.sucharu.sucharupro.domain.engine.preflight.PreflightEngineImpl(
+            ruleRegistry = com.sucharu.sucharupro.domain.preflight.PreflightRuleRegistry(),
+            preflightRepository = com.sucharu.sucharupro.data.repository.preflight.PreflightRepositoryImpl(
+                dataSource = com.sucharu.sucharupro.data.datasource.preflight.FakePreflightDataSource()
+            )
+        )
+    }
+
+    override val preflightService: com.sucharu.sucharupro.domain.service.preflight.PreflightService by lazy {
+        com.sucharu.sucharupro.domain.service.preflight.PreflightServiceImpl(
+            preflightEngine = preflightEngine,
+            preflightRepository = com.sucharu.sucharupro.data.repository.preflight.PreflightRepositoryImpl(
+                dataSource = com.sucharu.sucharupro.data.datasource.preflight.FakePreflightDataSource()
+            )
         )
     }
 }

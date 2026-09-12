@@ -2550,6 +2550,42 @@ open class PostgresRepositoryFactory(
             productionExecutionRepository = createProductionExecutionRepository(tenantId)
         )
     }
+
+    open fun createPreflightRuleRegistry(): com.sucharu.sucharupro.domain.preflight.PreflightRuleRegistry {
+        return com.sucharu.sucharupro.domain.preflight.PreflightRuleRegistry()
+    }
+
+    open fun createPreflightDataSource(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.data.datasource.preflight.PreflightDataSource {
+        return PostgresPreflightDataSource(transactionManager)
+    }
+
+    open fun createPreflightRepository(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.domain.repository.preflight.PreflightRepository {
+        return com.sucharu.sucharupro.data.repository.preflight.PreflightRepositoryImpl(
+            dataSource = createPreflightDataSource(tenantId)
+        )
+    }
+
+    open fun createPreflightEngine(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.domain.engine.preflight.PreflightEngine {
+        return com.sucharu.sucharupro.domain.engine.preflight.PreflightEngineImpl(
+            ruleRegistry = createPreflightRuleRegistry(),
+            preflightRepository = createPreflightRepository(tenantId)
+        )
+    }
+
+    open fun createPreflightService(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.domain.service.preflight.PreflightService {
+        return com.sucharu.sucharupro.domain.service.preflight.PreflightServiceImpl(
+            preflightEngine = createPreflightEngine(tenantId),
+            preflightRepository = createPreflightRepository(tenantId)
+        )
+    }
 }
 
 

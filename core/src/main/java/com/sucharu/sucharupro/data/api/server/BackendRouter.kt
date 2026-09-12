@@ -11,6 +11,8 @@ import com.sucharu.sucharupro.data.api.model.machine.alerts.*
 import com.sucharu.sucharupro.domain.machine.alerts.*
 import com.sucharu.sucharupro.data.api.model.machine.oee.*
 import com.sucharu.sucharupro.domain.machine.oee.*
+import com.sucharu.sucharupro.data.api.model.preflight.*
+import com.sucharu.sucharupro.domain.preflight.*
 import com.sucharu.sucharupro.data.persistence.postgres.PostgresRepositoryFactory
 import com.sucharu.sucharupro.data.api.model.businesscostcontrol.*
 import com.sucharu.sucharupro.data.api.model.businessreconciliation.*
@@ -2660,6 +2662,41 @@ class BackendRouter(
             val machineId = request.path.removePrefix("/api/v1/machines/").substringBefore("/oee").substringBefore("/performance/summary")
             val rf = repositoryFactory ?: throw IllegalStateException("RepositoryFactory is required")
             val res = useCases.getLatestOeeSummary(principal, machineId, rf)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        // Module 22 Step 01 - Preflight Engine Foundation Endpoints
+        request.path == "/api/v1/preflight/runs" && request.method == "POST" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val reqDto = parseStartPreflightRequest(request.body)
+            val rf = repositoryFactory ?: throw IllegalStateException("RepositoryFactory is required")
+            val res = useCases.startPreflightRun(principal, reqDto, rf)
+            HttpResponse(201, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/preflight/runs/[^/]+$")) && request.method == "GET" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val runId = request.path.removePrefix("/api/v1/preflight/runs/")
+            val rf = repositoryFactory ?: throw IllegalStateException("RepositoryFactory is required")
+            val res = useCases.getPreflightRunDetails(principal, runId, rf)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/preflight/runs/[^/]+/findings$")) && request.method == "GET" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val runId = request.path.removePrefix("/api/v1/preflight/runs/").removeSuffix("/findings")
+            val rf = repositoryFactory ?: throw IllegalStateException("RepositoryFactory is required")
+            val res = useCases.listPreflightFindings(principal, runId, rf)
+            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        }
+
+        request.path.matches(Regex("^/api/v1/preflight/artworks/[^/]+/runs$")) && request.method == "GET" -> {
+            val principal = securityContext.authenticate(request.authorizationHeader)
+            val artworkId = request.path.removePrefix("/api/v1/preflight/artworks/").removeSuffix("/runs")
+            val queryParams = parseQueryParams(request.path)
+            val limit = queryParams["limit"]?.toIntOrNull() ?: 100
+            val rf = repositoryFactory ?: throw IllegalStateException("RepositoryFactory is required")
+            val res = useCases.listPreflightRunsForArtwork(principal, artworkId, limit, rf)
             HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
         }
 
@@ -17321,6 +17358,34 @@ private fun parseDismissMachineAlertRequest(body: Any?): DismissMachineAlertRequ
     val map = parseBodyMap(body)
     val reason = map["reason"] as? String
     return DismissMachineAlertRequestDto(reason = reason)
+}
+
+private fun parseStartPreflightRequest(body: Any?): StartPreflightRequestDto {
+    if (body is StartPreflightRequestDto) return body
+    val map = parseBodyMap(body)
+    if (map.isNotEmpty()) {
+        val artworkId = (map["artworkId"] as? String)?.trim()?.ifBlank { null }
+            ?: throw ValidationException("Missing 'artworkId' parameter.")
+        val jobId = map["jobId"] as? String
+        val artworkVersionId = map["artworkVersionId"] as? String
+        val proofId = map["proofId"] as? String
+        val idempotencyKey = map["idempotencyKey"] as? String
+        @Suppress("UNCHECKED_CAST")
+        val orderSpec = (map["orderSpecificationMap"] as? Map<String, Any>) ?: emptyMap()
+        @Suppress("UNCHECKED_CAST")
+        val artworkMeta = (map["artworkMetadataMap"] as? Map<String, Any>) ?: emptyMap()
+
+        return StartPreflightRequestDto(
+            artworkId = artworkId,
+            jobId = jobId,
+            artworkVersionId = artworkVersionId,
+            proofId = proofId,
+            idempotencyKey = idempotencyKey,
+            orderSpecificationMap = orderSpec,
+            artworkMetadataMap = artworkMeta
+        )
+    }
+    throw ValidationException("Request body must be a valid StartPreflightRequestDto.")
 }
 
 private fun parseCalculateOeeRequest(body: Any?): CalculateOeeRequestDto {
