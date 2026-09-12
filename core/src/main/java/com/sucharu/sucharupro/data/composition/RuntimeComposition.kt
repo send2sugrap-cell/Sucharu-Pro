@@ -438,6 +438,11 @@ class ProductionRuntimeComposition(
         registry.registerRule(com.sucharu.sucharupro.domain.preflight.rules.SpecOrientationMatchRule())
         registry.registerRule(com.sucharu.sucharupro.domain.preflight.rules.SpecFormatMatchRule())
         registry.registerRule(com.sucharu.sucharupro.domain.preflight.rules.SpecDocumentTypeMatchRule())
+        registry.registerRule(com.sucharu.sucharupro.domain.preflight.rules.AssetDpiResolutionRule())
+        registry.registerRule(com.sucharu.sucharupro.domain.preflight.rules.AssetColorSpaceRule())
+        registry.registerRule(com.sucharu.sucharupro.domain.preflight.rules.AssetColorProfileRule())
+        registry.registerRule(com.sucharu.sucharupro.domain.preflight.rules.AssetIntegrityMissingRule())
+        registry.registerRule(com.sucharu.sucharupro.domain.preflight.rules.AssetIntegrityCorruptRule())
         com.sucharu.sucharupro.domain.engine.preflight.PreflightEngineImpl(
             ruleRegistry = registry,
             preflightRepository = com.sucharu.sucharupro.data.repository.preflight.PreflightRepositoryImpl(
