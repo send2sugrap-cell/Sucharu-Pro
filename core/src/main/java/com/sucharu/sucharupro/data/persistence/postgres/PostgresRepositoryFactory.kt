@@ -2561,6 +2561,11 @@ open class PostgresRepositoryFactory(
         registry.registerRule(com.sucharu.sucharupro.domain.preflight.rules.DocumentParseableRule())
         registry.registerRule(com.sucharu.sucharupro.domain.preflight.rules.DocumentPageCountRule())
         registry.registerRule(com.sucharu.sucharupro.domain.preflight.rules.ImageStructureReadableRule())
+        registry.registerRule(com.sucharu.sucharupro.domain.preflight.rules.SpecPageCountMatchRule())
+        registry.registerRule(com.sucharu.sucharupro.domain.preflight.rules.SpecDocumentSizeMatchRule())
+        registry.registerRule(com.sucharu.sucharupro.domain.preflight.rules.SpecOrientationMatchRule())
+        registry.registerRule(com.sucharu.sucharupro.domain.preflight.rules.SpecFormatMatchRule())
+        registry.registerRule(com.sucharu.sucharupro.domain.preflight.rules.SpecDocumentTypeMatchRule())
         return registry
     }
 

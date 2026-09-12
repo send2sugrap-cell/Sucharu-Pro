@@ -433,6 +433,11 @@ class ProductionRuntimeComposition(
         registry.registerRule(com.sucharu.sucharupro.domain.preflight.rules.DocumentParseableRule())
         registry.registerRule(com.sucharu.sucharupro.domain.preflight.rules.DocumentPageCountRule())
         registry.registerRule(com.sucharu.sucharupro.domain.preflight.rules.ImageStructureReadableRule())
+        registry.registerRule(com.sucharu.sucharupro.domain.preflight.rules.SpecPageCountMatchRule())
+        registry.registerRule(com.sucharu.sucharupro.domain.preflight.rules.SpecDocumentSizeMatchRule())
+        registry.registerRule(com.sucharu.sucharupro.domain.preflight.rules.SpecOrientationMatchRule())
+        registry.registerRule(com.sucharu.sucharupro.domain.preflight.rules.SpecFormatMatchRule())
+        registry.registerRule(com.sucharu.sucharupro.domain.preflight.rules.SpecDocumentTypeMatchRule())
         com.sucharu.sucharupro.domain.engine.preflight.PreflightEngineImpl(
             ruleRegistry = registry,
             preflightRepository = com.sucharu.sucharupro.data.repository.preflight.PreflightRepositoryImpl(
