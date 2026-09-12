@@ -1,9 +1,7 @@
 package com.sucharu.sucharupro.data.datasource.preflight
 
 import com.sucharu.sucharupro.domain.model.common.DomainResult
-import com.sucharu.sucharupro.domain.preflight.PreflightFinding
-import com.sucharu.sucharupro.domain.preflight.PreflightRuleExecution
-import com.sucharu.sucharupro.domain.preflight.PreflightRun
+import com.sucharu.sucharupro.domain.preflight.*
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -14,6 +12,7 @@ class FakePreflightDataSource : PreflightDataSource {
     private val runs = ConcurrentHashMap<String, PreflightRun>()
     private val ruleExecutions = ConcurrentHashMap<String, PreflightRuleExecution>()
     private val findings = ConcurrentHashMap<String, PreflightFinding>()
+    private val corrections = ConcurrentHashMap<String, PreflightFindingCorrection>()
 
     override suspend fun saveRun(run: PreflightRun): DomainResult<PreflightRun> {
         val key = "${run.tenantId}:${run.preflightRunId}"
@@ -75,6 +74,33 @@ class FakePreflightDataSource : PreflightDataSource {
         val filtered = findings.values.filter { f ->
             f.tenantId == tenantId && f.preflightRunId == runId
         }.sortedBy { it.createdAt }
+        return DomainResult.Success(filtered)
+    }
+
+    override suspend fun getFindingById(tenantId: String, findingId: String): DomainResult<PreflightFinding?> {
+        val key = "$tenantId:$findingId"
+        return DomainResult.Success(findings[key])
+    }
+
+    override suspend fun updateFinding(finding: PreflightFinding): DomainResult<PreflightFinding> {
+        val key = "${finding.tenantId}:${finding.findingId}"
+        findings[key] = finding
+        return DomainResult.Success(finding)
+    }
+
+    override suspend fun saveCorrection(correction: PreflightFindingCorrection): DomainResult<PreflightFindingCorrection> {
+        val key = "${correction.tenantId}:${correction.correctionId}"
+        corrections[key] = correction
+        return DomainResult.Success(correction)
+    }
+
+    override suspend fun listCorrectionsForFinding(
+        tenantId: String,
+        findingId: String
+    ): DomainResult<List<PreflightFindingCorrection>> {
+        val filtered = corrections.values.filter { c ->
+            c.tenantId == tenantId && c.findingId == findingId
+        }.sortedBy { it.submittedAt }
         return DomainResult.Success(filtered)
     }
 }

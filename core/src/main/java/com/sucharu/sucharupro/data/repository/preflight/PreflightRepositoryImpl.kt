@@ -2,10 +2,7 @@ package com.sucharu.sucharupro.data.repository.preflight
 
 import com.sucharu.sucharupro.data.datasource.preflight.PreflightDataSource
 import com.sucharu.sucharupro.domain.model.common.DomainResult
-import com.sucharu.sucharupro.domain.preflight.PreflightFinding
-import com.sucharu.sucharupro.domain.preflight.PreflightRuleExecution
-import com.sucharu.sucharupro.domain.preflight.PreflightRun
-import com.sucharu.sucharupro.domain.preflight.PreflightValidator
+import com.sucharu.sucharupro.domain.preflight.*
 import com.sucharu.sucharupro.domain.repository.preflight.PreflightRepository
 
 /**
@@ -77,5 +74,39 @@ class PreflightRepositoryImpl(
             return DomainResult.Error(message = "Tenant ID and Run ID cannot be blank.")
         }
         return dataSource.listFindingsByRun(tenantId, runId)
+    }
+
+    override suspend fun getFindingById(tenantId: String, findingId: String): DomainResult<PreflightFinding?> {
+        if (tenantId.isBlank() || findingId.isBlank()) {
+            return DomainResult.Error(message = "Tenant ID and Finding ID cannot be blank.")
+        }
+        return dataSource.getFindingById(tenantId, findingId)
+    }
+
+    override suspend fun updateFinding(finding: PreflightFinding): DomainResult<PreflightFinding> {
+        if (finding.tenantId.isBlank() || finding.findingId.isBlank()) {
+            return DomainResult.Error(message = "Tenant ID and Finding ID cannot be blank.")
+        }
+        return dataSource.updateFinding(finding)
+    }
+
+    override suspend fun saveCorrection(correction: PreflightFindingCorrection): DomainResult<PreflightFindingCorrection> {
+        if (correction.tenantId.isBlank() || correction.findingId.isBlank()) {
+            return DomainResult.Error(message = "Tenant ID and Finding ID cannot be blank.")
+        }
+        val valRes = PreflightFindingValidator.validateCorrectionSubmission(correction.description, correction.submittedBy)
+        if (valRes is DomainResult.Error) return DomainResult.Error(message = valRes.message)
+
+        return dataSource.saveCorrection(correction)
+    }
+
+    override suspend fun listCorrectionsForFinding(
+        tenantId: String,
+        findingId: String
+    ): DomainResult<List<PreflightFindingCorrection>> {
+        if (tenantId.isBlank() || findingId.isBlank()) {
+            return DomainResult.Error(message = "Tenant ID and Finding ID cannot be blank.")
+        }
+        return dataSource.listCorrectionsForFinding(tenantId, findingId)
     }
 }

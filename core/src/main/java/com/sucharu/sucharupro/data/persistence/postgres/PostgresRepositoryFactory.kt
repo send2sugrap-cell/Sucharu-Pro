@@ -2622,6 +2622,175 @@ open class PostgresRepositoryFactory(
             preflightRepository = createPreflightRepository(tenantId)
         )
     }
+
+    open fun createAffiliateWalletDataSource(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.data.datasource.affiliate.wallet.AffiliateWalletDataSource {
+        return com.sucharu.sucharupro.data.persistence.postgres.PostgresAffiliateWalletDataSource(
+            transactionManager = transactionManager
+        )
+    }
+
+    open fun createAffiliateWalletRepository(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.domain.repository.affiliate.wallet.AffiliateWalletRepository {
+        return com.sucharu.sucharupro.data.repository.affiliate.wallet.AffiliateWalletRepositoryImpl(
+            dataSource = createAffiliateWalletDataSource(tenantId)
+        )
+    }
+
+    open fun createAffiliateWalletService(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.domain.service.affiliate.wallet.AffiliateWalletService {
+        return com.sucharu.sucharupro.domain.service.affiliate.wallet.AffiliateWalletServiceImpl(
+            walletRepository = createAffiliateWalletRepository(tenantId),
+            affiliateRepository = createAffiliateRepository(tenantId)
+        )
+    }
+
+    open fun createAffiliateWalletLedgerDataSource(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.data.datasource.affiliate.wallet.AffiliateWalletLedgerDataSource {
+        return com.sucharu.sucharupro.data.persistence.postgres.PostgresAffiliateWalletLedgerDataSource(
+            transactionManager = transactionManager
+        )
+    }
+
+    open fun createAffiliateWalletLedgerRepository(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.domain.repository.affiliate.wallet.AffiliateWalletLedgerRepository {
+        return com.sucharu.sucharupro.data.repository.affiliate.wallet.AffiliateWalletLedgerRepositoryImpl(
+            dataSource = createAffiliateWalletLedgerDataSource(tenantId)
+        )
+    }
+
+    open fun createAffiliateWalletLedgerService(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.domain.service.affiliate.wallet.AffiliateWalletLedgerService {
+        return com.sucharu.sucharupro.domain.service.affiliate.wallet.AffiliateWalletLedgerServiceImpl(
+            walletRepository = createAffiliateWalletRepository(tenantId),
+            ledgerRepository = createAffiliateWalletLedgerRepository(tenantId)
+        )
+    }
+
+    open fun createAffiliateEarningWalletIntegrationService(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.domain.service.affiliate.wallet.AffiliateEarningWalletIntegrationService {
+        return com.sucharu.sucharupro.domain.service.affiliate.wallet.AffiliateEarningWalletIntegrationServiceImpl(
+            affiliateRepository = createAffiliateRepository(tenantId),
+            walletRepository = createAffiliateWalletRepository(tenantId),
+            walletService = createAffiliateWalletService(tenantId),
+            ledgerService = createAffiliateWalletLedgerService(tenantId)
+        )
+    }
+
+    open fun createAffiliateWalletHoldDataSource(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.data.datasource.affiliate.wallet.AffiliateWalletHoldDataSource {
+        return com.sucharu.sucharupro.data.persistence.postgres.PostgresAffiliateWalletHoldDataSource(
+            transactionManager = transactionManager
+        )
+    }
+
+    open fun createAffiliateWalletHoldRepository(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.domain.repository.affiliate.wallet.AffiliateWalletHoldRepository {
+        return com.sucharu.sucharupro.data.repository.affiliate.wallet.AffiliateWalletHoldRepositoryImpl(
+            dataSource = createAffiliateWalletHoldDataSource(tenantId)
+        )
+    }
+
+    open fun createAffiliateWalletHoldService(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.domain.service.affiliate.wallet.AffiliateWalletHoldService {
+        return com.sucharu.sucharupro.domain.service.affiliate.wallet.AffiliateWalletHoldServiceImpl(
+            walletRepository = createAffiliateWalletRepository(tenantId),
+            holdRepository = createAffiliateWalletHoldRepository(tenantId),
+            ledgerService = createAffiliateWalletLedgerService(tenantId)
+        )
+    }
+
+    open fun createAffiliatePayoutRequestDataSource(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.data.datasource.affiliate.wallet.AffiliatePayoutRequestDataSource {
+        return com.sucharu.sucharupro.data.persistence.postgres.PostgresAffiliatePayoutRequestDataSource(
+            transactionManager = transactionManager
+        )
+    }
+
+    open fun createAffiliatePayoutRequestRepository(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.domain.repository.affiliate.wallet.AffiliatePayoutRequestRepository {
+        return com.sucharu.sucharupro.data.repository.affiliate.wallet.AffiliatePayoutRequestRepositoryImpl(
+            dataSource = createAffiliatePayoutRequestDataSource(tenantId)
+        )
+    }
+
+    open fun createAffiliatePayoutRequestService(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.domain.service.affiliate.wallet.AffiliatePayoutRequestService {
+        return com.sucharu.sucharupro.domain.service.affiliate.wallet.AffiliatePayoutRequestServiceImpl(
+            walletRepository = createAffiliateWalletRepository(tenantId),
+            payoutRequestRepository = createAffiliatePayoutRequestRepository(tenantId),
+            holdService = createAffiliateWalletHoldService(tenantId)
+        )
+    }
+
+    open fun createAffiliatePayoutDisbursementDataSource(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.data.datasource.affiliate.wallet.AffiliatePayoutDisbursementDataSource {
+        return com.sucharu.sucharupro.data.persistence.postgres.PostgresAffiliatePayoutDisbursementDataSource(
+            transactionManager = transactionManager
+        )
+    }
+
+    open fun createAffiliatePayoutDisbursementRepository(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.domain.repository.affiliate.wallet.AffiliatePayoutDisbursementRepository {
+        return com.sucharu.sucharupro.data.repository.affiliate.wallet.AffiliatePayoutDisbursementRepositoryImpl(
+            dataSource = createAffiliatePayoutDisbursementDataSource(tenantId)
+        )
+    }
+
+    open fun createAffiliatePayoutDisbursementService(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.domain.service.affiliate.wallet.AffiliatePayoutDisbursementService {
+        return com.sucharu.sucharupro.domain.service.affiliate.wallet.AffiliatePayoutDisbursementServiceImpl(
+            payoutRequestRepository = createAffiliatePayoutRequestRepository(tenantId),
+            disbursementRepository = createAffiliatePayoutDisbursementRepository(tenantId),
+            ledgerService = createAffiliateWalletLedgerService(tenantId),
+            holdService = createAffiliateWalletHoldService(tenantId)
+        )
+    }
+
+    open fun createAffiliatePayoutRecoveryDataSource(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.data.datasource.affiliate.wallet.AffiliatePayoutRecoveryDataSource {
+        return com.sucharu.sucharupro.data.persistence.postgres.PostgresAffiliatePayoutRecoveryDataSource(
+            transactionManager = transactionManager
+        )
+    }
+
+    open fun createAffiliatePayoutRecoveryRepository(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.domain.repository.affiliate.wallet.AffiliatePayoutRecoveryRepository {
+        return com.sucharu.sucharupro.data.repository.affiliate.wallet.AffiliatePayoutRecoveryRepositoryImpl(
+            dataSource = createAffiliatePayoutRecoveryDataSource(tenantId)
+        )
+    }
+
+    open fun createAffiliatePayoutRecoveryService(
+        tenantId: String = defaultTenantId
+    ): com.sucharu.sucharupro.domain.service.affiliate.wallet.AffiliatePayoutRecoveryService {
+        return com.sucharu.sucharupro.domain.service.affiliate.wallet.AffiliatePayoutRecoveryServiceImpl(
+            payoutRequestRepository = createAffiliatePayoutRequestRepository(tenantId),
+            disbursementRepository = createAffiliatePayoutDisbursementRepository(tenantId),
+            recoveryRepository = createAffiliatePayoutRecoveryRepository(tenantId),
+            disbursementService = createAffiliatePayoutDisbursementService(tenantId),
+            ledgerService = createAffiliateWalletLedgerService(tenantId),
+            holdService = createAffiliateWalletHoldService(tenantId)
+        )
+    }
 }
 
 

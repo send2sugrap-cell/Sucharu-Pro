@@ -248,6 +248,121 @@ class PostgresPreflightDataSource(
         }
     }
 
+    override suspend fun getFindingById(tenantId: String, findingId: String): DomainResult<PreflightFinding?> {
+        return try {
+            val result = transactionManager.inTransaction(TenantContext(tenantId)) { ctx ->
+                val conn = ctx.connection
+                val sql = "SELECT * FROM preflight_findings WHERE tenant_id = ? AND finding_id = ?"
+                conn.prepareStatement(sql).use { ps ->
+                    ps.setString(1, tenantId)
+                    ps.setString(2, findingId)
+                    ps.executeQuery().use { rs ->
+                        if (rs.next()) mapFinding(rs) else null
+                    }
+                }
+            }
+            DomainResult.Success(result)
+        } catch (e: Exception) {
+            PostgresErrorTranslator.translate(e, "get preflight finding by id")
+        }
+    }
+
+    override suspend fun updateFinding(finding: PreflightFinding): DomainResult<PreflightFinding> {
+        return try {
+            transactionManager.inTransaction(TenantContext(finding.tenantId)) { ctx ->
+                val conn = ctx.connection
+                val sql = """
+                    UPDATE preflight_findings SET
+                        status = ?,
+                        acknowledged_by = ?,
+                        acknowledged_at = ?,
+                        resolved_at = ?,
+                        resolved_by = ?,
+                        waiver_reason = ?,
+                        waived_by = ?,
+                        waived_at = ?,
+                        revalidation_run_id = ?
+                    WHERE tenant_id = ? AND finding_id = ?
+                """.trimIndent()
+
+                conn.prepareStatement(sql).use { ps ->
+                    ps.setString(1, finding.status.name)
+                    ps.setString(2, finding.acknowledgedBy)
+                    if (finding.acknowledgedAt != null) ps.setTimestamp(3, java.sql.Timestamp(finding.acknowledgedAt)) else ps.setNull(3, java.sql.Types.TIMESTAMP)
+                    if (finding.resolvedAt != null) ps.setTimestamp(4, java.sql.Timestamp(finding.resolvedAt)) else ps.setNull(4, java.sql.Types.TIMESTAMP)
+                    ps.setString(5, finding.resolvedBy)
+                    ps.setString(6, finding.waiverReason)
+                    ps.setString(7, finding.waivedBy)
+                    if (finding.waivedAt != null) ps.setTimestamp(8, java.sql.Timestamp(finding.waivedAt)) else ps.setNull(8, java.sql.Types.TIMESTAMP)
+                    ps.setString(9, finding.revalidationRunId)
+                    ps.setString(10, finding.tenantId)
+                    ps.setString(11, finding.findingId)
+                    ps.executeUpdate()
+                }
+            }
+            DomainResult.Success(finding)
+        } catch (e: Exception) {
+            PostgresErrorTranslator.translate(e, "update preflight finding")
+        }
+    }
+
+    override suspend fun saveCorrection(correction: PreflightFindingCorrection): DomainResult<PreflightFindingCorrection> {
+        return try {
+            transactionManager.inTransaction(TenantContext(correction.tenantId)) { ctx ->
+                val conn = ctx.connection
+                val sql = """
+                    INSERT INTO preflight_finding_corrections (
+                        correction_id, tenant_id, finding_id, preflight_run_id,
+                        correction_type, description, artwork_version_id,
+                        submitted_by, submitted_at, revalidation_run_id
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, to_timestamp(? / 1000.0), ?)
+                    ON CONFLICT (correction_id) DO NOTHING
+                """.trimIndent()
+
+                conn.prepareStatement(sql).use { ps ->
+                    ps.setString(1, correction.correctionId)
+                    ps.setString(2, correction.tenantId)
+                    ps.setString(3, correction.findingId)
+                    ps.setString(4, correction.preflightRunId)
+                    ps.setString(5, correction.correctionType.name)
+                    ps.setString(6, correction.description)
+                    ps.setString(7, correction.artworkVersionId)
+                    ps.setString(8, correction.submittedBy)
+                    ps.setLong(9, correction.submittedAt)
+                    ps.setString(10, correction.revalidationRunId)
+                    ps.executeUpdate()
+                }
+            }
+            DomainResult.Success(correction)
+        } catch (e: Exception) {
+            PostgresErrorTranslator.translate(e, "save preflight finding correction")
+        }
+    }
+
+    override suspend fun listCorrectionsForFinding(
+        tenantId: String,
+        findingId: String
+    ): DomainResult<List<PreflightFindingCorrection>> {
+        return try {
+            val result = transactionManager.inTransaction(TenantContext(tenantId)) { ctx ->
+                val conn = ctx.connection
+                val sql = "SELECT * FROM preflight_finding_corrections WHERE tenant_id = ? AND finding_id = ? ORDER BY submitted_at ASC"
+                conn.prepareStatement(sql).use { ps ->
+                    ps.setString(1, tenantId)
+                    ps.setString(2, findingId)
+                    ps.executeQuery().use { rs ->
+                        val list = mutableListOf<PreflightFindingCorrection>()
+                        while (rs.next()) list.add(mapCorrection(rs))
+                        list
+                    }
+                }
+            }
+            DomainResult.Success(result)
+        } catch (e: Exception) {
+            PostgresErrorTranslator.translate(e, "list preflight finding corrections")
+        }
+    }
+
     private fun mapRun(rs: ResultSet): PreflightRun {
         val startTs = rs.getTimestamp("started_at")
         val compTs = rs.getTimestamp("completed_at")
@@ -291,6 +406,9 @@ class PostgresPreflightDataSource(
 
     private fun mapFinding(rs: ResultSet): PreflightFinding {
         val createdTs = rs.getTimestamp("created_at")
+        val ackTs = rs.getTimestamp("acknowledged_at")
+        val resTs = rs.getTimestamp("resolved_at")
+        val waivedTs = rs.getTimestamp("waived_at")
         return PreflightFinding(
             findingId = rs.getString("finding_id"),
             tenantId = rs.getString("tenant_id"),
@@ -303,7 +421,32 @@ class PostgresPreflightDataSource(
             expectedValue = rs.getString("expected_value"),
             actualValue = rs.getString("actual_value"),
             locationContext = rs.getString("location_context"),
+            status = try { PreflightFindingStatus.valueOf(rs.getString("status")) } catch (_: Exception) { PreflightFindingStatus.OPEN },
+            acknowledgedBy = rs.getString("acknowledged_by"),
+            acknowledgedAt = ackTs?.time,
+            resolvedAt = resTs?.time,
+            resolvedBy = rs.getString("resolved_by"),
+            waiverReason = rs.getString("waiver_reason"),
+            waivedBy = rs.getString("waived_by"),
+            waivedAt = waivedTs?.time,
+            revalidationRunId = rs.getString("revalidation_run_id"),
             createdAt = createdTs?.time ?: System.currentTimeMillis()
+        )
+    }
+
+    private fun mapCorrection(rs: ResultSet): PreflightFindingCorrection {
+        val subTs = rs.getTimestamp("submitted_at")
+        return PreflightFindingCorrection(
+            correctionId = rs.getString("correction_id"),
+            tenantId = rs.getString("tenant_id"),
+            findingId = rs.getString("finding_id"),
+            preflightRunId = rs.getString("preflight_run_id"),
+            correctionType = try { PreflightCorrectionType.valueOf(rs.getString("correction_type")) } catch (_: Exception) { PreflightCorrectionType.OTHER },
+            description = rs.getString("description"),
+            artworkVersionId = rs.getString("artwork_version_id"),
+            submittedBy = rs.getString("submitted_by"),
+            submittedAt = subTs?.time ?: System.currentTimeMillis(),
+            revalidationRunId = rs.getString("revalidation_run_id")
         )
     }
 }

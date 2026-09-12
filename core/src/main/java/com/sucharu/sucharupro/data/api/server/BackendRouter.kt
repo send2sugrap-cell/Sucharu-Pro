@@ -2665,39 +2665,9 @@ class BackendRouter(
             HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
         }
 
-        // Module 22 Step 01 - Preflight Engine Foundation Endpoints
-        request.path == "/api/v1/preflight/runs" && request.method == "POST" -> {
-            val principal = securityContext.authenticate(request.authorizationHeader)
-            val reqDto = parseStartPreflightRequest(request.body)
-            val rf = repositoryFactory ?: throw IllegalStateException("RepositoryFactory is required")
-            val res = useCases.startPreflightRun(principal, reqDto, rf)
-            HttpResponse(201, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
-        }
-
-        request.path.matches(Regex("^/api/v1/preflight/runs/[^/]+$")) && request.method == "GET" -> {
-            val principal = securityContext.authenticate(request.authorizationHeader)
-            val runId = request.path.removePrefix("/api/v1/preflight/runs/")
-            val rf = repositoryFactory ?: throw IllegalStateException("RepositoryFactory is required")
-            val res = useCases.getPreflightRunDetails(principal, runId, rf)
-            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
-        }
-
-        request.path.matches(Regex("^/api/v1/preflight/runs/[^/]+/findings$")) && request.method == "GET" -> {
-            val principal = securityContext.authenticate(request.authorizationHeader)
-            val runId = request.path.removePrefix("/api/v1/preflight/runs/").removeSuffix("/findings")
-            val rf = repositoryFactory ?: throw IllegalStateException("RepositoryFactory is required")
-            val res = useCases.listPreflightFindings(principal, runId, rf)
-            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
-        }
-
-        request.path.matches(Regex("^/api/v1/preflight/artworks/[^/]+/runs$")) && request.method == "GET" -> {
-            val principal = securityContext.authenticate(request.authorizationHeader)
-            val artworkId = request.path.removePrefix("/api/v1/preflight/artworks/").removeSuffix("/runs")
-            val queryParams = parseQueryParams(request.path)
-            val limit = queryParams["limit"]?.toIntOrNull() ?: 100
-            val rf = repositoryFactory ?: throw IllegalStateException("RepositoryFactory is required")
-            val res = useCases.listPreflightRunsForArtwork(principal, artworkId, limit, rf)
-            HttpResponse(200, ApiSuccessResponse(data = res, correlationId = correlationId), correlationId)
+        // Module 22 - Preflight Routes Delegation
+        request.path.startsWith("/api/v1/preflight/") -> {
+            handlePreflightRoutes(request, correlationId) ?: HttpResponse(404, ApiErrorResponse(errorCode = ErrorCode.NOT_FOUND, message = "API endpoint not found: ${request.path}"), correlationId)
         }
 
         request.path.matches(Regex("^/api/v1/shop-floor-tracking/jobs/[^/]+/telemetry$")) && request.method == "GET" -> {
@@ -17351,6 +17321,33 @@ private fun parseResolveMachineAlertRequest(body: Any?): ResolveMachineAlertRequ
     val map = parseBodyMap(body)
     val notes = map["resolutionNotes"] as? String
     return ResolveMachineAlertRequestDto(resolutionNotes = notes)
+}
+
+private fun parseSubmitCorrectionRequest(body: Any?): SubmitCorrectionRequestDto {
+    if (body is SubmitCorrectionRequestDto) return body
+    val map = parseBodyMap(body)
+    if (map.isNotEmpty()) {
+        val desc = (map["description"] as? String)?.trim()?.ifBlank { null }
+            ?: throw ValidationException("Missing 'description' parameter.")
+        val typeStr = (map["correctionType"] as? String)?.uppercase()
+        val corrType = try { if (typeStr != null) PreflightCorrectionType.valueOf(typeStr) else PreflightCorrectionType.OTHER } catch (_: Exception) { PreflightCorrectionType.OTHER }
+        val artworkVer = map["artworkVersionId"] as? String
+
+        return SubmitCorrectionRequestDto(
+            correctionType = corrType,
+            description = desc,
+            artworkVersionId = artworkVer
+        )
+    }
+    throw ValidationException("Request body must be a valid SubmitCorrectionRequestDto.")
+}
+
+private fun parseWaiveFindingRequest(body: Any?): WaiveFindingRequestDto {
+    if (body is WaiveFindingRequestDto) return body
+    val map = parseBodyMap(body)
+    val reason = (map["waiverReason"] as? String)?.trim()?.ifBlank { null }
+        ?: throw ValidationException("Missing 'waiverReason' parameter.")
+    return WaiveFindingRequestDto(waiverReason = reason)
 }
 
 private fun parseDismissMachineAlertRequest(body: Any?): DismissMachineAlertRequestDto {

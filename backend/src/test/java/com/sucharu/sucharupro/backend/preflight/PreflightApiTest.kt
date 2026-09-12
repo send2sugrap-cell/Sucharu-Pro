@@ -13,9 +13,8 @@ import com.sucharu.sucharupro.data.persistence.postgres.TransactionManager
 import com.sucharu.sucharupro.data.repository.preflight.PreflightRepositoryImpl
 import com.sucharu.sucharupro.domain.engine.preflight.PreflightEngine
 import com.sucharu.sucharupro.domain.engine.preflight.PreflightEngineImpl
-import com.sucharu.sucharupro.domain.preflight.PreflightOverallResult
-import com.sucharu.sucharupro.domain.preflight.PreflightRuleRegistry
-import com.sucharu.sucharupro.domain.preflight.PreflightRunStatus
+import com.sucharu.sucharupro.domain.preflight.*
+import com.sucharu.sucharupro.domain.preflight.rules.FileExistenceRule
 import com.sucharu.sucharupro.domain.repository.preflight.PreflightRepository
 import com.sucharu.sucharupro.domain.service.preflight.PreflightService
 import com.sucharu.sucharupro.domain.service.preflight.PreflightServiceImpl
@@ -39,6 +38,13 @@ class PreflightApiTest {
         role = UserRole.STAFF
     )
 
+    private val managerPrincipal = AuthenticatedPrincipal(
+        userId = "mgr_01",
+        projectId = projectId,
+        username = "mgr_user",
+        role = UserRole.MANAGER
+    )
+
     private val guestPrincipal = AuthenticatedPrincipal(
         userId = "guest_01",
         projectId = projectId,
@@ -51,6 +57,8 @@ class PreflightApiTest {
         val preflightDs = FakePreflightDataSource()
         val preflightRepo = PreflightRepositoryImpl(preflightDs)
         val ruleRegistry = PreflightRuleRegistry()
+        ruleRegistry.registerRule(FileExistenceRule())
+
         val preflightEngine = PreflightEngineImpl(ruleRegistry, preflightRepo)
         val preflightService = PreflightServiceImpl(preflightEngine, preflightRepo)
 
@@ -105,4 +113,157 @@ class PreflightApiTest {
             assertTrue(e.message?.contains("Forbidden") == true || e.message?.contains("Access") == true)
         }
     }
+
+    @Test
+    fun test03_acknowledgeFinding_staff_success() = runBlocking {
+        val req = StartPreflightRequestDto(
+            artworkId = artworkId,
+            artworkMetadataMap = mapOf("fileNotFound" to true)
+        )
+        val runResp = useCases.startPreflightRun(staffPrincipal, req, customFactory)
+        val findings = useCases.listPreflightFindings(staffPrincipal, runResp.preflightRunId, customFactory)
+        assertEquals(1, findings.size)
+        val finding = findings.first()
+
+        val ackResp = useCases.acknowledgeFinding(staffPrincipal, finding.findingId, customFactory)
+        assertEquals(PreflightFindingStatus.ACKNOWLEDGED, ackResp.status)
+        assertEquals("staff_01", ackResp.acknowledgedBy)
+    }
+
+    @Test
+    fun test04_submitFindingCorrection_staff_success() = runBlocking {
+        val req = StartPreflightRequestDto(
+            artworkId = artworkId,
+            artworkMetadataMap = mapOf("fileNotFound" to true)
+        )
+        val runResp = useCases.startPreflightRun(staffPrincipal, req, customFactory)
+        val finding = useCases.listPreflightFindings(staffPrincipal, runResp.preflightRunId, customFactory).first()
+
+        val corrReq = SubmitCorrectionRequestDto(
+            correctionType = PreflightCorrectionType.FILE_REPLACEMENT,
+            description = "Uploaded corrected PDF file v2",
+            artworkVersionId = "ARTWORK-V2"
+        )
+        val corrResp = useCases.submitFindingCorrection(staffPrincipal, finding.findingId, corrReq, customFactory)
+        assertNotNull(corrResp.correctionId)
+        assertEquals("staff_01", corrResp.submittedBy)
+        assertEquals("Uploaded corrected PDF file v2", corrResp.description)
+    }
+
+    @Test
+    fun test05_revalidateFinding_staff_success() = runBlocking {
+        val req = StartPreflightRequestDto(
+            artworkId = artworkId,
+            artworkMetadataMap = mapOf("fileNotFound" to true)
+        )
+        val runResp = useCases.startPreflightRun(staffPrincipal, req, customFactory)
+        val finding = useCases.listPreflightFindings(staffPrincipal, runResp.preflightRunId, customFactory).first()
+
+        val revalReq = StartPreflightRequestDto(
+            artworkId = artworkId,
+            artworkMetadataMap = mapOf("fileNotFound" to false, "fileUrl" to "https://storage.sucharu.com/artworks/v2.pdf")
+        )
+        val revalResp = useCases.revalidateFinding(staffPrincipal, finding.findingId, revalReq, customFactory)
+        assertEquals(PreflightFindingStatus.RESOLVED, revalResp.status)
+        assertEquals("staff_01", revalResp.resolvedBy)
+        assertNotNull(revalResp.revalidationRunId)
+    }
+
+    @Test
+    fun test06_waiveFinding_manager_success() = runBlocking {
+        val req = StartPreflightRequestDto(
+            artworkId = artworkId,
+            artworkMetadataMap = mapOf("fileNotFound" to true)
+        )
+        val runResp = useCases.startPreflightRun(staffPrincipal, req, customFactory)
+        val finding = useCases.listPreflightFindings(staffPrincipal, runResp.preflightRunId, customFactory).first()
+
+        val waiveReq = WaiveFindingRequestDto(
+            waiverReason = "Approved override by prepress manager"
+        )
+        val waivedResp = useCases.waiveFinding(managerPrincipal, finding.findingId, waiveReq, customFactory)
+        assertEquals(PreflightFindingStatus.WAIVED, waivedResp.status)
+        assertEquals("Approved override by prepress manager", waivedResp.waiverReason)
+        assertEquals("mgr_01", waivedResp.waivedBy)
+    }
+
+    @Test
+    fun test07_waiveFinding_staffRole_forbidden() = runBlocking {
+        val req = StartPreflightRequestDto(
+            artworkId = artworkId,
+            artworkMetadataMap = mapOf("fileNotFound" to true)
+        )
+        val runResp = useCases.startPreflightRun(staffPrincipal, req, customFactory)
+        val finding = useCases.listPreflightFindings(staffPrincipal, runResp.preflightRunId, customFactory).first()
+
+        val waiveReq = WaiveFindingRequestDto(
+            waiverReason = "Unauthorized staff waiver attempt"
+        )
+        try {
+            useCases.waiveFinding(staffPrincipal, finding.findingId, waiveReq, customFactory)
+            fail("Expected ForbiddenException when STAFF attempts to waive finding")
+        } catch (e: ForbiddenException) {
+            assertTrue(e.message?.contains("Forbidden") == true || e.message?.contains("Access") == true)
+        }
+    }
+
+    @Test
+    fun test08_listCorrectionsForFinding_success() = runBlocking {
+        val req = StartPreflightRequestDto(
+            artworkId = artworkId,
+            artworkMetadataMap = mapOf("fileNotFound" to true)
+        )
+        val runResp = useCases.startPreflightRun(staffPrincipal, req, customFactory)
+        val finding = useCases.listPreflightFindings(staffPrincipal, runResp.preflightRunId, customFactory).first()
+
+        val corrReq = SubmitCorrectionRequestDto(
+            correctionType = PreflightCorrectionType.FILE_REPLACEMENT,
+            description = "Correction 1",
+            artworkVersionId = "V2"
+        )
+        useCases.submitFindingCorrection(staffPrincipal, finding.findingId, corrReq, customFactory)
+
+        val corrections = useCases.listCorrectionsForFinding(staffPrincipal, finding.findingId, customFactory)
+        assertEquals(1, corrections.size)
+        assertEquals("Correction 1", corrections.first().description)
+    }
+
+    @Test
+    fun test09_evaluateProductionReadiness_ready_success() = runBlocking {
+        val req = StartPreflightRequestDto(
+            artworkId = artworkId,
+            artworkVersionId = "V1",
+            artworkMetadataMap = mapOf("fileNotFound" to false, "fileUrl" to "https://storage.sucharu.com/artworks/v1.pdf")
+        )
+        useCases.startPreflightRun(staffPrincipal, req, customFactory)
+
+        val evalReq = EvaluateProductionReadinessRequestDto(
+            artworkId = artworkId,
+            artworkVersionId = "V1"
+        )
+        val readinessResp = useCases.evaluateProductionReadiness(staffPrincipal, evalReq, customFactory)
+        assertEquals(ProductionReadinessDecision.READY, readinessResp.decision)
+        assertEquals(0, readinessResp.blockingFindingCount)
+        assertTrue(readinessResp.blockingReasons.isEmpty())
+    }
+
+    @Test
+    fun test10_evaluateProductionReadiness_blocked_success() = runBlocking {
+        val req = StartPreflightRequestDto(
+            artworkId = artworkId,
+            artworkVersionId = "V1",
+            artworkMetadataMap = mapOf("fileNotFound" to true)
+        )
+        useCases.startPreflightRun(staffPrincipal, req, customFactory)
+
+        val evalReq = EvaluateProductionReadinessRequestDto(
+            artworkId = artworkId,
+            artworkVersionId = "V1"
+        )
+        val readinessResp = useCases.evaluateProductionReadiness(staffPrincipal, evalReq, customFactory)
+        assertEquals(ProductionReadinessDecision.BLOCKED, readinessResp.decision)
+        assertEquals(1, readinessResp.blockingFindingCount)
+        assertFalse(readinessResp.blockingReasons.isEmpty())
+    }
 }
+

@@ -17,7 +17,7 @@ import com.sucharu.sucharupro.data.repository.productionplanning.ProductionPlann
 import com.sucharu.sucharupro.domain.machine.MachineEquipment
 import com.sucharu.sucharupro.domain.machine.MachineStatus
 import com.sucharu.sucharupro.domain.machine.MachineType
-import com.sucharu.sucharupro.domain.machine.health.MachineStatusMonitoringServiceImpl
+import com.sucharu.sucharupro.domain.service.machine.health.MachineStatusMonitoringServiceImpl
 import com.sucharu.sucharupro.domain.machine.telemetry.MachineTelemetryRecord
 import com.sucharu.sucharupro.domain.machine.telemetry.TelemetryMetricType
 import com.sucharu.sucharupro.domain.model.common.DomainResult
