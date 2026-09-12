@@ -2552,7 +2552,16 @@ open class PostgresRepositoryFactory(
     }
 
     open fun createPreflightRuleRegistry(): com.sucharu.sucharupro.domain.preflight.PreflightRuleRegistry {
-        return com.sucharu.sucharupro.domain.preflight.PreflightRuleRegistry()
+        val registry = com.sucharu.sucharupro.domain.preflight.PreflightRuleRegistry()
+        registry.registerRule(com.sucharu.sucharupro.domain.preflight.rules.FileExistenceRule())
+        registry.registerRule(com.sucharu.sucharupro.domain.preflight.rules.FileNonEmptyRule())
+        registry.registerRule(com.sucharu.sucharupro.domain.preflight.rules.FileFormatSupportedRule())
+        registry.registerRule(com.sucharu.sucharupro.domain.preflight.rules.FileFormatMatchRule())
+        registry.registerRule(com.sucharu.sucharupro.domain.preflight.rules.FileSignatureValidRule())
+        registry.registerRule(com.sucharu.sucharupro.domain.preflight.rules.DocumentParseableRule())
+        registry.registerRule(com.sucharu.sucharupro.domain.preflight.rules.DocumentPageCountRule())
+        registry.registerRule(com.sucharu.sucharupro.domain.preflight.rules.ImageStructureReadableRule())
+        return registry
     }
 
     open fun createPreflightDataSource(

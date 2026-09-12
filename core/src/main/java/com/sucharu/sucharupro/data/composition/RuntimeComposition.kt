@@ -267,8 +267,9 @@ class PostgresRuntimeComposition(
 
     override val preflightEngine: com.sucharu.sucharupro.domain.engine.preflight.PreflightEngine by lazy {
         val tm = DefaultPostgresTransactionManager(connectionProvider)
+        val factory = PostgresRepositoryFactory(tm)
         com.sucharu.sucharupro.domain.engine.preflight.PreflightEngineImpl(
-            ruleRegistry = com.sucharu.sucharupro.domain.preflight.PreflightRuleRegistry(),
+            ruleRegistry = factory.createPreflightRuleRegistry(),
             preflightRepository = com.sucharu.sucharupro.data.repository.preflight.PreflightRepositoryImpl(
                 dataSource = com.sucharu.sucharupro.data.persistence.postgres.PostgresPreflightDataSource(tm)
             )
@@ -423,8 +424,17 @@ class ProductionRuntimeComposition(
     }
 
     override val preflightEngine: com.sucharu.sucharupro.domain.engine.preflight.PreflightEngine by lazy {
+        val registry = com.sucharu.sucharupro.domain.preflight.PreflightRuleRegistry()
+        registry.registerRule(com.sucharu.sucharupro.domain.preflight.rules.FileExistenceRule())
+        registry.registerRule(com.sucharu.sucharupro.domain.preflight.rules.FileNonEmptyRule())
+        registry.registerRule(com.sucharu.sucharupro.domain.preflight.rules.FileFormatSupportedRule())
+        registry.registerRule(com.sucharu.sucharupro.domain.preflight.rules.FileFormatMatchRule())
+        registry.registerRule(com.sucharu.sucharupro.domain.preflight.rules.FileSignatureValidRule())
+        registry.registerRule(com.sucharu.sucharupro.domain.preflight.rules.DocumentParseableRule())
+        registry.registerRule(com.sucharu.sucharupro.domain.preflight.rules.DocumentPageCountRule())
+        registry.registerRule(com.sucharu.sucharupro.domain.preflight.rules.ImageStructureReadableRule())
         com.sucharu.sucharupro.domain.engine.preflight.PreflightEngineImpl(
-            ruleRegistry = com.sucharu.sucharupro.domain.preflight.PreflightRuleRegistry(),
+            ruleRegistry = registry,
             preflightRepository = com.sucharu.sucharupro.data.repository.preflight.PreflightRepositoryImpl(
                 dataSource = com.sucharu.sucharupro.data.datasource.preflight.FakePreflightDataSource()
             )
