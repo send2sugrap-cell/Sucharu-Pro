@@ -2582,6 +2582,12 @@ open class PostgresRepositoryFactory(
         registry.registerRule(com.sucharu.sucharupro.domain.preflight.rules.PageGeometryConsistencyRule())
         registry.registerRule(com.sucharu.sucharupro.domain.preflight.rules.SafeAreaGeometryRule())
         registry.registerRule(com.sucharu.sucharupro.domain.preflight.rules.ImpositionReadinessRule())
+        registry.registerRule(com.sucharu.sucharupro.domain.preflight.rules.ProofReferenceIntegrityRule())
+        registry.registerRule(com.sucharu.sucharupro.domain.preflight.rules.ProofPageCountComparisonRule())
+        registry.registerRule(com.sucharu.sucharupro.domain.preflight.rules.ProofGeometryComparisonRule())
+        registry.registerRule(com.sucharu.sucharupro.domain.preflight.rules.ProofContentFingerprintRule())
+        registry.registerRule(com.sucharu.sucharupro.domain.preflight.rules.ProofVersionComparisonRule())
+        registry.registerRule(com.sucharu.sucharupro.domain.preflight.rules.ProofVisualComparisonRule())
         return registry
     }
 
