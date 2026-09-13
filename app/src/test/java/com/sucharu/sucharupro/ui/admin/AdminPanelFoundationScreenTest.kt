@@ -19,7 +19,7 @@ class AdminPanelFoundationScreenTest {
         assertNotNull("AdminTypography must instantiate correctly", typography)
         assertNotNull("AdminSpacing must instantiate correctly", spacing)
 
-        assertEquals("Dark Navy background", 0xFF090E17, colors.background.value.toLong() shr 32 or (colors.background.value.toLong() and 0xFFFFFFFFL))
-        assertEquals("Dark Slate surface", 0xFF131D2E, colors.surface.value.toLong() shr 32 or (colors.surface.value.toLong() and 0xFFFFFFFFL))
+        assertEquals(androidx.compose.ui.graphics.Color(0xFF090E17), colors.background)
+        assertEquals(androidx.compose.ui.graphics.Color(0xFF131D2E), colors.surface)
     }
 }
