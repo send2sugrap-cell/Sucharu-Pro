@@ -51,6 +51,14 @@ interface BackendApiClient {
     suspend fun getProductionJobByOrder(orderId: String): ApiResult<List<com.sucharu.sucharupro.data.api.model.productionexecution.ProductionJobExecutionDto>>
     suspend fun checkHealthLive(): ApiResult<Map<String, String>>
     suspend fun checkHealthReady(): ApiResult<DatabaseHealthStatus>
+
+    // Module 24 Reporting Foundation Endpoints
+    suspend fun getReportCatalogue(): ApiResult<com.sucharu.sucharupro.data.api.model.report.ReportCatalogueResponseDto> =
+        ApiResult.Error(ApiErrorResponse(errorCode = ErrorCode.INTERNAL_ERROR, message = "Not implemented in stub"))
+    suspend fun queryReport(request: com.sucharu.sucharupro.data.api.model.report.ReportRequestDto): ApiResult<com.sucharu.sucharupro.data.api.model.report.ReportResponseDto> =
+        ApiResult.Error(ApiErrorResponse(errorCode = ErrorCode.INTERNAL_ERROR, message = "Not implemented in stub"))
+    suspend fun exportReport(request: com.sucharu.sucharupro.data.api.model.report.ExportReportRequestDto): ApiResult<com.sucharu.sucharupro.data.api.model.report.ReportExportDocumentDto> =
+        ApiResult.Error(ApiErrorResponse(errorCode = ErrorCode.INTERNAL_ERROR, message = "Not implemented in stub"))
 }
 
 typealias DevelopmentDirectBackendApiClient = DirectBackendApiClient
@@ -505,6 +513,39 @@ class DirectBackendApiClient(
             val success = res.body as ApiSuccessResponse<*>
             @Suppress("UNCHECKED_CAST")
             ApiResult.Success(success.data as List<com.sucharu.sucharupro.data.api.model.productionexecution.ProductionJobExecutionDto>, res.correlationId)
+        } else {
+            ApiResult.Error(res.body as ApiErrorResponse)
+        }
+    }
+
+    override suspend fun getReportCatalogue(): ApiResult<com.sucharu.sucharupro.data.api.model.report.ReportCatalogueResponseDto> {
+        val res = server.handle(HttpRequest(method = "GET", path = "/api/v1/reports/catalogue", headers = buildHeaders()))
+        return if (res.statusCode == 200) {
+            val success = res.body as ApiSuccessResponse<*>
+            @Suppress("UNCHECKED_CAST")
+            ApiResult.Success(success.data as com.sucharu.sucharupro.data.api.model.report.ReportCatalogueResponseDto, res.correlationId)
+        } else {
+            ApiResult.Error(res.body as ApiErrorResponse)
+        }
+    }
+
+    override suspend fun queryReport(request: com.sucharu.sucharupro.data.api.model.report.ReportRequestDto): ApiResult<com.sucharu.sucharupro.data.api.model.report.ReportResponseDto> {
+        val res = server.handle(HttpRequest(method = "POST", path = "/api/v1/reports/query", headers = buildHeaders(), body = request))
+        return if (res.statusCode == 200) {
+            val success = res.body as ApiSuccessResponse<*>
+            @Suppress("UNCHECKED_CAST")
+            ApiResult.Success(success.data as com.sucharu.sucharupro.data.api.model.report.ReportResponseDto, res.correlationId)
+        } else {
+            ApiResult.Error(res.body as ApiErrorResponse)
+        }
+    }
+
+    override suspend fun exportReport(request: com.sucharu.sucharupro.data.api.model.report.ExportReportRequestDto): ApiResult<com.sucharu.sucharupro.data.api.model.report.ReportExportDocumentDto> {
+        val res = server.handle(HttpRequest(method = "POST", path = "/api/v1/reports/export", headers = buildHeaders(), body = request))
+        return if (res.statusCode == 200) {
+            val success = res.body as ApiSuccessResponse<*>
+            @Suppress("UNCHECKED_CAST")
+            ApiResult.Success(success.data as com.sucharu.sucharupro.data.api.model.report.ReportExportDocumentDto, res.correlationId)
         } else {
             ApiResult.Error(res.body as ApiErrorResponse)
         }

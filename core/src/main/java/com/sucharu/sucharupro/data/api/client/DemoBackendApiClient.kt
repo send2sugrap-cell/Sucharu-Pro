@@ -2,6 +2,7 @@ package com.sucharu.sucharupro.data.api.client
 
 import com.sucharu.sucharupro.data.api.model.*
 import com.sucharu.sucharupro.data.api.model.printingcalculator.*
+import com.sucharu.sucharupro.data.api.model.report.*
 import com.sucharu.sucharupro.data.auth.model.*
 import com.sucharu.sucharupro.data.composition.DemoRole
 import com.sucharu.sucharupro.data.datasource.DemoOrderFixtures
@@ -586,5 +587,33 @@ class DemoBackendApiClient(
                 latencyMs = 1L
             )
         )
+    }
+
+    override suspend fun getReportCatalogue(): ApiResult<ReportCatalogueResponseDto> {
+        val principal = buildPrincipal(activeDemoRole)
+        val cat = com.sucharu.sucharupro.domain.service.report.Module24ReportCatalogueRegistry.getCatalogueForPrincipal(principal)
+        return ApiResult.Success(cat.toDto())
+    }
+
+    override suspend fun queryReport(request: ReportRequestDto): ApiResult<ReportResponseDto> {
+        val service = com.sucharu.sucharupro.domain.service.report.Module24ReportingServiceImpl()
+        val principal = buildPrincipal(activeDemoRole)
+        val domainReq = request.toDomainModel(principal.projectId, principal.projectId)
+        return when (val res = service.queryReport(principal, domainReq)) {
+            is com.sucharu.sucharupro.domain.model.common.DomainResult.Success -> ApiResult.Success(res.data.toDto())
+            is com.sucharu.sucharupro.domain.model.common.DomainResult.Error -> ApiResult.Error(ApiErrorResponse(errorCode = ErrorCode.FORBIDDEN, message = res.message))
+            is com.sucharu.sucharupro.domain.model.common.DomainResult.Loading -> ApiResult.Error(ApiErrorResponse(errorCode = ErrorCode.INTERNAL_ERROR, message = "Loading"))
+        }
+    }
+
+    override suspend fun exportReport(request: ExportReportRequestDto): ApiResult<ReportExportDocumentDto> {
+        val service = com.sucharu.sucharupro.domain.service.report.Module24ReportingServiceImpl()
+        val principal = buildPrincipal(activeDemoRole)
+        val domainReq = request.toDomainModel(principal.projectId, principal.projectId)
+        return when (val res = service.exportReport(principal, domainReq)) {
+            is com.sucharu.sucharupro.domain.model.common.DomainResult.Success -> ApiResult.Success(res.data.toDto())
+            is com.sucharu.sucharupro.domain.model.common.DomainResult.Error -> ApiResult.Error(ApiErrorResponse(errorCode = ErrorCode.FORBIDDEN, message = res.message))
+            is com.sucharu.sucharupro.domain.model.common.DomainResult.Loading -> ApiResult.Error(ApiErrorResponse(errorCode = ErrorCode.INTERNAL_ERROR, message = "Loading"))
+        }
     }
 }

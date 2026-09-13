@@ -42,13 +42,21 @@ object RoleCapabilityMatrix {
         AuthorizationCapability.CREATE_RETURN_REQUEST,
         AuthorizationCapability.READ_OWN_RETURNS,
         AuthorizationCapability.READ_OWN_DELIVERIES,
-        AuthorizationCapability.NOTIFICATION_VIEW
+        AuthorizationCapability.NOTIFICATION_VIEW,
+        AuthorizationCapability.REPORT_VIEW_SALES,
+        AuthorizationCapability.REPORT_VIEW_CUSTOMER,
+        AuthorizationCapability.REPORT_VIEW_ORDER,
+        AuthorizationCapability.REPORT_VIEW_PRODUCTION,
+        AuthorizationCapability.REPORT_VIEW_DELIVERY,
+        AuthorizationCapability.REPORT_VIEW_FINANCE
     )
 
     private val affiliateCapabilities: Set<AuthorizationCapability> = publicCapabilities + authenticatedIdentityCapabilities + setOf(
         AuthorizationCapability.READ_OWN_AFFILIATE_PROFILE,
         AuthorizationCapability.READ_OWN_REFERRALS,
-        AuthorizationCapability.READ_OWN_COMMISSIONS
+        AuthorizationCapability.READ_OWN_COMMISSIONS,
+        AuthorizationCapability.REPORT_VIEW_AFFILIATE,
+        AuthorizationCapability.REPORT_VIEW_WALLET_PAYOUT
     )
 
     private val staffCapabilities: Set<AuthorizationCapability> = publicCapabilities + authenticatedIdentityCapabilities + setOf(
@@ -86,7 +94,14 @@ object RoleCapabilityMatrix {
         AuthorizationCapability.WORKFLOW_ESCALATE,
         AuthorizationCapability.NOTIFICATION_VIEW,
         AuthorizationCapability.NOTIFICATION_SEND,
-        AuthorizationCapability.OBSERVABILITY_TENANT_VIEW
+        AuthorizationCapability.OBSERVABILITY_TENANT_VIEW,
+        AuthorizationCapability.REPORT_VIEW_ORDER,
+        AuthorizationCapability.REPORT_VIEW_PRODUCTION,
+        AuthorizationCapability.REPORT_VIEW_QUALITY,
+        AuthorizationCapability.REPORT_VIEW_INVENTORY,
+        AuthorizationCapability.REPORT_VIEW_DELIVERY,
+        AuthorizationCapability.REPORT_VIEW_MACHINE_OPERATIONS,
+        AuthorizationCapability.REPORT_VIEW_PREFLIGHT
     )
 
     private val managerCapabilities: Set<AuthorizationCapability> = staffCapabilities + setOf(
@@ -106,7 +121,13 @@ object RoleCapabilityMatrix {
         AuthorizationCapability.NOTIFICATION_REPLAY,
         AuthorizationCapability.NOTIFICATION_SUPPRESSION_MANAGE,
         AuthorizationCapability.OBSERVABILITY_VIEW,
-        AuthorizationCapability.OBSERVABILITY_ALERT_VIEW
+        AuthorizationCapability.OBSERVABILITY_ALERT_VIEW,
+        AuthorizationCapability.REPORT_VIEW_SALES,
+        AuthorizationCapability.REPORT_VIEW_CUSTOMER,
+        AuthorizationCapability.REPORT_VIEW_FINANCE,
+        AuthorizationCapability.REPORT_VIEW_PROFITABILITY,
+        AuthorizationCapability.REPORT_VIEW_EXECUTIVE_ANALYTICS,
+        AuthorizationCapability.REPORT_EXPORT
     )
 
     private val adminCapabilities: Set<AuthorizationCapability> = AuthorizationCapability.entries.toSet()

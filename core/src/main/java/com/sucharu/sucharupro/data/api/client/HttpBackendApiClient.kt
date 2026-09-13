@@ -348,4 +348,16 @@ class HttpBackendApiClient(
     override suspend fun checkHealthReady(): ApiResult<DatabaseHealthStatus> {
         return request("GET", "/health/ready", typeToken = object : TypeToken<DatabaseHealthStatus>() {}.type)
     }
+
+    override suspend fun getReportCatalogue(): ApiResult<com.sucharu.sucharupro.data.api.model.report.ReportCatalogueResponseDto> {
+        return request("GET", "/api/v1/reports/catalogue", typeToken = object : TypeToken<com.sucharu.sucharupro.data.api.model.report.ReportCatalogueResponseDto>() {}.type)
+    }
+
+    override suspend fun queryReport(request: com.sucharu.sucharupro.data.api.model.report.ReportRequestDto): ApiResult<com.sucharu.sucharupro.data.api.model.report.ReportResponseDto> {
+        return request("POST", "/api/v1/reports/query", body = request, typeToken = object : TypeToken<com.sucharu.sucharupro.data.api.model.report.ReportResponseDto>() {}.type)
+    }
+
+    override suspend fun exportReport(request: com.sucharu.sucharupro.data.api.model.report.ExportReportRequestDto): ApiResult<com.sucharu.sucharupro.data.api.model.report.ReportExportDocumentDto> {
+        return request("POST", "/api/v1/reports/export", body = request, typeToken = object : TypeToken<com.sucharu.sucharupro.data.api.model.report.ReportExportDocumentDto>() {}.type)
+    }
 }
