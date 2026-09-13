@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Inventory
 import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material.icons.filled.MonetizationOn
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.PrecisionManufacturing
 import androidx.compose.material.icons.filled.ReceiptLong
@@ -125,6 +126,7 @@ object AdminNavigationRegistry {
         title = "SYSTEM GOVERNANCE",
         items = listOf(
             AdminNavItem(AppDestination.Admin.Configuration, "Module 00 System Configuration", Icons.Default.Tune),
+            AdminNavItem(AppDestination.Admin.Notifications, "Module 10 System Alerts & Notifications", Icons.Default.Notifications),
             AdminNavItem(AppDestination.Admin.Settings, "Module 01 Settings & Profile", Icons.Default.Settings)
         )
     )

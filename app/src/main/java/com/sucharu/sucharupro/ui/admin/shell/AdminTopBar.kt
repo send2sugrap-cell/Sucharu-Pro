@@ -50,7 +50,7 @@ fun AdminTopBar(
     modifier: Modifier = Modifier,
     subtitle: String? = null,
     principal: AuthenticatedPrincipal? = null,
-    notificationCount: Int = 3,
+    notificationCount: Int = 0,
     onToggleNavigation: (() -> Unit)? = null,
     onSearchClick: (() -> Unit)? = null,
     onNotificationsClick: (() -> Unit)? = null

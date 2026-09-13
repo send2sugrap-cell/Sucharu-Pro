@@ -139,9 +139,10 @@ private fun AdminShellScaffold(
                 title = currentDestination.title,
                 subtitle = "Subsystem: ${currentDestination.route}",
                 principal = principal,
+                notificationCount = 0,
                 onToggleNavigation = onToggleNavigation,
-                onSearchClick = { },
-                onNotificationsClick = { }
+                onSearchClick = null,
+                onNotificationsClick = { onNavigateTo(AppDestination.Admin.Notifications) }
             )
         }
     ) { paddingValues ->
