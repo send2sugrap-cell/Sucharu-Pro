@@ -10,9 +10,10 @@ Module 24 Step 10 completes the final forensic verification of the Sucharu Pro E
 - **Catalogue Completeness**: All 15 canonical report categories (`SALES`, `CUSTOMER`, `ORDER`, `PRODUCTION`, `QUALITY`, `INVENTORY`, `DELIVERY`, `FINANCE`, `PROFITABILITY`, `AFFILIATE`, `WALLET_PAYOUT`, `MACHINE_OPERATIONS`, `PREFLIGHT`, `AUDIT`, `EXECUTIVE_ANALYTICS`) and 138 report definitions are fully implemented, queryable, and exportable.
 - **Cross-Domain Reconciliations**:
   - 13 Canonical Production Stages (`DESIGN` through `DELIVERED`) fully reconciled.
-  - 3-Way Financial Reconciliation (Invoices vs Payments vs Customer Ledger Entries) fully reconciled.
+  - 3-Way Financial Settlement (Invoices vs Payments vs Customer Ledger Entries) achieves 0.00 BDT variance.
   - Quantity Reconciliation (Order Qty vs Produced Qty vs Inventory Qty vs Dispatched Qty vs Delivered Qty vs Returned Qty) fully reconciled.
 - **Security & Multi-Tenancy**: Tenant isolation (`request.tenantId == principal.projectId`), RBAC capabilities (`RoleCapabilityMatrix`), Customer self-scope (`effectiveCustomerId`), and Affiliate self-scope (`effectiveAffiliateId`) strictly enforced on all queries and exports.
+- **Verification Level Precision**: Software implementation and backend/database security are verified at Level L5 (PostgreSQL/RLS runtime) and Level L6 (Android Compose UI/ViewModel runtime). Physical Android hardware execution (L7) and physical factory machine hardware integration are explicitly reported as **PENDING / EXTERNAL HARDWARE GAPS**.
 - **Precision & Currency**: Monetary reports execute in `BigDecimal` and format as `Money` (`৳` / `BDT`) - ZERO binary floating-point precision loss.
 
 ---
@@ -144,7 +145,7 @@ Module 24 Step 10 completes the final forensic verification of the Sucharu Pro E
 ---
 
 ### 22. ANDROID UI VERIFICATION
-- Verified Compose UI rendering in `BusinessFinancialReportingScreen` and `FinancialReportingDashboardScreen`.
+- Verified Compose UI rendering in `BusinessFinancialReportingScreen` and `FinancialReportingDashboardScreen` (Level L6).
 
 ---
 
@@ -154,23 +155,23 @@ Module 24 Step 10 completes the final forensic verification of the Sucharu Pro E
 ---
 
 ### 24. FULL REPORTING E2E JOURNEYS
-- **RPT-E2E-01 Customer Order → Sales Report**: **PASS**
-- **RPT-E2E-02 Order → Production → Production Report**: **PASS**
-- **RPT-E2E-03 Production → QC/Rework → Quality Report**: **PASS**
-- **RPT-E2E-04 Production → Finished Goods Inventory → Stock Balance**: **PASS**
-- **RPT-E2E-05 READY → Challan → Delivery → Delivery Report**: **PASS**
-- **RPT-E2E-06 Invoice → Payment → Allocation → Ledger → Finance Report**: **PASS**
-- **RPT-E2E-07 Cost → Revenue → Profitability Report**: **PASS**
-- **RPT-E2E-08 Affiliate → Earning → Wallet → Payout Report**: **PASS**
-- **RPT-E2E-09 Machine → Telemetry → OEE → Machine Report**: **PASS**
-- **RPT-E2E-10 Artwork → Preflight → Readiness → Preflight Report**: **PASS**
-- **RPT-E2E-11 Audit Event → Audit Report**: **PASS**
-- **RPT-E2E-12 Executive Analytics Cross-Module Dashboard**: **PASS**
-- **RPT-E2E-13 Authorized User → Multi-Format Export**: **PASS**
-- **RPT-E2E-14 Unauthorized User → Access Denied**: **PASS**
-- **RPT-E2E-15 Cross-Tenant Attempt → Denied**: **PASS**
-- **RPT-E2E-16 Customer Scope Violation Attempt → Denied**: **PASS**
-- **RPT-E2E-17 Affiliate Scope Violation Attempt → Denied**: **PASS**
+- **RPT-E2E-01 Customer Order → Sales Report**: **PASS (L5 / L6)**
+- **RPT-E2E-02 Order → Production → Production Report**: **PASS (L5 / L6)**
+- **RPT-E2E-03 Production → QC/Rework → Quality Report**: **PASS (L5 / L6)**
+- **RPT-E2E-04 Production → Finished Goods Inventory → Stock Balance**: **PASS (L5 / L6)**
+- **RPT-E2E-05 READY → Challan → Delivery → Delivery Report**: **PASS (L5 / L6)**
+- **RPT-E2E-06 Invoice → Payment → Allocation → Ledger → Finance Report**: **PASS (L5 / L6)**
+- **RPT-E2E-07 Cost → Revenue → Profitability Report**: **PASS (L5 / L6)**
+- **RPT-E2E-08 Affiliate → Earning → Wallet → Payout Report**: **PASS (L5 / L6)**
+- **RPT-E2E-09 Machine → Telemetry → OEE → Machine Report**: **PASS (L5 / L6)**
+- **RPT-E2E-10 Artwork → Preflight → Readiness → Preflight Report**: **PASS (L5 / L6)**
+- **RPT-E2E-11 Audit Event → Audit Report**: **PASS (L5 / L6)**
+- **RPT-E2E-12 Executive Analytics Cross-Module Dashboard**: **PASS (L5 / L6)**
+- **RPT-E2E-13 Authorized User → Multi-Format Export**: **PASS (L5 / L6)**
+- **RPT-E2E-14 Unauthorized User → Access Denied**: **PASS (L5 / L6)**
+- **RPT-E2E-15 Cross-Tenant Attempt → Denied**: **PASS (L5 / L6)**
+- **RPT-E2E-16 Customer Scope Violation Attempt → Denied**: **PASS (L5 / L6)**
+- **RPT-E2E-17 Affiliate Scope Violation Attempt → Denied**: **PASS (L5 / L6)**
 
 ---
 
@@ -215,7 +216,7 @@ Module 24 Step 10 completes the final forensic verification of the Sucharu Pro E
 
 ### 30. EXTERNAL HARDWARE / PROVIDER GAPS
 - **Factory Hardware**: Physical offset press/PLC/SCADA gateways not connected in CI. Software-level telemetry verified.
-- **Mobile Hardware**: Physical Android mobile device not connected in CI. Software-level Compose UI verified.
+- **Mobile Hardware**: Physical Android mobile device not connected in CI. Software-level Compose UI verified at Level L6.
 
 ---
 
@@ -230,18 +231,18 @@ Module 24 Step 10 completes the final forensic verification of the Sucharu Pro E
 ### 32. MASTER VERIFICATION MATRICES
 
 #### A. Final Module 24 Verification Matrix
-| Step | Feature | Source | Tests | API | PostgreSQL | RLS | Android | Device | E2E | Final Level | Status |
+| Step | Feature | Source | Tests | API | PostgreSQL | RLS | Android L6 | Mobile Device L7 | E2E | Final Level | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| Step 01 | Foundation & Contracts | Core | Passed | Verified | Verified | Verified | Verified | Pending | Verified | L5 | PASS |
-| Step 02 | Sales & Orders | Mod 02/03 | Passed | Verified | Verified | Verified | Verified | Pending | Verified | L5 | PASS |
-| Step 03 | Production & QC | Mod 04/06 | Passed | Verified | Verified | Verified | Verified | Pending | Verified | L5 | PASS |
-| Step 04 | Inventory & Delivery | Mod 07/08/11 | Passed | Verified | Verified | Verified | Verified | Pending | Verified | L5 | PASS |
-| Step 05 | Finance & Costing | Mod 09/14/15 | Passed | Verified | Verified | Verified | Verified | Pending | Verified | L5 | PASS |
-| Step 06 | Affiliate & Wallet | Mod 20/23 | Passed | Verified | Verified | Verified | Verified | Pending | Verified | L5 | PASS |
-| Step 07 | Machine & OEE | Mod 21 | Passed | Verified | Verified | Verified | Verified | Pending | Verified | L5 | PASS |
-| Step 08 | Preflight & Readiness | Mod 05/06/22 | Passed | Verified | Verified | Verified | Verified | Pending | Verified | L5 | PASS |
-| Step 09 | Unified UI & Export | Mod 24 UI | Passed | Verified | Verified | Verified | Verified | Pending | Verified | L5 | PASS |
-| Step 10 | Final E2E Verification | Mod 00-24 | Passed | Verified | Verified | Verified | Verified | Pending | Verified | L5 | PASS |
+| Step 01 | Foundation & Contracts | Core | Passed | Verified | Verified | Verified | Verified | Pending | Verified | L5 / L6 | PASS |
+| Step 02 | Sales & Orders | Mod 02/03 | Passed | Verified | Verified | Verified | Verified | Pending | Verified | L5 / L6 | PASS |
+| Step 03 | Production & QC | Mod 04/06 | Passed | Verified | Verified | Verified | Verified | Pending | Verified | L5 / L6 | PASS |
+| Step 04 | Inventory & Delivery | Mod 07/08/11 | Passed | Verified | Verified | Verified | Verified | Pending | Verified | L5 / L6 | PASS |
+| Step 05 | Finance & Costing | Mod 09/14/15 | Passed | Verified | Verified | Verified | Verified | Pending | Verified | L5 / L6 | PASS |
+| Step 06 | Affiliate & Wallet | Mod 20/23 | Passed | Verified | Verified | Verified | Verified | Pending | Verified | L5 / L6 | PASS |
+| Step 07 | Machine & OEE | Mod 21 | Passed | Verified | Verified | Verified | Verified | Pending | Verified | L5 / L6 | PASS |
+| Step 08 | Preflight & Readiness | Mod 05/06/22 | Passed | Verified | Verified | Verified | Verified | Pending | Verified | L5 / L6 | PASS |
+| Step 09 | Unified UI & Export | Mod 24 UI | Passed | Verified | Verified | Verified | Verified | Pending | Verified | L5 / L6 | PASS |
+| Step 10 | Final E2E Verification | Mod 00-24 | Passed | Verified | Verified | Verified | Verified | Pending | Verified | L5 / L6 | PASS |
 
 #### B. Cross-Module Reconciliation Matrix
 | Domain | Canonical Source | Report | Expected | Actual | Match | Status |
@@ -286,4 +287,4 @@ No open P0, P1, or P2 defects. All historical P3 defects closed.
 ---
 
 ### 38. FINAL VERDICT
-**PASS WITH GAPS** *(All software, unit, API, multi-tenant isolation, capability security, 15-category report queries, multi-format exports, and E2E journeys passed; physical factory equipment & physical mobile device verification pending).*
+**PASS WITH GAPS** *(All software, unit, API, tenant isolation, capability security, 15-category report queries, multi-format exports, and E2E journeys passed; physical factory equipment & physical mobile device verification pending).*
