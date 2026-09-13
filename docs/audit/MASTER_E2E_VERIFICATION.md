@@ -1,17 +1,17 @@
 # SUCHARU PRO — MASTER E2E VERIFICATION MATRIX (MODULES 00–24)
 
-## VERIFICATION LEVEL LEGEND
+## DEFINITIVE VERIFICATION LEVEL DEFINITIONS
 - **L0** — Source / Static Code Inspection Only
-- **L1** — Build / Compilation Verified
-- **L2** — Unit / Service Test Verified
-- **L3** — Repository / Data-Source Verified
-- **L4** — API / Backend Runtime Verified
-- **L5** — PostgreSQL / RLS Runtime Verified
+- **L1** — Build / Compilation Verified (`assembleDebug`, `:core:jar`, `:backend:jar`)
+- **L2** — Unit / Service / ViewModel Test Verified (JUnit test suite execution)
+- **L3** — Repository / Data-Source Abstraction Verified
+- **L4** — API / Backend REST Router Runtime Verified
+- **L5** — PostgreSQL / RLS Multi-Tenant Security Runtime Verified
 - **L6** — Android Application / Compose UI Runtime Verified
 - **L7** — Physical Android Hardware Device Verified
 - **L8** — Complete End-to-End Business Journey Verified
 
-> **PRECISION NOTE**: Software E2E Journeys are verified across backend services, REST APIs, PostgreSQL multi-tenant RLS, and Android Compose ViewModels (Level L5/L6). Physical mobile hardware execution (L7) and physical factory equipment integration (e.g. presses, CTP) are explicitly documented as **EXTERNAL HARDWARE DEPENDENCIES / PENDING**.
+> **PRECISION RULE**: Software E2E Journeys are verified across backend services, REST APIs, PostgreSQL multi-tenant RLS, and Android Compose ViewModels (Level L5/L6). Physical mobile hardware execution (L7) and physical factory equipment integration (e.g. presses, CTP) are explicitly documented as **EXTERNAL HARDWARE DEPENDENCIES / PENDING**.
 
 ---
 
