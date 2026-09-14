@@ -7,11 +7,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -113,7 +115,7 @@ fun PrintingServicesScreen(
                         CategoryGridItemCard(
                             item = item,
                             onClick = {
-                                // Direct order/quotation routing with selected category
+                                // Direct quotation & calculator page routing
                                 onNavigate(AppDestination.Customer.Quotations)
                             }
                         )
@@ -126,6 +128,8 @@ fun PrintingServicesScreen(
 
 /**
  * Reusable 2-Column Material 3 Category Grid Item Card.
+ *
+ * Dynamic height (min 160.dp) to eliminate text clipping on small/normal mobile displays.
  */
 @Composable
 fun CategoryGridItemCard(
@@ -136,7 +140,8 @@ fun CategoryGridItemCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .height(140.dp)
+            .defaultMinSize(minHeight = 160.dp)
+            .wrapContentHeight()
             .clickable { onClick() },
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -144,14 +149,14 @@ fun CategoryGridItemCard(
     ) {
         Column(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(12.dp),
+                .fillMaxWidth()
+                .padding(10.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.SpaceBetween
         ) {
             Box(
                 modifier = Modifier
-                    .size(44.dp)
+                    .size(38.dp)
                     .background(item.bgColor, RoundedCornerShape(10.dp)),
                 contentAlignment = Alignment.Center
             ) {
@@ -159,19 +164,19 @@ fun CategoryGridItemCard(
                     imageVector = item.icon,
                     contentDescription = item.title,
                     tint = item.iconColor,
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(22.dp)
                 )
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
             Text(
                 text = item.title,
-                fontSize = 13.sp,
+                fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color(0xFF263238),
                 textAlign = TextAlign.Center,
-                maxLines = 1,
+                maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
 
@@ -179,10 +184,10 @@ fun CategoryGridItemCard(
 
             Text(
                 text = item.subtitleGsm,
-                fontSize = 11.sp,
-                color = Color(0xFF607D8B),
+                fontSize = 10.sp,
+                color = Color(0xFF64748B),
                 textAlign = TextAlign.Center,
-                maxLines = 1,
+                maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
 
@@ -193,7 +198,9 @@ fun CategoryGridItemCard(
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color(0xFF2E7D32),
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }
     }
