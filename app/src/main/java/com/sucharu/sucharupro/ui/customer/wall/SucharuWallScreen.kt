@@ -103,8 +103,20 @@ fun SucharuWallScreen(
                 HomeHeader(
                     principal = principal,
                     notificationCount = 0,
-                    onProfileClick = { onNavigateToDestination(AppDestination.Customer.Profile) },
-                    onNotificationClick = { onNavigateToDestination(AppDestination.Customer.Notifications) }
+                    onProfileClick = {
+                        if (principal != null) {
+                            onNavigateToDestination(AppDestination.Customer.Profile)
+                        } else {
+                            onNavigateToDestination(AppDestination.Public.Login)
+                        }
+                    },
+                    onNotificationClick = {
+                        if (principal != null) {
+                            onNavigateToDestination(AppDestination.Customer.Notifications)
+                        } else {
+                            onNavigateToDestination(AppDestination.Public.Login)
+                        }
+                    }
                 )
             },
             bottomBar = {
@@ -116,8 +128,20 @@ fun SucharuWallScreen(
                             CustomerBottomTab.HOME -> { /* Stay on Home */ }
                             CustomerBottomTab.SERVICES -> onNavigateToDestination(AppDestination.Public.PrintingServices)
                             CustomerBottomTab.OFFERS -> onNavigateToDestination(AppDestination.Public.Offers)
-                            CustomerBottomTab.ACTIVITY -> onNavigateToDestination(AppDestination.Customer.Orders)
-                            CustomerBottomTab.ACCOUNT -> onNavigateToDestination(AppDestination.Customer.Profile)
+                            CustomerBottomTab.ACTIVITY -> {
+                                if (principal != null) {
+                                    onNavigateToDestination(AppDestination.Customer.Orders)
+                                } else {
+                                    onNavigateToDestination(AppDestination.Public.Login)
+                                }
+                            }
+                            CustomerBottomTab.ACCOUNT -> {
+                                if (principal != null) {
+                                    onNavigateToDestination(AppDestination.Customer.Profile)
+                                } else {
+                                    onNavigateToDestination(AppDestination.Public.Login)
+                                }
+                            }
                         }
                     },
                     userRole = principal?.role

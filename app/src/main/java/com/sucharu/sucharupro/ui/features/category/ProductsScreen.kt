@@ -11,14 +11,19 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.sucharu.sucharupro.data.repository.category.CategoryItemDetail
 import com.sucharu.sucharupro.ui.customer.components.CardSkeletonLoader
 import com.sucharu.sucharupro.ui.customer.components.CustomerEmptyState
 import com.sucharu.sucharupro.ui.customer.components.CustomerErrorState
@@ -28,6 +33,7 @@ import com.sucharu.sucharupro.ui.navigation.AppDestination
 /**
  * Clean 2-Column Material 3 Grid Category Details Screen for Products Catalogue.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProductsScreen(
     categoryKey: String = "ALL",
@@ -36,6 +42,7 @@ fun ProductsScreen(
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    var selectedItemForDetail by remember { mutableStateOf<CategoryItemDetail?>(null) }
 
     LaunchedEffect(categoryKey) {
         viewModel.loadProductsCategory(categoryKey)
@@ -101,13 +108,24 @@ fun ProductsScreen(
                         CategoryGridItemCard(
                             item = item,
                             onClick = {
-                                // Direct order/quotation routing with selected product
-                                onNavigate(AppDestination.Customer.Quotations)
+                                // Open Item Detail Spec Sheet
+                                selectedItemForDetail = item
                             }
                         )
                     }
                 }
             }
         }
+    }
+
+    // Modal Spec Sheet for selected item
+    if (selectedItemForDetail != null) {
+        CategoryItemDetailSheet(
+            item = selectedItemForDetail,
+            onDismiss = { selectedItemForDetail = null },
+            onOrderRequestClick = {
+                onNavigate(AppDestination.Customer.Quotations)
+            }
+        )
     }
 }

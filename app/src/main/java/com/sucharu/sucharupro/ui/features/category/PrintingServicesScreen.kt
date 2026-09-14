@@ -20,12 +20,16 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -45,6 +49,7 @@ import com.sucharu.sucharupro.ui.navigation.AppDestination
 /**
  * Clean 2-Column Material 3 Grid Category Details Screen for Printing Services.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PrintingServicesScreen(
     categoryKey: String = "ALL",
@@ -53,6 +58,7 @@ fun PrintingServicesScreen(
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    var selectedItemForDetail by remember { mutableStateOf<CategoryItemDetail?>(null) }
 
     LaunchedEffect(categoryKey) {
         viewModel.loadServicesCategory(categoryKey)
@@ -115,14 +121,25 @@ fun PrintingServicesScreen(
                         CategoryGridItemCard(
                             item = item,
                             onClick = {
-                                // Direct quotation & calculator page routing
-                                onNavigate(AppDestination.Customer.Quotations)
+                                // Open Item Detail Spec Sheet
+                                selectedItemForDetail = item
                             }
                         )
                     }
                 }
             }
         }
+    }
+
+    // Modal Spec Sheet for selected item
+    if (selectedItemForDetail != null) {
+        CategoryItemDetailSheet(
+            item = selectedItemForDetail,
+            onDismiss = { selectedItemForDetail = null },
+            onOrderRequestClick = {
+                onNavigate(AppDestination.Customer.Quotations)
+            }
+        )
     }
 }
 
