@@ -25,6 +25,7 @@ testcontainers = "1.20.4"
 firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
 firebase-auth = { group = "com.google.firebase", name = "firebase-auth-ktx" }
 firebase-vertexai = { group = "com.google.firebase", name = "firebase-vertexai", version = "16.2.0" }
+generativeai = { group = "com.google.ai.client.generativeai", name = "generativeai", version = "0.9.0" }
 firebase-appcheck = { group = "com.google.firebase", name = "firebase-appcheck" }
 firebase-appcheck-debug = { group = "com.google.firebase", name = "firebase-appcheck-debug" }
 firebase-admin = { group = "com.google.firebase", name = "firebase-admin", version.ref = "firebaseAdmin" }

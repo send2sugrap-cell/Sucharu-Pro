@@ -1,10 +1,21 @@
+import java.io.FileInputStream
 import java.time.Duration
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.google.services)
 }
+
+val localProperties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localProperties.load(FileInputStream(localPropertiesFile))
+}
+val geminiApiKey = localProperties.getProperty("GEMINI_API_KEY")
+    ?: System.getenv("GEMINI_API_KEY")
+    ?: "AIzaSyAAJ0seMLnsNB9hU5fRHEeWXUfUMYB0Rs0"
 
 android {
     namespace = "com.sucharu.sucharupro"
@@ -20,14 +31,17 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField("String", "GEMINI_API_KEY", "\"$geminiApiKey\"")
     }
 
     buildTypes {
         debug {
             buildConfigField("boolean", "DEMO_MODE", "true")
+            buildConfigField("String", "GEMINI_API_KEY", "\"$geminiApiKey\"")
         }
         release {
             buildConfigField("boolean", "DEMO_MODE", "false")
+            buildConfigField("String", "GEMINI_API_KEY", "\"$geminiApiKey\"")
             optimization {
                 enable = false
             }
@@ -61,6 +75,7 @@ dependencies {
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)
     implementation(libs.firebase.vertexai)
+    implementation(libs.generativeai)
     implementation(libs.firebase.appcheck)
     debugImplementation(libs.firebase.appcheck.debug)
     implementation(platform(libs.androidx.compose.bom))
