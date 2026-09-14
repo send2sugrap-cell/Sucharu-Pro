@@ -55,8 +55,7 @@ fun SucharuGraphicsAppShell(
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var successMessage by remember { mutableStateOf<String?>(null) }
 
-    // Intercept Android hardware / gesture Back actions safely across auth & demo flows
-    BackHandler(enabled = activeAuthScreenOverride != null) {
+    val handleAuthBackNavigation: () -> Unit = {
         when (activeAuthScreenOverride) {
             "demo_verification" -> {
                 errorMessage = null
@@ -98,6 +97,15 @@ fun SucharuGraphicsAppShell(
                 successMessage = null
                 activeAuthScreenOverride = null
             }
+        }
+    }
+
+    // Intercept Android hardware / gesture Back actions safely
+    BackHandler(enabled = currentDestination != AppDestination.Public.Home || activeAuthScreenOverride != null) {
+        if (activeAuthScreenOverride != null) {
+            handleAuthBackNavigation()
+        } else {
+            navigationManager.navigateBack()
         }
     }
 

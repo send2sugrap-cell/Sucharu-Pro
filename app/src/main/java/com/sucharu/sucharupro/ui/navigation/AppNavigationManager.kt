@@ -92,7 +92,13 @@ class AppNavigationManager(
     fun navigateBack(): Boolean {
         if (backStack.size > 1) {
             backStack.removeAt(backStack.lastIndex)
-            _currentDestination.value = backStack.last()
+            val previous = backStack.last()
+            _currentDestination.value = previous
+            return true
+        } else if (_currentDestination.value != AppDestination.Public.Home) {
+            _currentDestination.value = AppDestination.Public.Home
+            backStack.clear()
+            backStack.add(AppDestination.Public.Home)
             return true
         }
         return false
