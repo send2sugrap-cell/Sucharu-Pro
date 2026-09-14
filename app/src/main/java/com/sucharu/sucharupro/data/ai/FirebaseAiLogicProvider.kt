@@ -1,25 +1,25 @@
 package com.sucharu.sucharupro.data.ai
 
-import com.google.ai.client.generativeai.GenerativeModel
+import com.google.firebase.Firebase
+import com.google.firebase.vertexai.GenerativeModel
+import com.google.firebase.vertexai.vertexAI
 import com.sucharu.sucharupro.domain.service.ai.SucharuAiProvider
 
 /**
- * Concrete Provider Implementation for Firebase AI Logic / Google Generative AI (Gemini).
+ * Concrete Provider Implementation for Official Firebase Vertex AI / Firebase AI Logic.
  *
- * Implements [SucharuAiProvider] using model "gemini-1.5-flash".
- * Safely handles network errors, App Check 403s, empty responses, and converts exceptions
- * into safe [Result.failure] without crashing the application.
+ * Implements [SucharuAiProvider] using official Firebase Vertex AI Android SDK ("gemini-1.5-flash").
+ *
+ * SECURITY GUARANTEE:
+ * Zero hardcoded API keys in source code. Firebase.vertexAI automatically leverages the
+ * 'google-services.json' context, App Check attestation, and Firebase backend security rules.
  */
 class FirebaseAiLogicProvider(
-    private val apiKey: String = "AIzaSyAAJ0seMLnsNB9hU5fRHEeWXUfUMYB0Rs0",
     private val modelName: String = "gemini-1.5-flash"
 ) : SucharuAiProvider {
 
     private val generativeModel: GenerativeModel by lazy {
-        GenerativeModel(
-            modelName = modelName,
-            apiKey = apiKey
-        )
+        Firebase.vertexAI.generativeModel(modelName)
     }
 
     override suspend fun generateResponse(prompt: String): Result<String> {
@@ -31,7 +31,7 @@ class FirebaseAiLogicProvider(
             val response = generativeModel.generateContent(prompt)
             val text = response.text
             if (text.isNullOrBlank()) {
-                Result.failure(IllegalStateException("Firebase AI returned empty or null response"))
+                Result.failure(IllegalStateException("Firebase Vertex AI returned empty or null response"))
             } else {
                 Result.success(text)
             }
