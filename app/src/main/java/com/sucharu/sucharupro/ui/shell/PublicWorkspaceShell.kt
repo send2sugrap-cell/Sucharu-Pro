@@ -19,6 +19,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.sucharu.sucharupro.ui.customer.wall.SucharuWallScreen
+import com.sucharu.sucharupro.ui.customer.wall.SucharuWallViewModel
 import com.sucharu.sucharupro.ui.navigation.AppDestination
 
 /**
@@ -32,42 +35,54 @@ fun PublicWorkspaceShell(
     isDemoMode: Boolean = false,
     onTryDemo: (() -> Unit)? = null
 ) {
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(Color(0xFF0B132B))
-    ) {
-        // Navigation Menu (Scrollable Row for mobile)
-        ScrollableTabRow(
-            selectedTabIndex = getTabIndex(currentDestination),
-            containerColor = Color(0xFF1C2541),
-            contentColor = Color(0xFF9ECAFF),
-            edgePadding = 16.dp,
-            divider = {}
+    if (currentDestination is AppDestination.Public.Home) {
+        SucharuWallScreen(
+            viewModel = viewModel { SucharuWallViewModel() },
+            principal = null,
+            onNavigateToDestination = onNavigate,
+            modifier = modifier
+        )
+    } else {
+        Column(
+            modifier = modifier
+                .fillMaxSize()
+                .background(Color(0xFF0B132B))
         ) {
-            PublicNavItem("HOME", currentDestination == AppDestination.Public.Home) { onNavigate(AppDestination.Public.Home) }
-            PublicNavItem("SERVICES", currentDestination == AppDestination.Public.PrintingServices) { onNavigate(AppDestination.Public.PrintingServices) }
-            PublicNavItem("PRODUCTS", currentDestination == AppDestination.Public.Products) { onNavigate(AppDestination.Public.Products) }
-            PublicNavItem("OFFERS", currentDestination == AppDestination.Public.Offers) { onNavigate(AppDestination.Public.Offers) }
-            PublicNavItem("GALLERY", currentDestination == AppDestination.Public.Portfolio) { onNavigate(AppDestination.Public.Portfolio) }
-            PublicNavItem("ABOUT", currentDestination == AppDestination.Public.About) { onNavigate(AppDestination.Public.About) }
-            PublicNavItem("FAQ", currentDestination == AppDestination.Public.Faq) { onNavigate(AppDestination.Public.Faq) }
-            PublicNavItem("CONTACT", currentDestination == AppDestination.Public.Contact) { onNavigate(AppDestination.Public.Contact) }
-            PublicNavItem("AI ASSISTANT", currentDestination == AppDestination.Public.PublicAiAssistant) { onNavigate(AppDestination.Public.PublicAiAssistant) }
-        }
+            // Navigation Menu (Scrollable Row for mobile)
+            ScrollableTabRow(
+                selectedTabIndex = getTabIndex(currentDestination),
+                containerColor = Color(0xFF1C2541),
+                contentColor = Color(0xFF9ECAFF),
+                edgePadding = 16.dp,
+                divider = {}
+            ) {
+                PublicNavItem("HOME", currentDestination == AppDestination.Public.Home) { onNavigate(AppDestination.Public.Home) }
+                PublicNavItem("SERVICES", currentDestination == AppDestination.Public.PrintingServices) { onNavigate(AppDestination.Public.PrintingServices) }
+                PublicNavItem("PRODUCTS", currentDestination == AppDestination.Public.Products) { onNavigate(AppDestination.Public.Products) }
+                PublicNavItem("OFFERS", currentDestination == AppDestination.Public.Offers) { onNavigate(AppDestination.Public.Offers) }
+                PublicNavItem("GALLERY", currentDestination == AppDestination.Public.Portfolio) { onNavigate(AppDestination.Public.Portfolio) }
+                PublicNavItem("ABOUT", currentDestination == AppDestination.Public.About) { onNavigate(AppDestination.Public.About) }
+                PublicNavItem("FAQ", currentDestination == AppDestination.Public.Faq) { onNavigate(AppDestination.Public.Faq) }
+                PublicNavItem("CONTACT", currentDestination == AppDestination.Public.Contact) { onNavigate(AppDestination.Public.Contact) }
+                PublicNavItem("AI ASSISTANT", currentDestination == AppDestination.Public.PublicAiAssistant) { onNavigate(AppDestination.Public.PublicAiAssistant) }
+            }
 
-        Box(modifier = Modifier.weight(1f)) {
-            when (currentDestination) {
-                is AppDestination.Public.Home -> PublicHomeView(isDemoMode = isDemoMode, onTryDemo = onTryDemo)
-                is AppDestination.Public.PrintingServices -> PublicServicesView()
-                is AppDestination.Public.Products -> PublicProductsView()
-                is AppDestination.Public.Offers -> PublicOffersView()
-                is AppDestination.Public.Portfolio -> PublicGalleryView()
-                is AppDestination.Public.About -> PublicAboutView()
-                is AppDestination.Public.Faq -> PublicFaqView()
-                is AppDestination.Public.Contact, is AppDestination.Public.Location -> PublicContactView()
-                is AppDestination.Public.PublicAiAssistant -> PublicAiAssistantView()
-                else -> PublicHomeView(isDemoMode = isDemoMode, onTryDemo = onTryDemo)
+            Box(modifier = Modifier.weight(1f)) {
+                when (currentDestination) {
+                    is AppDestination.Public.PrintingServices -> PublicServicesView()
+                    is AppDestination.Public.Products -> PublicProductsView()
+                    is AppDestination.Public.Offers -> PublicOffersView()
+                    is AppDestination.Public.Portfolio -> PublicGalleryView()
+                    is AppDestination.Public.About -> PublicAboutView()
+                    is AppDestination.Public.Faq -> PublicFaqView()
+                    is AppDestination.Public.Contact, is AppDestination.Public.Location -> PublicContactView()
+                    is AppDestination.Public.PublicAiAssistant -> PublicAiAssistantView()
+                    else -> SucharuWallScreen(
+                        viewModel = viewModel { SucharuWallViewModel() },
+                        principal = null,
+                        onNavigateToDestination = onNavigate
+                    )
+                }
             }
         }
     }
