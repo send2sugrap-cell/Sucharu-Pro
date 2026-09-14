@@ -65,14 +65,15 @@ import com.sucharu.sucharupro.ui.customer.theme.CustomerColors
 import com.sucharu.sucharupro.ui.customer.theme.CustomerTheme
 import com.sucharu.sucharupro.ui.customer.wall.components.HomeActivityCard
 import com.sucharu.sucharupro.ui.customer.wall.components.HomeHeader
-import com.sucharu.sucharupro.ui.customer.wall.components.HomeHeroCard
 import com.sucharu.sucharupro.ui.navigation.AppDestination
 
 /**
- * Refactored Front-Facing Home / Sucharu Wall Presentation Layer.
+ * Clean, Light-Theme Mobile-First Home / Sucharu Wall.
  *
- * Lightweight, card-grid layout inspired by utility dashboard apps.
- * Preserves existing ViewModels, API calls, Navigation callbacks, and Data models.
+ * 1. Primary top view opens directly with the light notice banner (Color(0xFFFFF3E0))
+ * 2. Followed immediately by the 4-column card grid (অফসেট, ডিজিটাল, প্যাকেজিং, ব্যানার) at the top
+ * 3. All old dark UI blocks and dark hero cards removed
+ * 4. Preserves ViewModels, API calls, Navigation callbacks, and Data models
  */
 @Composable
 fun SucharuWallScreen(
@@ -89,7 +90,7 @@ fun SucharuWallScreen(
         viewModel.loadWallFeed(principal)
     }
 
-    // Light/Neutral Modern Utility Theme
+    // Light/Neutral Modern Commercial Utility Theme
     CustomerTheme(colors = CustomerColors.light()) {
         Scaffold(
             modifier = modifier.fillMaxSize(),
@@ -174,18 +175,7 @@ fun SucharuWallScreen(
                         contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(14.dp)
                     ) {
-                        // ১. হিরো কার্ড / একটিভ অর্ডার ওভারভিউ
-                        item {
-                            HomeHeroCard(
-                                principal = principal,
-                                activeOrderNumber = "ORD-000001",
-                                activeOrderStatus = "IN PRODUCTION",
-                                onTrackOrderClick = { onNavigateToDestination(AppDestination.Customer.Orders) },
-                                onNewOrderClick = { onNavigateToDestination(AppDestination.Customer.Quotations) }
-                            )
-                        }
-
-                        // ২. ব্যানার / নোটিশ বক্স
+                        // ১. ব্যানার / নোটিশ বক্স (RIGHT AT THE TOP OF THE MOBILE SCREEN)
                         item {
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
@@ -216,7 +206,7 @@ fun SucharuWallScreen(
                             }
                         }
 
-                        // ৩. প্রিন্টিং সার্ভিস (৪ কলাম গ্রিড)
+                        // ২. প্রিন্টিং সার্ভিস (৪ কলাম গ্রিড) - AT THE TOP OF THE MOBILE SCREEN
                         item {
                             Text(
                                 text = "প্রিন্টিং সার্ভিস",
@@ -242,7 +232,7 @@ fun SucharuWallScreen(
                             StandardGridRow(items = services)
                         }
 
-                        // ৪. জনপ্রিয় প্রোডাক্টস (দুই সারিতে ৪টি করে কার্ড)
+                        // ৩. জনপ্রিয় প্রোডাক্টস (দুই সারিতে ৪টি করে কার্ড)
                         item {
                             Text(
                                 text = "জনপ্রিয় প্রোডাক্টস",
@@ -285,7 +275,7 @@ fun SucharuWallScreen(
                             }
                         }
 
-                        // ৫. এআই ও স্মার্ট টুলস
+                        // ৪. এআই ও স্মার্ট টুলস
                         item {
                             Text(
                                 text = "স্মার্ট টুলস",
@@ -311,7 +301,7 @@ fun SucharuWallScreen(
                             StandardGridRow(items = tools)
                         }
 
-                        // ৬. ব্যাক্তিগত অ্যাক্টিভিটি টাইমলাইন
+                        // ৫. ব্যাক্তিগত অ্যাক্টিভিটি টাইমলাইন (যদি ডাটা থাকে)
                         if (feed.personalActivities.isNotEmpty()) {
                             item {
                                 Text(
