@@ -56,6 +56,9 @@ import com.sucharu.sucharupro.ui.customer.wall.SucharuWallScreen
 import com.sucharu.sucharupro.ui.customer.wall.SucharuWallViewModel
 import com.sucharu.sucharupro.ui.navigation.AppDestination
 
+import com.sucharu.sucharupro.ui.features.category.PrintingServicesScreen
+import com.sucharu.sucharupro.ui.features.category.ProductsScreen
+
 /**
  * Clean Light-Theme Public Workspace Shell.
  *
@@ -84,8 +87,14 @@ fun PublicWorkspaceShell(
                 .background(Color(0xFFF6F8FA))
         ) {
             when (currentDestination) {
-                is AppDestination.Public.PrintingServices -> PublicServicesView(onNavigate = onNavigate)
-                is AppDestination.Public.Products -> PublicProductsView(onNavigate = onNavigate)
+                is AppDestination.Public.PrintingServices -> {
+                    val key = (currentDestination as? AppDestination.Public.PrintingServices)?.categoryKey ?: "ALL"
+                    PrintingServicesScreen(categoryKey = key, onNavigate = onNavigate)
+                }
+                is AppDestination.Public.Products -> {
+                    val key = (currentDestination as? AppDestination.Public.Products)?.categoryKey ?: "ALL"
+                    ProductsScreen(categoryKey = key, onNavigate = onNavigate)
+                }
                 is AppDestination.Public.Offers -> PublicOffersView(onNavigate = onNavigate)
                 is AppDestination.Public.Portfolio -> PublicGalleryView(onNavigate = onNavigate)
                 is AppDestination.Public.About -> PublicAboutView(onNavigate = onNavigate)

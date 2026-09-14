@@ -16,12 +16,16 @@ sealed class AppDestination(
     sealed class Public(route: String, title: String) : AppDestination(route, title, isPublic = true) {
         object Home : Public("public/home", "Home")
         object About : Public("public/about", "About Us")
-        object PrintingServices : Public("public/services", "Services")
+        data class PrintingServices(val categoryKey: String = "ALL") : Public("public/services/$categoryKey", "Services") {
+            companion object : Public("public/services", "Services")
+        }
         object DigitalPrinting : Public("public/services/digital", "Digital Printing")
         object OffsetPrinting : Public("public/services/offset", "Offset Printing")
         object PackagingSolutions : Public("public/services/packaging", "Packaging Solutions")
         object CorporateGifts : Public("public/services/corporate-gifts", "Corporate Gifts")
-        object Products : Public("public/products", "Products")
+        data class Products(val categoryKey: String = "ALL") : Public("public/products/$categoryKey", "Products") {
+            companion object : Public("public/products", "Products")
+        }
         object Offers : Public("public/offers", "Offers")
         object Portfolio : Public("public/portfolio", "Portfolio")
         object Contact : Public("public/contact", "Contact")

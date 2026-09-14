@@ -217,16 +217,16 @@ fun SucharuWallScreen(
                             )
                             val services = listOf(
                                 GridMenuItem("অফসেট", Icons.Default.Print, Color(0xFFE8F5E9), Color(0xFF2E7D32)) {
-                                    onNavigateToDestination(AppDestination.Public.PrintingServices)
+                                    onNavigateToDestination(AppDestination.Public.PrintingServices("Offset"))
                                 },
                                 GridMenuItem("ডিজিটাল", Icons.Default.Description, Color(0xFFE3F2FD), Color(0xFF1565C0)) {
-                                    onNavigateToDestination(AppDestination.Public.PrintingServices)
+                                    onNavigateToDestination(AppDestination.Public.PrintingServices("Digital"))
                                 },
                                 GridMenuItem("প্যাকেজিং", Icons.Default.ShoppingCart, Color(0xFFFFF3E0), Color(0xFFEF6C00)) {
-                                    onNavigateToDestination(AppDestination.Public.PrintingServices)
+                                    onNavigateToDestination(AppDestination.Public.PrintingServices("Packaging"))
                                 },
                                 GridMenuItem("ব্যানার", Icons.Default.Star, Color(0xFFF3E5F5), Color(0xFF7B1FA2)) {
-                                    onNavigateToDestination(AppDestination.Public.PrintingServices)
+                                    onNavigateToDestination(AppDestination.Public.PrintingServices("Banner"))
                                 }
                             )
                             StandardGridRow(items = services)
@@ -243,30 +243,30 @@ fun SucharuWallScreen(
                             )
                             val productsRow1 = listOf(
                                 GridMenuItem("ভিজিটিং কার্ড", Icons.Default.AccountBox, Color(0xFFE0F7FA), Color(0xFF00838F)) {
-                                    onNavigateToDestination(AppDestination.Public.Products)
+                                    onNavigateToDestination(AppDestination.Public.Products("Card"))
                                 },
                                 GridMenuItem("ব্রোশিওর", Icons.Default.Book, Color(0xFFFBE9E7), Color(0xFFD84315)) {
-                                    onNavigateToDestination(AppDestination.Public.Products)
+                                    onNavigateToDestination(AppDestination.Public.Products("Brochure"))
                                 },
                                 GridMenuItem("রিজিড বক্স", Icons.Default.Home, Color(0xFFEFEBE9), Color(0xFF4E342E)) {
-                                    onNavigateToDestination(AppDestination.Public.Products)
+                                    onNavigateToDestination(AppDestination.Public.Products("RigidBox"))
                                 },
                                 GridMenuItem("ট্যাগ / লেবেল", Icons.Default.CheckCircle, Color(0xFFEDE7F6), Color(0xFF512DA8)) {
-                                    onNavigateToDestination(AppDestination.Public.Products)
+                                    onNavigateToDestination(AppDestination.Public.Products("Tag"))
                                 }
                             )
                             val productsRow2 = listOf(
                                 GridMenuItem("চালান বই", Icons.Default.List, Color(0xFFE8EAF6), Color(0xFF283593)) {
-                                    onNavigateToDestination(AppDestination.Public.Products)
+                                    onNavigateToDestination(AppDestination.Public.Products("Challan"))
                                 },
                                 GridMenuItem("৩ডি লেটার", Icons.Default.Build, Color(0xFFFFF8E1), Color(0xFFF57F17)) {
-                                    onNavigateToDestination(AppDestination.Public.Products)
+                                    onNavigateToDestination(AppDestination.Public.Products("3D"))
                                 },
                                 GridMenuItem("স্টিকার", Icons.Default.ThumbUp, Color(0xFFF1F8E9), Color(0xFF33691E)) {
-                                    onNavigateToDestination(AppDestination.Public.Products)
+                                    onNavigateToDestination(AppDestination.Public.Products("Sticker"))
                                 },
                                 GridMenuItem("অন্যান্য", Icons.Default.MoreHoriz, Color(0xFFECEFF1), Color(0xFF455A64)) {
-                                    onNavigateToDestination(AppDestination.Public.Products)
+                                    onNavigateToDestination(AppDestination.Public.Products("Others"))
                                 }
                             )
                             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
