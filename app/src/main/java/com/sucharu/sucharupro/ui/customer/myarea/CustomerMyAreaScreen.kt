@@ -95,9 +95,6 @@ fun CustomerMyAreaScreen(
                         selectedTab = tab
                         when (tab) {
                             CustomerBottomTab.HOME -> onNavigateToDestination(AppDestination.Public.Home)
-                            CustomerBottomTab.SERVICES -> onNavigateToDestination(AppDestination.Public.PrintingServices)
-                            CustomerBottomTab.OFFERS -> onNavigateToDestination(AppDestination.Public.Offers)
-                            CustomerBottomTab.ACTIVITY -> onNavigateToDestination(AppDestination.Customer.Orders)
                             CustomerBottomTab.ACCOUNT -> { /* Stay on My Area */ }
                         }
                     },

@@ -5,10 +5,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Print
-import androidx.compose.material.icons.filled.Timeline
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -23,22 +20,19 @@ import com.sucharu.sucharupro.data.api.model.UserRole
 import com.sucharu.sucharupro.ui.customer.theme.CustomerTheme
 
 /**
- * Mobile Bottom Navigation tab items.
+ * Streamlined Mobile Bottom Navigation tab items.
  */
 enum class CustomerBottomTab(
     val title: String,
     val icon: ImageVector,
     val route: String
 ) {
-    HOME("Home", Icons.Default.Home, "customer/home"),
-    SERVICES("Services", Icons.Default.Print, "customer/services"),
-    OFFERS("Offers", Icons.Default.LocalOffer, "customer/offers"),
-    ACTIVITY("Activity", Icons.Default.Timeline, "customer/activity"),
-    ACCOUNT("Account", Icons.Default.Person, "customer/account")
+    HOME("হোম", Icons.Default.Home, "customer/home"),
+    ACCOUNT("প্রোফাইল", Icons.Default.Person, "customer/account")
 }
 
 /**
- * Mobile-First Bottom Navigation Bar for Customer & Affiliate experiences.
+ * Streamlined Bottom Dock for Customer & Affiliate experiences.
  */
 @Composable
 fun CustomerBottomNavigation(
@@ -50,7 +44,7 @@ fun CustomerBottomNavigation(
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .height(64.dp),
+            .height(56.dp),
         color = CustomerTheme.colors.surface,
         border = BorderStroke(1.dp, CustomerTheme.colors.border)
     ) {

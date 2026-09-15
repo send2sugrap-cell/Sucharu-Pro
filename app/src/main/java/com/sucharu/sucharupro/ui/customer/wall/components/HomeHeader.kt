@@ -33,10 +33,12 @@ import com.sucharu.sucharupro.data.api.model.AuthenticatedPrincipal
 import com.sucharu.sucharupro.ui.customer.theme.CustomerTheme
 
 /**
- * Top Header for Redesigned Front-Facing Home / Sucharu Wall.
+ * Top Header Bar for Front-Facing Home / Sucharu Wall.
  *
- * LEFT: Sucharu Graphics / Sucharu Pro brand logo and title
- * RIGHT: Profile avatar action and Notification bell action
+ * LEFT: Sucharu Graphics logo icon and stacked title/subtitle
+ * LINE 1: "সুচারু গ্রাফিক্স" (Bold)
+ * LINE 2: "এন্ড প্রিন্টিং" (Subtle subtitle)
+ * RIGHT: Notification Bell and Profile Avatar
  */
 @Composable
 fun HomeHeader(
@@ -59,14 +61,14 @@ fun HomeHeader(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // LEFT: Sucharu Graphics Branding
+            // LEFT: Company Logo & Stacked Title Layout
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.clickable { onProfileClick() }
             ) {
                 Box(
                     modifier = Modifier
-                        .size(40.dp)
+                        .size(42.dp)
                         .clip(RoundedCornerShape(12.dp))
                         .background(CustomerTheme.colors.accentContainer)
                         .border(1.dp, CustomerTheme.colors.accentPrimary.copy(alpha = 0.3f), RoundedCornerShape(12.dp)),
@@ -76,7 +78,7 @@ fun HomeHeader(
                         imageVector = Icons.Default.Print,
                         contentDescription = "Sucharu Graphics Logo",
                         tint = CustomerTheme.colors.accentPrimary,
-                        modifier = Modifier.size(22.dp)
+                        modifier = Modifier.size(24.dp)
                     )
                 }
 
@@ -84,16 +86,20 @@ fun HomeHeader(
 
                 Column {
                     Text(
-                        text = "SUCHARU GRAPHICS",
+                        text = "সুচারু গ্রাফিক্স",
                         style = CustomerTheme.typography.title.copy(
                             fontWeight = FontWeight.Bold,
-                            letterSpacing = 0.5.sp
+                            fontSize = 16.sp,
+                            letterSpacing = 0.2.sp
                         ),
                         color = CustomerTheme.colors.primaryText
                     )
                     Text(
-                        text = "Commercial Printing ERP",
-                        style = CustomerTheme.typography.caption,
+                        text = "এন্ড প্রিন্টিং",
+                        style = CustomerTheme.typography.caption.copy(
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium
+                        ),
                         color = CustomerTheme.colors.secondaryText
                     )
                 }

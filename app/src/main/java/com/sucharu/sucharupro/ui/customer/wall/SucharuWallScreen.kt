@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.AccountBox
 import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.AutoAwesome
@@ -24,17 +25,23 @@ import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Calculate
+import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.HeadsetMic
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Inventory
 import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.PrecisionManufacturing
 import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Sell
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.ThumbUp
@@ -67,17 +74,26 @@ import com.sucharu.sucharupro.ui.customer.components.CustomerEmptyState
 import com.sucharu.sucharupro.ui.customer.components.CustomerErrorState
 import com.sucharu.sucharupro.ui.customer.theme.CustomerColors
 import com.sucharu.sucharupro.ui.customer.theme.CustomerTheme
-import com.sucharu.sucharupro.ui.customer.wall.components.HomeActivityCard
+import com.sucharu.sucharupro.ui.customer.wall.components.DailyWisdomCard
+import com.sucharu.sucharupro.ui.customer.wall.components.HomeBannerPager
 import com.sucharu.sucharupro.ui.customer.wall.components.HomeHeader
+import com.sucharu.sucharupro.ui.customer.wall.components.PrayerTimesCard
+import com.sucharu.sucharupro.ui.customer.wall.components.TriCalendarCard
 import com.sucharu.sucharupro.ui.navigation.AppDestination
 
 /**
- * Clean, Light-Theme Mobile-First Home / Sucharu Wall.
+ * Sucharu Pro Redesigned Home Wall (Hand-Drawn Blueprint Alignment).
  *
- * 1. Primary top view opens directly with the light notice banner (Color(0xFFFFF3E0))
- * 2. Followed immediately by the 4-column card grid (অফসেট, ডিজিটাল, প্যাকেজিং, ব্যানার) at the top
- * 3. All old dark UI blocks and dark hero cards removed
- * 4. Preserves ViewModels, API calls, Navigation callbacks, and Data models
+ * Layout Structure (Top to Bottom):
+ * 1. Top Header Bar (Company Logo, "সুচারু গ্রাফিক্স / এন্ড প্রিন্টিং", Notifications, Profile)
+ * 2. Daily Wisdom / বাণী চিরন্তন Card
+ * 3. Tri-Calendar & Occasion Notice Bar (Day, Gregorian, Hijri, Bangla, Status Notice)
+ * 4. Prayer Times Widget (ফজর, যোহর, আসর, মাগরিব, এশা)
+ * 5. Hero Banner Carousel / Running Offers
+ * 6. Printing Services (4-Column Grid)
+ * 7. Popular Products (4-Column Grid Rows)
+ * 8. Smart Tools (4-Column Grid)
+ * 9. Streamlined Bottom Navigation Dock (Home / Account)
  */
 @Composable
 fun SucharuWallScreen(
@@ -94,7 +110,7 @@ fun SucharuWallScreen(
         viewModel.loadWallFeed(principal)
     }
 
-    // Light/Neutral Modern Commercial Utility Theme
+    // Light/Neutral Modern Utility Theme
     CustomerTheme(colors = CustomerColors.light()) {
         Scaffold(
             modifier = modifier.fillMaxSize(),
@@ -126,15 +142,6 @@ fun SucharuWallScreen(
                         selectedTab = tab
                         when (tab) {
                             CustomerBottomTab.HOME -> { /* Stay on Home */ }
-                            CustomerBottomTab.SERVICES -> onNavigateToDestination(AppDestination.Public.PrintingServices)
-                            CustomerBottomTab.OFFERS -> onNavigateToDestination(AppDestination.Public.Offers)
-                            CustomerBottomTab.ACTIVITY -> {
-                                if (principal != null) {
-                                    onNavigateToDestination(AppDestination.Customer.Orders)
-                                } else {
-                                    onNavigateToDestination(AppDestination.Public.Login)
-                                }
-                            }
                             CustomerBottomTab.ACCOUNT -> {
                                 if (principal != null) {
                                     onNavigateToDestination(AppDestination.Customer.Profile)
@@ -203,38 +210,32 @@ fun SucharuWallScreen(
                         contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(14.dp)
                     ) {
-                        // ১. ব্যানার / নোটিশ বক্স (RIGHT AT THE TOP OF THE MOBILE SCREEN)
+                        // ১. বাণী চিরন্তন (Daily Wisdom Card)
                         item {
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(12.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3E0)),
-                                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFFE0B2))
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(12.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Notifications,
-                                        contentDescription = null,
-                                        tint = Color(0xFFE65100),
-                                        modifier = Modifier.size(24.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(
-                                        text = feed.featuredOffer?.title ?: "দশ মিলি করি কাজ: অফসেট ও প্যাকেজিং-এ বিশেষ ছাড় চলছে!",
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.Medium,
-                                        color = Color(0xFFE65100),
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                }
+                            DailyWisdomCard()
+                        }
+
+                        // ২. ক্যালেন্ডার ও নোটিশ বার (Tri-Calendar Card)
+                        item {
+                            TriCalendarCard()
+                        }
+
+                        // ৩. নামাজের সময়সূচি (Prayer Times Card)
+                        item {
+                            PrayerTimesCard()
+                        }
+
+                        // ৪. হিরো ব্যানার ক্যালেণ্ডার / অফার সেশন
+                        if (feed.offers.isNotEmpty()) {
+                            item {
+                                HomeBannerPager(
+                                    offers = feed.offers,
+                                    onOfferClick = { onNavigateToDestination(AppDestination.Public.Offers) }
+                                )
                             }
                         }
 
-                        // ২. প্রিন্টিং সার্ভিস (৪ কলাম গ্রিড) - AT THE TOP OF THE MOBILE SCREEN
+                        // ৫. প্রিন্টিং সার্ভিস (৪ কলাম গ্রিড)
                         item {
                             Text(
                                 text = "প্রিন্টিং সার্ভিস",
@@ -245,22 +246,22 @@ fun SucharuWallScreen(
                             )
                             val services = listOf(
                                 GridMenuItem("অফসেট", Icons.Default.Print, Color(0xFFE8F5E9), Color(0xFF2E7D32)) {
-                                    onNavigateToDestination(AppDestination.Public.PrintingServices("Offset"))
+                                    onNavigateToDestination(AppDestination.Public.ProductGallery("Offset", "অফসেট প্রিন্টিং"))
                                 },
                                 GridMenuItem("ডিজিটাল", Icons.Default.PrecisionManufacturing, Color(0xFFE3F2FD), Color(0xFF1565C0)) {
-                                    onNavigateToDestination(AppDestination.Public.PrintingServices("Digital"))
+                                    onNavigateToDestination(AppDestination.Public.ProductGallery("Digital", "ডিজিটাল প্রিন্ট"))
                                 },
                                 GridMenuItem("প্যাকেজিং", Icons.Default.Inventory, Color(0xFFFFF3E0), Color(0xFFEF6C00)) {
-                                    onNavigateToDestination(AppDestination.Public.PrintingServices("Packaging"))
+                                    onNavigateToDestination(AppDestination.Public.ProductGallery("Packaging", "কাস্টম প্যাকেজিং"))
                                 },
                                 GridMenuItem("ব্যানার", Icons.Default.Star, Color(0xFFF3E5F5), Color(0xFF7B1FA2)) {
-                                    onNavigateToDestination(AppDestination.Public.PrintingServices("Banner"))
+                                    onNavigateToDestination(AppDestination.Public.ProductGallery("Banner", "পিভিসি ব্যানার"))
                                 }
                             )
                             StandardGridRow(items = services)
                         }
 
-                        // ৩. জনপ্রিয় প্রোডাক্টস (দুই সারিতে ৪টি করে কার্ড)
+                        // ৬. জনপ্রিয় প্রোডাক্টস (দুই সারিতে ৪টি করে কার্ড)
                         item {
                             Text(
                                 text = "জনপ্রিয় প্রোডাক্টস",
@@ -271,30 +272,30 @@ fun SucharuWallScreen(
                             )
                             val productsRow1 = listOf(
                                 GridMenuItem("ভিজিটিং কার্ড", Icons.Default.Badge, Color(0xFFE0F7FA), Color(0xFF00838F)) {
-                                    onNavigateToDestination(AppDestination.Public.Products("Card"))
+                                    onNavigateToDestination(AppDestination.Public.ProductGallery("Card", "ভিজিটিং কার্ড"))
                                 },
                                 GridMenuItem("ব্রোশিওর", Icons.Default.Book, Color(0xFFFBE9E7), Color(0xFFD84315)) {
-                                    onNavigateToDestination(AppDestination.Public.Products("Brochure"))
+                                    onNavigateToDestination(AppDestination.Public.ProductGallery("Brochure", "ব্রোশিওর ও ফ্লায়ার"))
                                 },
                                 GridMenuItem("রিজিড বক্স", Icons.Default.Archive, Color(0xFFEFEBE9), Color(0xFF4E342E)) {
-                                    onNavigateToDestination(AppDestination.Public.Products("RigidBox"))
+                                    onNavigateToDestination(AppDestination.Public.ProductGallery("RigidBox", "রিজিড বক্স"))
                                 },
                                 GridMenuItem("ট্যাগ / লেবেল", Icons.Default.Sell, Color(0xFFEDE7F6), Color(0xFF512DA8)) {
-                                    onNavigateToDestination(AppDestination.Public.Products("Tag"))
+                                    onNavigateToDestination(AppDestination.Public.ProductGallery("Tag", "ট্যাগ ও লেবেল"))
                                 }
                             )
                             val productsRow2 = listOf(
                                 GridMenuItem("চালান বই", Icons.Default.Receipt, Color(0xFFE8EAF6), Color(0xFF283593)) {
-                                    onNavigateToDestination(AppDestination.Public.Products("Challan"))
+                                    onNavigateToDestination(AppDestination.Public.ProductGallery("Challan", "চালান ও ক্যাশ মেমো"))
                                 },
                                 GridMenuItem("৩ডি লেটার", Icons.Default.Build, Color(0xFFFFF8E1), Color(0xFFF57F17)) {
-                                    onNavigateToDestination(AppDestination.Public.Products("3D"))
+                                    onNavigateToDestination(AppDestination.Public.ProductGallery("3D", "৩ডি সাইন লেটার"))
                                 },
                                 GridMenuItem("স্টিকার", Icons.Default.ThumbUp, Color(0xFFF1F8E9), Color(0xFF33691E)) {
-                                    onNavigateToDestination(AppDestination.Public.Products("Sticker"))
+                                    onNavigateToDestination(AppDestination.Public.ProductGallery("Sticker", "ডাই-কাট স্টিকার"))
                                 },
                                 GridMenuItem("অন্যান্য", Icons.Default.Category, Color(0xFFECEFF1), Color(0xFF455A64)) {
-                                    onNavigateToDestination(AppDestination.Public.Products("Others"))
+                                    onNavigateToDestination(AppDestination.Public.ProductGallery("Others", "অন্যান্য সামগ্রী"))
                                 }
                             )
                             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -303,7 +304,7 @@ fun SucharuWallScreen(
                             }
                         }
 
-                        // ৪. এআই ও স্মার্ট টুলস
+                        // ৭. স্মার্ট টুলস
                         item {
                             Text(
                                 text = "স্মার্ট টুলস",
@@ -320,34 +321,17 @@ fun SucharuWallScreen(
                                     onNavigateToDestination(AppDestination.Customer.Quotations)
                                 },
                                 GridMenuItem("ট্র্যাকিং", Icons.Default.LocalShipping, Color(0xFFB2EBF2), Color(0xFF006064)) {
-                                    onNavigateToDestination(AppDestination.Customer.Orders)
+                                    if (principal != null) {
+                                        onNavigateToDestination(AppDestination.Customer.Orders)
+                                    } else {
+                                        onNavigateToDestination(AppDestination.Public.Login)
+                                    }
                                 },
                                 GridMenuItem("সাপোর্ট", Icons.Default.HeadsetMic, Color(0xFFFFCDD2), Color(0xFFC62828)) {
                                     onNavigateToDestination(AppDestination.Customer.Support)
                                 }
                             )
                             StandardGridRow(items = tools)
-                        }
-
-                        // ৫. ব্যাক্তিগত অ্যাক্টিভিটি টাইমলাইন (যদি ডাটা থাকে)
-                        if (feed.personalActivities.isNotEmpty()) {
-                            item {
-                                Text(
-                                    text = "ব্যাক্তিগত অ্যাক্টিভিটি",
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF263238),
-                                    modifier = Modifier.padding(bottom = 6.dp)
-                                )
-                                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    feed.personalActivities.forEach { act ->
-                                        HomeActivityCard(
-                                            item = act,
-                                            onClick = { onNavigateToDestination(AppDestination.Customer.Orders) }
-                                        )
-                                    }
-                                }
-                            }
                         }
 
                         item {
@@ -422,116 +406,6 @@ fun StandardGridRow(items: List<GridMenuItem>) {
                     )
                 }
             }
-        }
-    }
-}
-
-/**
- * Helper composable matching exact requested function signature.
- */
-@Composable
-fun SucharuMuslimBanglaStyleHome(
-    onServiceClick: (String) -> Unit = {}
-) {
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFFF6F8FA)),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
-    ) {
-        // ১. ব্যানার / নোটিশ বক্স
-        item {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3E0)),
-                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFFE0B2))
-            ) {
-                Row(
-                    modifier = Modifier.padding(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Notifications,
-                        contentDescription = null,
-                        tint = Color(0xFFE65100),
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "দশ মিলি করি কাজ: অফসেট ও প্যাকেজিং-এ বিশেষ ছাড় চলছে!",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = Color(0xFFE65100),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-            }
-        }
-
-        // ২. প্রিন্টিং সার্ভিস (৪ কলাম গ্রিড)
-        item {
-            Text(
-                text = "প্রিন্টিং সার্ভিস",
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF263238),
-                modifier = Modifier.padding(bottom = 6.dp)
-            )
-            val services = listOf(
-                GridMenuItem("অফসেট", Icons.Default.Print, Color(0xFFE8F5E9), Color(0xFF2E7D32)) { onServiceClick("Offset") },
-                GridMenuItem("ডিজিটাল", Icons.Default.PrecisionManufacturing, Color(0xFFE3F2FD), Color(0xFF1565C0)) { onServiceClick("Digital") },
-                GridMenuItem("প্যাকেজিং", Icons.Default.Inventory, Color(0xFFFFF3E0), Color(0xFFEF6C00)) { onServiceClick("Packaging") },
-                GridMenuItem("ব্যানার", Icons.Default.Star, Color(0xFFF3E5F5), Color(0xFF7B1FA2)) { onServiceClick("Banner") }
-            )
-            StandardGridRow(items = services)
-        }
-
-        // ৩. প্রোডাক্টস (দুই সারিতে ৪টি করে কার্ড)
-        item {
-            Text(
-                text = "জনপ্রিয় প্রোডাক্টস",
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF263238),
-                modifier = Modifier.padding(bottom = 6.dp)
-            )
-            val productsRow1 = listOf(
-                GridMenuItem("ভিজিটিং কার্ড", Icons.Default.Badge, Color(0xFFE0F7FA), Color(0xFF00838F)) { onServiceClick("Card") },
-                GridMenuItem("ব্রোশিওর", Icons.Default.Book, Color(0xFFFBE9E7), Color(0xFFD84315)) { onServiceClick("Brochure") },
-                GridMenuItem("রিজিড বক্স", Icons.Default.Archive, Color(0xFFEFEBE9), Color(0xFF4E342E)) { onServiceClick("RigidBox") },
-                GridMenuItem("ট্যাগ / লেবেল", Icons.Default.Sell, Color(0xFFEDE7F6), Color(0xFF512DA8)) { onServiceClick("Tag") }
-            )
-            val productsRow2 = listOf(
-                GridMenuItem("চালান বই", Icons.Default.Receipt, Color(0xFFE8EAF6), Color(0xFF283593)) { onServiceClick("Challan") },
-                GridMenuItem("৩ডি লেটার", Icons.Default.Build, Color(0xFFFFF8E1), Color(0xFFF57F17)) { onServiceClick("3D") },
-                GridMenuItem("স্টিকার", Icons.Default.ThumbUp, Color(0xFFF1F8E9), Color(0xFF33691E)) { onServiceClick("Sticker") },
-                GridMenuItem("অন্যান্য", Icons.Default.Category, Color(0xFFECEFF1), Color(0xFF455A64)) { onServiceClick("Others") }
-            )
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                StandardGridRow(items = productsRow1)
-                StandardGridRow(items = productsRow2)
-            }
-        }
-
-        // ৪. এআই ও স্মার্ট টুলস
-        item {
-            Text(
-                text = "স্মার্ট টুলস",
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF263238),
-                modifier = Modifier.padding(bottom = 6.dp)
-            )
-            val tools = listOf(
-                GridMenuItem("AI সহকারী", Icons.Default.AutoAwesome, Color(0xFFFFF9C4), Color(0xFFF57F17)) { onServiceClick("AI") },
-                GridMenuItem("দর হিসাব", Icons.Default.Calculate, Color(0xFFDCEDC8), Color(0xFF33691E)) { onServiceClick("Calculator") },
-                GridMenuItem("ট্র্যাকিং", Icons.Default.LocalShipping, Color(0xFFB2EBF2), Color(0xFF006064)) { onServiceClick("Track") },
-                GridMenuItem("সাপোর্ট", Icons.Default.HeadsetMic, Color(0xFFFFCDD2), Color(0xFFC62828)) { onServiceClick("Support") }
-            )
-            StandardGridRow(items = tools)
         }
     }
 }
