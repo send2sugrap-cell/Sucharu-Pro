@@ -198,15 +198,13 @@ fun SucharuWallScreen(
                         }
 
                         // ২. হিরো ব্যানার স্লাইডার (Hero Banner Pager - Full Width below Wisdom)
-                        item {
-                            HomeBannerPager(
-                                offers = if (feed.offers.isNotEmpty()) feed.offers else listOf(
-                                    WallOfferItem("DEMO-1", "প্রিমিয়াম প্রিন্টিং", "বিশেষ ছাড় চলছে", "২০% ডিসকাউন্ট", "৩০ সেপ্টেম্বর ২০২৬"),
-                                    WallOfferItem("DEMO-2", "কাস্টম প্যাকেজিং", "রিজিড ও পেপার বক্স", "১০% অফ", "৩০ সেপ্টেম্বর ২০২৬"),
-                                    WallOfferItem("DEMO-3", "ফ্লায়ার ও মেমো", "ফ্রি হোম ডেলিভারি", "বিশেষ ডিল", "৩০ সেপ্টেম্বর ২০২৬")
-                                ),
-                                onOfferClick = { onNavigateToDestination(AppDestination.Public.Offers) }
-                            )
+                        if (feed.offers.isNotEmpty()) {
+                            item {
+                                HomeBannerPager(
+                                    offers = feed.offers,
+                                    onOfferClick = { onNavigateToDestination(AppDestination.Public.Offers) }
+                                )
+                            }
                         }
 
                         // ৩. রানিং প্লেয়ার নামাজের সময়সূচি (PrayerTimesCard - Dedicated Widget)

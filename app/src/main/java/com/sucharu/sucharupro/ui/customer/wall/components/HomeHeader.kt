@@ -26,14 +26,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sucharu.sucharupro.data.api.model.AuthenticatedPrincipal
-import com.sucharu.sucharupro.ui.customer.theme.CustomerTheme
 
 /**
- * Top Header Bar for Front-Facing Home / Sucharu Wall.
+ * Premium Ink Navy Top Header Bar for Front-Facing Home / Sucharu Wall.
  *
  * LEFT: Sucharu Graphics logo icon and stacked title/subtitle
  * LINE 1: "সুচারু গ্রাফিক্স" (Bold)
@@ -50,14 +50,14 @@ fun HomeHeader(
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        color = CustomerTheme.colors.surface,
-        tonalElevation = 1.dp,
-        shadowElevation = 1.dp
+        color = Color(0xFF0F172A),
+        tonalElevation = 2.dp,
+        shadowElevation = 2.dp
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = CustomerTheme.spacing.lg, vertical = CustomerTheme.spacing.md),
+                .padding(horizontal = 16.dp, vertical = 12.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -70,37 +70,33 @@ fun HomeHeader(
                     modifier = Modifier
                         .size(42.dp)
                         .clip(RoundedCornerShape(12.dp))
-                        .background(CustomerTheme.colors.accentContainer)
-                        .border(1.dp, CustomerTheme.colors.accentPrimary.copy(alpha = 0.3f), RoundedCornerShape(12.dp)),
+                        .background(Color(0xFF0284C7))
+                        .border(1.dp, Color(0xFF38BDF8), RoundedCornerShape(12.dp)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Default.Print,
                         contentDescription = "Sucharu Graphics Logo",
-                        tint = CustomerTheme.colors.accentPrimary,
+                        tint = Color.White,
                         modifier = Modifier.size(24.dp)
                     )
                 }
 
-                Spacer(modifier = Modifier.width(CustomerTheme.spacing.md))
+                Spacer(modifier = Modifier.width(12.dp))
 
                 Column {
                     Text(
                         text = "সুচারু গ্রাফিক্স",
-                        style = CustomerTheme.typography.title.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 16.sp,
-                            letterSpacing = 0.2.sp
-                        ),
-                        color = CustomerTheme.colors.primaryText
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                        letterSpacing = 0.2.sp
                     )
                     Text(
                         text = "এন্ড প্রিন্টিং",
-                        style = CustomerTheme.typography.caption.copy(
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Medium
-                        ),
-                        color = CustomerTheme.colors.secondaryText
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color(0xFF38BDF8)
                     )
                 }
             }
@@ -115,7 +111,7 @@ fun HomeHeader(
                         Icon(
                             imageVector = Icons.Default.Notifications,
                             contentDescription = "Notifications",
-                            tint = CustomerTheme.colors.primaryText
+                            tint = Color.White
                         )
                     }
                     if (notificationCount > 0) {
@@ -125,24 +121,24 @@ fun HomeHeader(
                                 .padding(top = 4.dp, end = 4.dp)
                                 .size(8.dp)
                                 .clip(CircleShape)
-                                .background(CustomerTheme.colors.error)
+                                .background(Color(0xFFEF4444))
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.width(CustomerTheme.spacing.xs))
+                Spacer(modifier = Modifier.width(4.dp))
 
                 IconButton(
                     onClick = onProfileClick,
                     modifier = Modifier
                         .size(40.dp)
                         .clip(CircleShape)
-                        .background(CustomerTheme.colors.elevatedSurface)
+                        .background(Color(0xFF1E293B))
                 ) {
                     Icon(
                         imageVector = Icons.Default.Person,
                         contentDescription = "User Profile",
-                        tint = CustomerTheme.colors.accentPrimary
+                        tint = Color(0xFF38BDF8)
                     )
                 }
             }
