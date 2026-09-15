@@ -62,29 +62,31 @@ import com.sucharu.sucharupro.ui.customer.components.CustomerEmptyState
 import com.sucharu.sucharupro.ui.customer.components.CustomerErrorState
 import com.sucharu.sucharupro.ui.customer.theme.CustomerColors
 import com.sucharu.sucharupro.ui.customer.theme.CustomerTheme
+import com.sucharu.sucharupro.ui.customer.wall.components.DailyWisdomCard
 import com.sucharu.sucharupro.ui.customer.wall.components.HomeBannerPager
 import com.sucharu.sucharupro.ui.customer.wall.components.HomeHeader
-import com.sucharu.sucharupro.ui.customer.wall.components.LeftBlueprintCard
 import com.sucharu.sucharupro.ui.customer.wall.components.PrayerTimesCard
 import com.sucharu.sucharupro.ui.customer.wall.components.RunningOffersCarousel
 import com.sucharu.sucharupro.ui.customer.wall.components.SecondaryPromoBanner
+import com.sucharu.sucharupro.ui.customer.wall.components.TriCalendarCard
 import com.sucharu.sucharupro.ui.navigation.AppDestination
 
 /**
- * Sucharu Pro Redesigned Home Wall (Exact Hand-Drawn Blueprint Alignment).
+ * Sucharu Pro Redesigned Home Wall (Clean Mobile-Responsive Layout).
  *
- * LAYOUT STRUCTURE (Top to Bottom):
- * 1. Top Header Bar (Logo | "সুচারু গ্রাফিক্স / এন্ড প্রিন্টিং" | Notification & Profile)
- * 2. Tri-Part Center Section (3-Column Center Grid Row):
- *    - Left: LeftBlueprintCard (AI Wisdom Quote + Tri-Calendar & Status Badge) [Weight 1.1f]
- *    - Center: HeroBannerPager (Auto-sliding Hero Banner Carousel) [Weight 1.8f]
- *    - Right: PrayerTimesCard (Live Waqt progress & countdown) [Weight 1.1f]
- * 3. Secondary Wide Promo Banner (Awards, T-shirts, Offset Press, Sucharu Circular Logo)
- * 4. Running Offers Carousel (চলমান অফার সমূহ - 3 Campaign Offer Cards)
- * 5. Printing Services (4-Column Grid)
- * 6. Popular Products (4-Column Grid Rows)
- * 7. Smart Tools (4-Column Grid)
- * 8. Minimal Bottom Navigation Dock (Retaining Home Anchor)
+ * LAYOUT STRUCTURE (Top-to-Bottom):
+ * 1. Header (Logo, "সুচারু গ্রাফিক্স / এন্ড প্রিন্টিং", Notifications, Profile)
+ * 2. Daily Wisdom Card (Full Width)
+ * 3. Info Hub Row (50-50 Split Side-by-Side):
+ *    - Left: TriCalendarCard (weight = 1f)
+ *    - Right: PrayerTimesCard (weight = 1f)
+ * 4. Hero Banner Slider (FULL WIDTH across screen, 150-165dp height)
+ * 5. Secondary Wide Promo Banner
+ * 6. Running Offers Carousel (3 Campaign Offer Cards)
+ * 7. Printing Services (4-Column Grid)
+ * 8. Popular Products (4-Column Grid Rows)
+ * 9. Smart Tools (4-Column Grid)
+ * 10. Streamlined Bottom Dock (Home / Profile)
  */
 @Composable
 fun SucharuWallScreen(
@@ -201,50 +203,55 @@ fun SucharuWallScreen(
                         contentPadding = PaddingValues(12.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        // ১. ৩-কলাম সেন্টার গ্রিড সেকশন (Tri-Part Center Section Row)
+                        // ১. বাণী চিরন্তন (Daily Wisdom Card - Full Width)
+                        item {
+                            DailyWisdomCard()
+                        }
+
+                        // ২. ইনফো হাব রো (Info Hub Row: 50-50 Split Side-by-Side)
                         item {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                horizontalArrangement = Arrangement.spacedBy(10.dp),
                                 verticalAlignment = Alignment.Top
                             ) {
-                                // LEFT: LeftBlueprintCard (AI Wisdom Quote + Tri-Calendar)
-                                Box(modifier = Modifier.weight(1.1f)) {
-                                    LeftBlueprintCard()
-                                }
-
-                                // CENTER: Hero Banner Pager
-                                Box(modifier = Modifier.weight(1.8f)) {
-                                    HomeBannerPager(
-                                        offers = if (feed.offers.isNotEmpty()) feed.offers else listOf(
-                                            WallOfferItem("DEMO-1", "প্রিমিয়াম প্রিন্টিং", "বিশেষ ছাড় চলছে", "২০% ডিসকাউন্ট", "৩০ সেপ্টেম্বর ২০২৬"),
-                                            WallOfferItem("DEMO-2", "কাস্টম প্যাকেজিং", "রিজিড ও পেপার বক্স", "১০% অফ", "৩০ সেপ্টেম্বর ২০২৬"),
-                                            WallOfferItem("DEMO-3", "ফ্লায়ার ও মেমো", "ফ্রি হোম ডেলিভারি", "বিশেষ ডিল", "৩০ সেপ্টেম্বর ২০২৬")
-                                        ),
-                                        onOfferClick = { onNavigateToDestination(AppDestination.Public.Offers) }
-                                    )
+                                // LEFT: Tri-Calendar Card
+                                Box(modifier = Modifier.weight(1f)) {
+                                    TriCalendarCard()
                                 }
 
                                 // RIGHT: Prayer Times Card
-                                Box(modifier = Modifier.weight(1.1f)) {
+                                Box(modifier = Modifier.weight(1f)) {
                                     PrayerTimesCard()
                                 }
                             }
                         }
 
-                        // ২. সেকেন্ডারি ওয়াইড প্রমোশনাল ব্যানার
+                        // ৩. হিরো ব্যানার স্লাইডার (FULL WIDTH across mobile screen)
+                        item {
+                            HomeBannerPager(
+                                offers = if (feed.offers.isNotEmpty()) feed.offers else listOf(
+                                    WallOfferItem("DEMO-1", "প্রিমিয়াম প্রিন্টিং", "বিশেষ ছাড় চলছে", "২০% ডিসকাউন্ট", "৩০ সেপ্টেম্বর ২০২৬"),
+                                    WallOfferItem("DEMO-2", "কাস্টম প্যাকেজিং", "রিজিড ও পেপার বক্স", "১০% অফ", "৩০ সেপ্টেম্বর ২০২৬"),
+                                    WallOfferItem("DEMO-3", "ফ্লায়ার ও মেমো", "ফ্রি হোম ডেলিভারি", "বিশেষ ডিল", "৩০ সেপ্টেম্বর ২০২৬")
+                                ),
+                                onOfferClick = { onNavigateToDestination(AppDestination.Public.Offers) }
+                            )
+                        }
+
+                        // ৪. সেকেন্ডারি ওয়াইড প্রমোশনাল ব্যানার
                         item {
                             SecondaryPromoBanner()
                         }
 
-                        // ৩. চলমান অফার সমূহ (Running Offers Carousel)
+                        // ৫. চলমান অফার সমূহ (Running Offers Carousel)
                         item {
                             RunningOffersCarousel(
                                 onOfferClick = { onNavigateToDestination(AppDestination.Customer.Quotations) }
                             )
                         }
 
-                        // ৪. প্রিন্টিং সার্ভিস (৪ কলাম গ্রিড)
+                        // ৬. প্রিন্টিং সার্ভিস (৪ কলাম গ্রিড)
                         item {
                             Text(
                                 text = "প্রিন্টিং সার্ভিস",
@@ -270,7 +277,7 @@ fun SucharuWallScreen(
                             StandardGridRow(items = services)
                         }
 
-                        // ৫. জনপ্রিয় প্রোডাক্টস (দুই সারিতে ৪টি করে কার্ড)
+                        // ৭. জনপ্রিয় প্রোডাক্টস (দুই সারিতে ৪টি করে কার্ড)
                         item {
                             Text(
                                 text = "জনপ্রিয় প্রোডাক্টস",
@@ -313,7 +320,7 @@ fun SucharuWallScreen(
                             }
                         }
 
-                        // ৬. স্মার্ট টুলস
+                        // ৮. স্মার্ট টুলস
                         item {
                             Text(
                                 text = "স্মার্ট টুলস",

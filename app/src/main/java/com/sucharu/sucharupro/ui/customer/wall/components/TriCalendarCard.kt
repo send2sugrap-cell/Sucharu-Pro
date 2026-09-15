@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -23,15 +24,15 @@ import androidx.compose.ui.unit.sp
 
 /**
  * Tri-Calendar & Special Occasion Notice Bar.
- * Compact 3-Column Center-Hero layout compatible.
+ * Clean 50-50 Split Row Layout compatible.
  */
 @Composable
 fun TriCalendarCard(
     modifier: Modifier = Modifier,
     dayName: String = "মঙ্গলবার",
-    gregorianDate: String = "১৫ সেপ্টে ২০২৬",
-    hijriDate: String = "২৩ রবিউল আউয়াল",
-    banglaDate: String = "৩০ ভাদ্র ১৪৩৩",
+    gregorianDate: String = "১৫ সেপ্টেম্বর ২০২৬",
+    hijriDate: String = "২৩ রবিউল আউয়াল ১৪৪৮ হিজরি",
+    banglaDate: String = "৩০ ভাদ্র ১৪৩৩ বঙ্গাব্দ",
     occasionNotice: String = "বাণিজ্যিক সেবা সক্রিয় রানিং"
 ) {
     Card(
@@ -42,26 +43,36 @@ fun TriCalendarCard(
         border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0))
     ) {
         Column(
-            modifier = Modifier.padding(10.dp),
+            modifier = Modifier.padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            Text(
-                text = dayName,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF0284C7)
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = dayName,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF0284C7)
+                )
 
-            Text(
-                text = gregorianDate,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF0F172A)
-            )
+                Text(
+                    text = gregorianDate,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF0F172A),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+
+            Spacer(modifier = Modifier.height(2.dp))
 
             Text(
                 text = "হিজরি: $hijriDate",
-                fontSize = 10.sp,
+                fontSize = 11.sp,
                 color = Color(0xFF64748B),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
@@ -69,23 +80,23 @@ fun TriCalendarCard(
 
             Text(
                 text = "বাংলা: $banglaDate",
-                fontSize = 10.sp,
+                fontSize = 11.sp,
                 color = Color(0xFF64748B),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
 
             if (occasionNotice.isNotBlank()) {
-                Spacer(modifier = Modifier.height(2.dp))
+                Spacer(modifier = Modifier.height(4.dp))
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(Color(0xFFE0F2FE), RoundedCornerShape(6.dp))
-                        .padding(horizontal = 6.dp, vertical = 4.dp)
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {
                     Text(
                         text = occasionNotice,
-                        fontSize = 9.sp,
+                        fontSize = 10.sp,
                         fontWeight = FontWeight.Medium,
                         color = Color(0xFF0369A1),
                         maxLines = 2,
