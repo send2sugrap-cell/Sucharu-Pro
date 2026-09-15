@@ -33,6 +33,12 @@ sealed class AppDestination(
         object Faq : Public("public/faq", "FAQ")
         object Announcements : Public("public/announcements", "Announcements")
         object PublicAiAssistant : Public("public/ai-assistant", "AI Assistant")
+        data class ProductGallery(
+            val categoryId: String = "ALL",
+            val categoryTitle: String = "ডিজাইন গ্যালারি"
+        ) : Public("public/gallery/$categoryId", "Product Gallery") {
+            companion object : Public("public/gallery", "Product Gallery")
+        }
         object Login : Public("auth/login", "Sign In")
         object Register : Public("auth/register", "Sign Up")
         object ForgotPassword : Public("auth/forgot-password", "Forgot Password")

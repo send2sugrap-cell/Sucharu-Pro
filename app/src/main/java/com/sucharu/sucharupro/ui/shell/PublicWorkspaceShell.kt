@@ -56,6 +56,7 @@ import com.sucharu.sucharupro.ui.customer.wall.SucharuWallScreen
 import com.sucharu.sucharupro.ui.customer.wall.SucharuWallViewModel
 import com.sucharu.sucharupro.ui.navigation.AppDestination
 
+import com.sucharu.sucharupro.ui.customer.screens.ProductGalleryScreen
 import com.sucharu.sucharupro.ui.features.category.PrintingServicesScreen
 import com.sucharu.sucharupro.ui.features.category.ProductsScreen
 
@@ -94,6 +95,14 @@ fun PublicWorkspaceShell(
                 is AppDestination.Public.Products -> {
                     val key = (currentDestination as? AppDestination.Public.Products)?.categoryKey ?: "ALL"
                     ProductsScreen(categoryKey = key, onNavigate = onNavigate)
+                }
+                is AppDestination.Public.ProductGallery -> {
+                    val dest = currentDestination as AppDestination.Public.ProductGallery
+                    ProductGalleryScreen(
+                        categoryId = dest.categoryId,
+                        categoryTitle = dest.categoryTitle,
+                        onNavigate = onNavigate
+                    )
                 }
                 is AppDestination.Public.Offers -> PublicOffersView(onNavigate = onNavigate)
                 is AppDestination.Public.Portfolio -> PublicGalleryView(onNavigate = onNavigate)

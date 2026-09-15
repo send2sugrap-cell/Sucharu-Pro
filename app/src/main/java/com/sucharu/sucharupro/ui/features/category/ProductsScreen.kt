@@ -108,8 +108,8 @@ fun ProductsScreen(
                         CategoryGridItemCard(
                             item = item,
                             onClick = {
-                                // Open Item Detail Spec Sheet
-                                selectedItemForDetail = item
+                                // Navigate cleanly to Universal Product Gallery Screen
+                                onNavigate(AppDestination.Public.ProductGallery(item.id, item.title))
                             }
                         )
                     }

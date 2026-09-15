@@ -45,6 +45,7 @@ object DeepLinkAuthorizer {
             sanitizedRoute.startsWith("public/faq") -> return AppDestination.Public.Faq
             sanitizedRoute.startsWith("public/announcements") -> return AppDestination.Public.Announcements
             sanitizedRoute.startsWith("public/ai-assistant") -> return AppDestination.Public.PublicAiAssistant
+            sanitizedRoute.startsWith("public/gallery") -> return AppDestination.Public.ProductGallery()
             sanitizedRoute.startsWith("auth/login") -> return AppDestination.Public.Login
             sanitizedRoute.startsWith("auth/register") -> return AppDestination.Public.Register
             sanitizedRoute.startsWith("auth/forgot-password") -> return AppDestination.Public.ForgotPassword
