@@ -9,34 +9,40 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 /**
- * Prayer Times Widget (নামাজের সময়সূচি).
- * Displays daily prayer times for Fajar, Dhuhr, Asr, Maghrib, Isha.
+ * Right Column Prayer Times Card (Matching Hand-Drawn Blueprint).
+ * Shows current Waqt (যোহর), next Waqt (আসর), live progress bar, and remaining time.
  */
 @Composable
 fun PrayerTimesCard(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    currentWaqt: String = "যোহর",
+    currentWaqtTime: String = "১১:৫৪ মি.",
+    nextWaqt: String = "আসর",
+    nextWaqtTime: String = "৪:১৯ মি.",
+    remainingTime: String = "২ ঘণ্টা ৩১ মিনিট বাকি",
+    progress: Float = 0.65f
 ) {
-    val prayerTimes = listOf(
-        "ফজর" to "৪:৩৫ AM",
-        "যোহর" to "১২:০৫ PM",
-        "আসর" to "৪:২৫ PM",
-        "মাগরিব" to "৬:১০ PM",
-        "এশা" to "৭:২৫ PM"
-    )
-
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
@@ -44,45 +50,101 @@ fun PrayerTimesCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0))
     ) {
-        Column(modifier = Modifier.padding(14.dp)) {
+        Column(
+            modifier = Modifier.padding(10.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            // Header: Sun Icon & Times
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.WbSunny,
+                        contentDescription = null,
+                        tint = Color(0xFFD97706),
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "$currentWaqt $currentWaqtTime",
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF0F172A)
+                    )
+                }
+
+                Text(
+                    text = "$nextWaqt $nextWaqtTime",
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF64748B)
+                )
+            }
+
+            // Current Waqt Name
             Text(
-                text = "আজকের নামাজের সময়সূচি (ঢাকা)",
+                text = currentWaqt,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF263238)
+                color = Color(0xFF0284C7)
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            // Progress Bar
+            LinearProgressIndicator(
+                progress = { progress },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(6.dp)
+                    .clip(RoundedCornerShape(3.dp)),
+                color = Color(0xFF16A34A),
+                trackColor = Color(0xFFE2E8F0)
+            )
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                prayerTimes.forEach { (name, time) ->
+                Text(
+                    text = "১১:৫৪ - ০৪:১৮",
+                    fontSize = 9.sp,
+                    color = Color(0xFF64748B)
+                )
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         modifier = Modifier
-                            .weight(1f)
-                            .background(Color(0xFFF8FAFC), RoundedCornerShape(8.dp))
-                            .padding(vertical = 8.dp, horizontal = 4.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                text = name,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF0284C7)
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = time,
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = Color(0xFF334155)
-                            )
-                        }
-                    }
+                            .size(6.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFF16A34A))
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "চলমান",
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF16A34A)
+                    )
                 }
+            }
+
+            // Remaining Time Badge
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color(0xFFF1F5F9), RoundedCornerShape(6.dp))
+                    .padding(horizontal = 6.dp, vertical = 4.dp),
+                contentAlignment = Alignment.CenterEnd
+            ) {
+                Text(
+                    text = remainingTime,
+                    fontSize = 9.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color(0xFF334155)
+                )
             }
         }
     }
