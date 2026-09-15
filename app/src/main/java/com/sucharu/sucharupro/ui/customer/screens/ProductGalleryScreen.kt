@@ -22,14 +22,10 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.AccountBox
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Book
-import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Star
@@ -38,6 +34,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
@@ -78,8 +75,9 @@ data class GalleryTemplateItem(
  * Universal Product Gallery & Sample Showcase Screen.
  *
  * Displays a 2-Column M3 Grid of design templates tailored to [categoryId] / [categoryTitle].
- * Clicking any template opens a preview dialog with "এই ডিজাইনটি অর্ডার করুন" CTA routing to Quotations queue.
+ * Clicking any template opens a preview dialog with "এই ডিজাইনটি অর্ডার করুন" CTA opening [CustomerOrderFormSheet].
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProductGalleryScreen(
     categoryId: String = "ALL",
@@ -88,6 +86,10 @@ fun ProductGalleryScreen(
     modifier: Modifier = Modifier
 ) {
     var selectedTemplateForPreview by remember { mutableStateOf<GalleryTemplateItem?>(null) }
+    var selectedTemplateForOrderForm by remember { mutableStateOf<GalleryTemplateItem?>(null) }
+    var showCustomOrderForm by remember { mutableStateOf(false) }
+    var confirmedOrderResult by remember { mutableStateOf<OrderSubmissionResult?>(null) }
+
     val templates = remember(categoryId) { getMockGalleryTemplates(categoryId, categoryTitle) }
 
     CustomerTheme(colors = com.sucharu.sucharupro.ui.customer.theme.CustomerColors.light()) {
@@ -163,7 +165,7 @@ fun ProductGalleryScreen(
                         .padding(16.dp)
                 ) {
                     Button(
-                        onClick = { onNavigate(AppDestination.Customer.Quotations) },
+                        onClick = { showCustomOrderForm = true },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(48.dp),
@@ -273,8 +275,9 @@ fun ProductGalleryScreen(
 
                         Button(
                             onClick = {
+                                val current = template
                                 selectedTemplateForPreview = null
-                                onNavigate(AppDestination.Customer.Quotations)
+                                selectedTemplateForOrderForm = current
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -294,6 +297,35 @@ fun ProductGalleryScreen(
                     }
                 }
             }
+        }
+
+        // Customer Order Placement Form Sheet
+        if (selectedTemplateForOrderForm != null || showCustomOrderForm) {
+            CustomerOrderFormSheet(
+                templateItem = selectedTemplateForOrderForm,
+                categoryTitle = categoryTitle,
+                onDismiss = {
+                    selectedTemplateForOrderForm = null
+                    showCustomOrderForm = false
+                },
+                onOrderConfirmed = { result ->
+                    selectedTemplateForOrderForm = null
+                    showCustomOrderForm = false
+                    confirmedOrderResult = result
+                }
+            )
+        }
+
+        // Order Confirmation Success Dialog
+        if (confirmedOrderResult != null) {
+            OrderSuccessConfirmationDialog(
+                result = confirmedOrderResult!!,
+                onGoToOrders = {
+                    confirmedOrderResult = null
+                    onNavigate(AppDestination.Customer.Orders)
+                },
+                onDismiss = { confirmedOrderResult = null }
+            )
         }
     }
 }
