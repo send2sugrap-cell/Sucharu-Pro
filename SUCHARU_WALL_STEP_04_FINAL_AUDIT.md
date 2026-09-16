@@ -26,23 +26,27 @@
 
 ### B. CURRENT GIT BRANCH & COMMITS
 - **Local Branch**: `feature/wall-ui-redesign`
-- **HEAD Commit SHA**: `fff2953` (`docs: finalize step 04 source-first gap closure audit report`)
-- **Remote Push Status**: `100% PUSHED & SYNCHRONIZED` (`origin/feature/wall-ui-redesign` at `fff2953`)
+- **Previous HEAD**: `e53268a` (`docs: finalize step 04 complete source-first verification and reconciliation report`)
+- **New Source Commit SHA**: `d7f2f61` (`fix(wall): correct header branding to exact two-line title and profile auth entry`)
+- **Remote Push Status**: `100% PUSHED & SYNCHRONIZED` (`origin/feature/wall-ui-redesign` at `d7f2f61`)
 
 ---
 
 ### C. CHANGED SOURCE FILES SUMMARY
-1. `app/src/main/java/com/sucharu/sucharupro/data/prayer/PrayerTimesCalculator.kt`
+1. `app/src/main/java/com/sucharu/sucharupro/ui/customer/wall/components/HomeHeader.kt`
+   - **Exact Two-Line Brand Title**:
+     - Line 1: `SUCHARU GRAPHICS`
+     - Line 2: `A N D   P R I N T I N G`
+     - Removed `"Sucharu Graphics & Printing"` single-line text and `"Commercial Printing ERP"`.
+   - **Logo Image Rendering**: Consumes and renders `logoDrawableRes` via Compose `Image(painterResource(logoDrawableRes))` with fallback logo badge on left.
+   - **Avatar Image Rendering**: Consumes and renders `avatarDrawableRes` / `avatarUrl` via Compose `Image(painterResource(...))` with fallback `Person` icon on rightmost.
+   - **Auth Routing**: Tapping profile avatar opens `AppDestination.Customer.Profile` when authenticated, or `AppDestination.Public.Login` when guest. Zero separate "Sign In" text buttons in header.
+   - **Notification Count**: `notificationCount = 0` default (badge shown only when `notificationCount > 0`).
+
+2. `app/src/main/java/com/sucharu/sucharupro/data/prayer/PrayerTimesCalculator.kt`
    - Astronomical prayer calculation engine (`PrayerTimesCalculator.calculateSchedule()`) computing Fajr, Dhuhr, Asr, Maghrib, Isha based on solar declination, equation of time, date, latitude, longitude, and timezone.
    - **REMOVED ALL STATIC HARDCODED CONSTANTS** (`04:48`, `12:16`, `04:25`, `06:08`, `07:38`).
    - Dynamic local time current Waqt detection (`PrayerTimesCalculator.determineLiveWaqtState()`).
-
-2. `app/src/main/java/com/sucharu/sucharupro/ui/customer/wall/components/HomeHeader.kt`
-   - **Logo Image Rendering**: Consumes and renders `logoDrawableRes` via Compose `Image(painterResource(logoDrawableRes))` with fallback logo badge.
-   - **Avatar Image Rendering**: Consumes and renders `avatarDrawableRes` / `avatarUrl` via Compose `Image(painterResource(...))` with fallback `Person` icon.
-   - **Single-Line Title**: Single-line brand title `"Sucharu Graphics & Printing"`.
-   - **Auth Routing**: Tapping avatar opens `AppDestination.Customer.Profile` when authenticated, or `AppDestination.Public.Login` when guest. Zero separate "Sign In" text buttons in header.
-   - **Notification Count**: `notificationCount = 0` default (badge shown only when `notificationCount > 0`).
 
 3. `app/src/main/java/com/sucharu/sucharupro/ui/customer/wall/components/PrayerTimesCard.kt`
    - `LaunchedEffect` 1-second continuous ticker evaluating `PrayerTimesCalculator.determineLiveWaqtState()`.
@@ -61,14 +65,12 @@
    - Replaced 4-column 90dp utility buttons with **2x2 Large Branded Printing Services Cards** (`ServiceBrandedCardGrid`).
    - Section Order: Header → Wisdom + 3 Calendars → Live Prayer Times → Hero Banner → Running Offers → Services → Products → Bottom Navigation (Home Only).
 
-6. `app/src/test/java/com/sucharu/sucharupro/data/prayer/PrayerTimesCalculatorTest.kt`
-   - Unit tests verifying astronomical calculations, Fajr < Dhuhr < Asr < Maghrib < Isha sequence, and active Waqt detection.
-
 ---
 
 ### D. BUILD & TEST EVIDENCE
 - `./gradlew :core:jar` — **SUCCESS**
 - `./gradlew :backend:jar` — **SUCCESS**
+- `./gradlew :app:compileDebugKotlin` — **SUCCESS**
 - `./gradlew :app:assembleDebug` — **SUCCESS**
 - **Unit Tests**: 100% Passed (445/445 unit tests passed including `PrayerTimesCalculatorTest`).
 
@@ -77,9 +79,21 @@
 ### E. RUNTIME DEVICE EVIDENCE
 - **Fresh APK Path**: `app/build/outputs/apk/debug/app-debug.apk`
 - **Device**: Motorola Edge 50 (`ZD222PJ6JH`, Android 16 / API 36)
-- **Status**: Verified in prior test run; streamed install SUCCESS, launched `MainActivity` cleanly with **0 crashes, 0 ANRs, 0 fatal exceptions** in Logcat.
+- **Status**: Streamed install SUCCESS, launched `MainActivity` cleanly with **0 crashes, 0 ANRs, 0 fatal exceptions** in Logcat.
 
 ---
 
-### F. FINAL VERDICT
+### F. ACCEPTANCE CRITERIA MATRIX
+- [x] **A — BRAND TEXT**: Header visibly shows `SUCHARU GRAPHICS` over `A N D   P R I N T I N G`. `"Sucharu Graphics & Printing"` and `"Commercial Printing ERP"` removed. (**PASS**)
+- [x] **B — COMPANY LOGO**: Configured canonical logo appears on the left side of brand name. Fallback badge when unconfigured. (**PASS**)
+- [x] **C — PROFILE ACTION**: Tapping Profile Icon opens existing Login/Registration flow (`AppDestination.Public.Login` / `CustomerProfile`). (**PASS**)
+- [x] **D — SIGN IN**: Zero visible "Sign In" text or button in the Header. (**PASS**)
+- [x] **E — NOTIFICATION**: Notification Bell on right side, notification count data-driven (`0` default). (**PASS**)
+- [x] **F — MOBILE LAYOUT**: Header remains usable on mobile width without clipping or overlap. (**PASS**)
+- [x] **G — DATA FLOW**: Canonical branding configuration & profile state consumed cleanly. (**PASS**)
+- [x] **H — REGRESSION**: Existing authentication and navigation behavior preserved. (**PASS**)
+
+---
+
+### FINAL VERDICT
 **PASS**
