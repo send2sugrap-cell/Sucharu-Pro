@@ -6,6 +6,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -37,8 +38,11 @@ import com.sucharu.sucharupro.data.api.model.AuthenticatedPrincipal
 /**
  * Premium Branded Top Header Bar for Sucharu Graphics & Printing.
  *
- * Consumes and renders image-configurable logo and avatar images when available,
- * falling back to clean brand badges when no image asset is supplied.
+ * LEFT: Image-configurable logo badge & exact two-line brand identity:
+ * LINE 1: SUCHARU GRAPHICS
+ * LINE 2: A N D  P R I N T I N G
+ *
+ * RIGHT: Notification Bell and Profile Avatar
  */
 @Composable
 fun HomeHeader(
@@ -63,7 +67,7 @@ fun HomeHeader(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // LEFT: Image-Configurable Logo Badge & Single-Line Brand Title
+            // LEFT: Image-Configurable Logo Badge & Exact Two-Line Brand Title
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.clickable { onProfileClick() }
@@ -95,16 +99,25 @@ fun HomeHeader(
 
                 Spacer(modifier = Modifier.width(12.dp))
 
-                Text(
-                    text = "Sucharu Graphics & Printing",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White,
-                    letterSpacing = 0.5.sp
-                )
+                Column {
+                    Text(
+                        text = "SUCHARU GRAPHICS",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Color.White,
+                        letterSpacing = 1.sp
+                    )
+                    Text(
+                        text = "A N D   P R I N T I N G",
+                        fontSize = 9.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF9ECAFF),
+                        letterSpacing = 2.4.sp
+                    )
+                }
             }
 
-            // RIGHT: Actions (Notification & Profile Avatar)
+            // RIGHT: Actions (Notification Bell & Profile Avatar)
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box {
                     IconButton(
