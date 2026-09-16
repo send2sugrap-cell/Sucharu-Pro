@@ -215,7 +215,7 @@ private fun PublicOffersView(onNavigate: (AppDestination) -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF6F8FA))
+            .background(Color(0xFF0B132B))
     ) {
         MobileTopBar(
             title = "স্পেশাল অফার্স",
@@ -228,8 +228,8 @@ private fun PublicOffersView(onNavigate: (AppDestination) -> Unit) {
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            ServiceDetailCard("ই ঈদ বিশেষ ছাড় - ১৫% OFF", "কাস্টম ভিজিটিং কার্ড ও অফসেট প্যাকেজিং-এ বিশেষ ডিসকাউন্ট।", Icons.Default.Star, Color(0xFFFFF3E0), Color(0xFFE65100))
-            ServiceDetailCard("বাল্ক প্যাকেজিং ডিল - ১০% OFF", "৫,০০০০+ ইউনিট প্যাকেজিং অর্ডারে ফ্রি ডিজাইন ও ডেলিভারি।", Icons.Default.ShoppingCart, Color(0xFFE8F5E9), Color(0xFF2E7D32))
+            ServiceDetailCard("ঈদ বিশেষ ছাড় - ১৫% OFF", "কাস্টম ভিজিটিং কার্ড ও অফসেট প্যাকেজিং-এ বিশেষ ডিসকাউন্ট।", Icons.Default.Star, Color(0xFF1E293B), Color(0xFFD97706))
+            ServiceDetailCard("বাল্ক প্যাকেজিং ডিল - ১০% OFF", "৫,০০০০+ ইউনিট প্যাকেজিং অর্ডারে ফ্রি ডিজাইন ও ডেলিভারি।", Icons.Default.ShoppingCart, Color(0xFF1E293B), Color(0xFF10B981))
         }
     }
 }
