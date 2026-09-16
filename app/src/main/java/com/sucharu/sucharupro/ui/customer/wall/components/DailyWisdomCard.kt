@@ -35,12 +35,12 @@ import java.time.chrono.HijrahDate
  * Data class for synchronized Tri-Calendar calculation.
  */
 data class TriCalendarData(
-    val gregorianDay: String = "১৬",
-    val gregorianMonthYear: String = "০৯/২০২৬",
-    val banglaDay: String = "০১",
-    val banglaMonthYear: String = "০৬/১৪৩৩",
-    val hijriDay: String = "০৪",
-    val hijriMonthYear: String = "০৪/১৪৪৮"
+    val gregorianDay: String = "16",
+    val gregorianMonthYear: String = "09/2026",
+    val banglaDay: String = "01",
+    val banglaMonthYear: String = "06/1433",
+    val hijriDay: String = "04",
+    val hijriMonthYear: String = "04/1448"
 )
 
 /**
@@ -124,7 +124,7 @@ fun DailyWisdomCard(
             Box(
                 modifier = Modifier
                     .width(1.dp)
-                    .height(60.dp)
+                    .height(64.dp)
                     .background(Color(0xFF334155))
             )
 
@@ -138,13 +138,13 @@ fun DailyWisdomCard(
             ) {
                 CalendarColumnItem("খ্রিস্টাব্দ", calendarData.gregorianDay, calendarData.gregorianMonthYear)
 
-                Box(modifier = Modifier.width(1.dp).height(40.dp).background(Color(0xFF334155)))
+                Box(modifier = Modifier.width(1.dp).height(44.dp).background(Color(0xFF334155)))
 
                 CalendarColumnItem("বঙ্গাব্দ", calendarData.banglaDay, calendarData.banglaMonthYear)
 
-                Box(modifier = Modifier.width(1.dp).height(40.dp).background(Color(0xFF334155)))
+                Box(modifier = Modifier.width(1.dp).height(44.dp).background(Color(0xFF334155)))
 
-                CalendarColumnItem("হিজরি", calendarData.hijriDay, calendarData.hijriMonthYear)
+                CalendarColumnItem("হিজরী", calendarData.hijriDay, calendarData.hijriMonthYear)
             }
         }
     }
@@ -156,30 +156,37 @@ private fun CalendarColumnItem(
     largeDay: String,
     subMonthYear: String
 ) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(1.dp)
+    ) {
         Text(
             text = largeDay,
-            fontSize = 18.sp,
+            fontSize = 22.sp,
             fontWeight = FontWeight.ExtraBold,
-            color = Color(0xFF38BDF8)
+            color = Color(0xFF38BDF8),
+            lineHeight = 22.sp
         )
         Text(
             text = subMonthYear,
-            fontSize = 9.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color.White
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Normal,
+            color = Color.White,
+            lineHeight = 12.sp
         )
         Text(
             text = label,
-            fontSize = 8.sp,
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Bold,
             color = Color(0xFF94A3B8),
-            textAlign = TextAlign.Center
+            textAlign = TextAlign.Center,
+            lineHeight = 11.sp
         )
     }
 }
 
 /**
- * Calculates current Gregorian, Bangabda, and Hijri dates dynamically.
+ * Calculates current Gregorian, Bangabda, and Hijri dates dynamically in English digits.
  */
 private fun calculateTriCalendarData(): TriCalendarData {
     val now = LocalDate.now()
@@ -187,29 +194,26 @@ private fun calculateTriCalendarData(): TriCalendarData {
     val month = now.monthValue
     val year = now.year
 
-    fun toBengaliDigits(number: Int): String {
-        val bengaliDigits = charArrayOf('০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯')
+    fun toEnglishDigits(number: Int): String {
         return String.format(java.util.Locale.US, "%02d", number)
-            .map { if (it.isDigit()) bengaliDigits[it - '0'] else it }
-            .joinToString("")
     }
 
-    val gregDayStr = toBengaliDigits(day)
-    val gregMonthYearStr = "${toBengaliDigits(month)}/${toBengaliDigits(year)}"
+    val gregDayStr = toEnglishDigits(day)
+    val gregMonthYearStr = "${toEnglishDigits(month)}/${year}"
 
     // Bangla / Bangabda calculation (Solar Calendar offset ~593 years)
     val banglaYear = year - 593
     val banglaMonth = if (month >= 4) month - 3 else month + 9
     val banglaDay = if (day >= 15) day - 14 else day + 16
-    val banglaDayStr = toBengaliDigits(banglaDay)
-    val banglaMonthYearStr = "${toBengaliDigits(banglaMonth)}/${toBengaliDigits(banglaYear)}"
+    val banglaDayStr = toEnglishDigits(banglaDay)
+    val banglaMonthYearStr = "${toEnglishDigits(banglaMonth)}/${banglaYear}"
 
     // Hijri calculation via HijrahDate
     val hijrahDate = HijrahDate.now()
-    val hijriDayStr = toBengaliDigits(hijrahDate.get(java.time.temporal.ChronoField.DAY_OF_MONTH))
+    val hijriDayStr = toEnglishDigits(hijrahDate.get(java.time.temporal.ChronoField.DAY_OF_MONTH))
     val hijriMonth = hijrahDate.get(java.time.temporal.ChronoField.MONTH_OF_YEAR)
     val hijriYear = hijrahDate.get(java.time.temporal.ChronoField.YEAR)
-    val hijriMonthYearStr = "${toBengaliDigits(hijriMonth)}/${toBengaliDigits(hijriYear)}"
+    val hijriMonthYearStr = "${toEnglishDigits(hijriMonth)}/${hijriYear}"
 
     return TriCalendarData(
         gregorianDay = gregDayStr,
