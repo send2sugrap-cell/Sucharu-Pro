@@ -66,7 +66,6 @@ fun AffiliateMyAreaScreen(
     onNavigateBack: (() -> Unit)? = null
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    var selectedTab by remember { mutableStateOf(CustomerBottomTab.ACCOUNT) }
 
     LaunchedEffect(principal) {
         viewModel.loadMyArea(principal)
@@ -84,12 +83,10 @@ fun AffiliateMyAreaScreen(
             },
             bottomBar = {
                 CustomerBottomNavigation(
-                    selectedTab = selectedTab,
+                    selectedTab = CustomerBottomTab.HOME,
                     onTabSelect = { tab ->
-                        selectedTab = tab
                         when (tab) {
                             CustomerBottomTab.HOME -> onNavigateToDestination(AppDestination.Public.Home)
-                            CustomerBottomTab.ACCOUNT -> { /* Stay on My Area */ }
                         }
                     },
                     userRole = principal?.role

@@ -100,6 +100,9 @@ fun SucharuWallScreen(
                 HomeHeader(
                     principal = principal,
                     notificationCount = 0,
+                    onLogoClick = {
+                        /* Logo click action (e.g. reload feed or stay home) */
+                    },
                     onProfileClick = {
                         if (principal != null) {
                             onNavigateToDestination(AppDestination.Customer.Profile)
@@ -123,13 +126,6 @@ fun SucharuWallScreen(
                         selectedTab = tab
                         when (tab) {
                             CustomerBottomTab.HOME -> { /* Stay on Home */ }
-                            CustomerBottomTab.ACCOUNT -> {
-                                if (principal != null) {
-                                    onNavigateToDestination(AppDestination.Customer.Profile)
-                                } else {
-                                    onNavigateToDestination(AppDestination.Public.Login)
-                                }
-                            }
                         }
                     },
                     userRole = principal?.role

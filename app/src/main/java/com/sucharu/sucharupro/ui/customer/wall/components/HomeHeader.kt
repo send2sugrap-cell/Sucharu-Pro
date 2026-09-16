@@ -38,10 +38,7 @@ import com.sucharu.sucharupro.data.api.model.AuthenticatedPrincipal
 /**
  * Premium Branded Top Header Bar for Sucharu Graphics & Printing.
  *
- * LEFT: Image-configurable logo badge & exact two-line brand identity:
- * LINE 1: SUCHARU GRAPHICS
- * LINE 2: A N D  P R I N T I N G
- *
+ * LEFT: Image-configurable logo badge (clickable on logo box only) & static two-line brand title
  * RIGHT: Notification Bell and Profile Avatar
  */
 @Composable
@@ -52,6 +49,7 @@ fun HomeHeader(
     logoDrawableRes: Int? = null,
     avatarDrawableRes: Int? = null,
     avatarUrl: String? = null,
+    onLogoClick: () -> Unit = {},
     onProfileClick: () -> Unit = {},
     onNotificationClick: () -> Unit = {}
 ) {
@@ -67,17 +65,17 @@ fun HomeHeader(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // LEFT: Image-Configurable Logo Badge & Exact Two-Line Brand Title
+            // LEFT: Image-Configurable Logo Badge (Individual Click Listener) & Static Brand Title
             Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.clickable { onProfileClick() }
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Box(
                     modifier = Modifier
                         .size(44.dp)
                         .clip(CircleShape)
                         .background(Color(0xFF00B4D8))
-                        .border(1.5.dp, Color(0xFF9ECAFF), CircleShape),
+                        .border(1.5.dp, Color(0xFF9ECAFF), CircleShape)
+                        .clickable { onLogoClick() },
                     contentAlignment = Alignment.Center
                 ) {
                     if (logoDrawableRes != null) {
@@ -99,6 +97,7 @@ fun HomeHeader(
 
                 Spacer(modifier = Modifier.width(12.dp))
 
+                // Non-clickable Static Brand Typography
                 Column {
                     Text(
                         text = "SUCHARU GRAPHICS",
