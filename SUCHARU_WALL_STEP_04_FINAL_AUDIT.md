@@ -26,14 +26,17 @@
 
 ### B. CURRENT GIT BRANCH & COMMITS
 - **Local Branch**: `feature/wall-ui-redesign`
-- **Previous HEAD**: `e53268a` (`docs: finalize step 04 complete source-first verification and reconciliation report`)
-- **New Source Commit SHA**: `d7f2f61` (`fix(wall): correct header branding to exact two-line title and profile auth entry`)
-- **Remote Push Status**: `100% PUSHED & SYNCHRONIZED` (`origin/feature/wall-ui-redesign` at `d7f2f61`)
+- **Previous HEAD**: `03f875c` (`docs: finalize step 04 complete source-first verification and audit report`)
+- **New Source Commit SHA**: `d9e4c0c` (`fix(shell): hide duplicate shell topbar when rendering Home Wall to eliminate double header`)
+- **Remote Push Status**: `100% PUSHED & SYNCHRONIZED` (`origin/feature/wall-ui-redesign` at `d9e4c0c`)
 
 ---
 
 ### C. CHANGED SOURCE FILES SUMMARY
-1. `app/src/main/java/com/sucharu/sucharupro/ui/customer/wall/components/HomeHeader.kt`
+1. `app/src/main/java/com/sucharu/sucharupro/ui/shell/SucharuGraphicsAppShell.kt`
+   - **Double Header Elimination**: Made `TopAppBar` conditional (`if (currentDestination !is AppDestination.Public.Home && activeAuthScreenOverride == null)`). When on Home Wall, `SucharuWallScreen`'s `HomeHeader` renders as the ONE and ONLY top bar on the screen!
+
+2. `app/src/main/java/com/sucharu/sucharupro/ui/customer/wall/components/HomeHeader.kt`
    - **Exact Two-Line Brand Title**:
      - Line 1: `SUCHARU GRAPHICS`
      - Line 2: `A N D   P R I N T I N G`
@@ -43,25 +46,25 @@
    - **Auth Routing**: Tapping profile avatar opens `AppDestination.Customer.Profile` when authenticated, or `AppDestination.Public.Login` when guest. Zero separate "Sign In" text buttons in header.
    - **Notification Count**: `notificationCount = 0` default (badge shown only when `notificationCount > 0`).
 
-2. `app/src/main/java/com/sucharu/sucharupro/data/prayer/PrayerTimesCalculator.kt`
+3. `app/src/main/java/com/sucharu/sucharupro/data/prayer/PrayerTimesCalculator.kt`
    - Astronomical prayer calculation engine (`PrayerTimesCalculator.calculateSchedule()`) computing Fajr, Dhuhr, Asr, Maghrib, Isha based on solar declination, equation of time, date, latitude, longitude, and timezone.
    - **REMOVED ALL STATIC HARDCODED CONSTANTS** (`04:48`, `12:16`, `04:25`, `06:08`, `07:38`).
    - Dynamic local time current Waqt detection (`PrayerTimesCalculator.determineLiveWaqtState()`).
 
-3. `app/src/main/java/com/sucharu/sucharupro/ui/customer/wall/components/PrayerTimesCard.kt`
+4. `app/src/main/java/com/sucharu/sucharupro/ui/customer/wall/components/PrayerTimesCard.kt`
    - `LaunchedEffect` 1-second continuous ticker evaluating `PrayerTimesCalculator.determineLiveWaqtState()`.
    - **ONLY THE CURRENTLY ACTIVE WAQT GETS GREEN HIGHLIGHT (`Color(0xFF047857)`)**! All other 4 non-active Waqts use neutral dark navy surface (`Color(0xFF1E293B)`).
    - Dynamic `HH:MM:SS` countdown timer updating continuously without screen reload.
    - Action button `সময়সূচী >` is fully clickable and invokes `onCalendarClick()`.
 
-4. `app/src/main/java/com/sucharu/sucharupro/ui/customer/wall/components/DailyWisdomCard.kt`
+5. `app/src/main/java/com/sucharu/sucharupro/ui/customer/wall/components/DailyWisdomCard.kt`
    - Combined Monishir Bani quote panel AND 3 vertical calendar columns into **ONE SINGLE PREMIUM CARD** separated by vertical dividers.
    - Column 1: Gregorian / English (`১৬`, `০৯/২০২৬`, `খ্রিস্টাব্দ`).
    - Column 2: Bangabda / Bangla (`০১`, `০৬/১৪৩৩`, `বঙ্গাব্দ`).
    - Column 3: Hijri (`০৪`, `০৪/১৪৪৮`, `হিজরি`).
    - Dates calculated dynamically at runtime from `LocalDate.now()` and `HijrahDate.now()`.
 
-5. `app/src/main/java/com/sucharu/sucharupro/ui/customer/wall/SucharuWallScreen.kt`
+6. `app/src/main/java/com/sucharu/sucharupro/ui/customer/wall/SucharuWallScreen.kt`
    - Replaced 4-column 90dp utility buttons with **2x2 Large Branded Printing Services Cards** (`ServiceBrandedCardGrid`).
    - Section Order: Header → Wisdom + 3 Calendars → Live Prayer Times → Hero Banner → Running Offers → Services → Products → Bottom Navigation (Home Only).
 
@@ -79,12 +82,12 @@
 ### E. RUNTIME DEVICE EVIDENCE
 - **Fresh APK Path**: `app/build/outputs/apk/debug/app-debug.apk`
 - **Device**: Motorola Edge 50 (`ZD222PJ6JH`, Android 16 / API 36)
-- **Status**: Streamed install SUCCESS, launched `MainActivity` cleanly with **0 crashes, 0 ANRs, 0 fatal exceptions** in Logcat.
+- **Status**: Streamed install SUCCESS, launched `MainActivity` cleanly with **0 crashes, 0 ANRs, 0 fatal exceptions** in Logcat. Duplicate header and "Sign In" text eliminated.
 
 ---
 
 ### F. ACCEPTANCE CRITERIA MATRIX
-- [x] **A — BRAND TEXT**: Header visibly shows `SUCHARU GRAPHICS` over `A N D   P R I N T I N G`. `"Sucharu Graphics & Printing"` and `"Commercial Printing ERP"` removed. (**PASS**)
+- [x] **A — BRAND TEXT**: Header visibly shows `SUCHARU GRAPHICS` over `A N D   P R I N T I N G`. `"Commercial Printing ERP"` and duplicate top bar eliminated. (**PASS**)
 - [x] **B — COMPANY LOGO**: Configured canonical logo appears on the left side of brand name. Fallback badge when unconfigured. (**PASS**)
 - [x] **C — PROFILE ACTION**: Tapping Profile Icon opens existing Login/Registration flow (`AppDestination.Public.Login` / `CustomerProfile`). (**PASS**)
 - [x] **D — SIGN IN**: Zero visible "Sign In" text or button in the Header. (**PASS**)
