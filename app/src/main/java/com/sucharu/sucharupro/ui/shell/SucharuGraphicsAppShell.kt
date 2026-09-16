@@ -91,11 +91,17 @@ fun SucharuGraphicsAppShell(
                 errorMessage = null
                 successMessage = null
                 activeAuthScreenOverride = null
+                if (currentDestination != AppDestination.Public.Home) {
+                    navigationManager.navigateTo(AppDestination.Public.Home, null)
+                }
             }
             else -> {
                 errorMessage = null
                 successMessage = null
                 activeAuthScreenOverride = null
+                if (currentDestination != AppDestination.Public.Home) {
+                    navigationManager.navigateTo(AppDestination.Public.Home, null)
+                }
             }
         }
     }
