@@ -129,15 +129,16 @@ fun SucharuGraphicsAppShell(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Column(modifier = Modifier.clickable { 
-                        navigationManager.navigateTo(AppDestination.Public.Home, (entryState as? AppEntryState.Authenticated)?.principal)
-                    }) {
-                        Text("SUCHARU GRAPHICS", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF9ECAFF))
-                        Text("Commercial Printing ERP", fontSize = 10.sp, color = Color(0xFFB7C8D8))
-                    }
-                },
+            if (currentDestination !is AppDestination.Public.Home && activeAuthScreenOverride == null) {
+                TopAppBar(
+                    title = {
+                        Column(modifier = Modifier.clickable { 
+                            navigationManager.navigateTo(AppDestination.Public.Home, (entryState as? AppEntryState.Authenticated)?.principal)
+                        }) {
+                            Text("SUCHARU GRAPHICS", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF9ECAFF))
+                            Text("A N D   P R I N T I N G", fontSize = 10.sp, color = Color(0xFFB7C8D8))
+                        }
+                    },
                 actions = {
                     when (val state = entryState) {
                         is AppEntryState.Authenticated -> {
@@ -241,6 +242,7 @@ fun SucharuGraphicsAppShell(
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF0B132B))
             )
+            }
         },
         modifier = modifier.fillMaxSize()
     ) { innerPadding ->
