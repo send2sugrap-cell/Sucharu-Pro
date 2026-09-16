@@ -69,13 +69,13 @@ import com.sucharu.sucharupro.ui.navigation.AppDestination
  *
  * FINAL LOCKED SECTION ORDER:
  * 1. HEADER (HomeHeader)
- * 2. MONISHIR BANI + DATE (DailyWisdomCard)
- * 3. RUNNING PRAYER-TIME WIDGET (PrayerTimesCard)
+ * 2. MONISHIR BANI + DATE (DailyWisdomCard + 3-Calendar Columns)
+ * 3. RUNNING PRAYER-TIME WIDGET (PrayerTimesCard - LIVE DATA)
  * 4. HERO SIGNBOARD / BANNER (HomeBannerPager)
  * 5. চলমান অফার (RunningOffersCarousel)
- * 6. PRINTING SERVICES (Our Services)
+ * 6. PRINTING SERVICES (2x2 Large Branded Cards)
  * 7. POPULAR PRODUCTS (Popular Products)
- * 8. BOTTOM NAVIGATION (CustomerBottomNavigation)
+ * 8. BOTTOM NAVIGATION (CustomerBottomNavigation - Home Only)
  */
 @Composable
 fun SucharuWallScreen(
@@ -99,7 +99,7 @@ fun SucharuWallScreen(
             topBar = {
                 HomeHeader(
                     principal = principal,
-                    notificationCount = 3,
+                    notificationCount = 0,
                     onProfileClick = {
                         if (principal != null) {
                             onNavigateToDestination(AppDestination.Customer.Profile)
@@ -191,12 +191,12 @@ fun SucharuWallScreen(
                         contentPadding = PaddingValues(12.dp),
                         verticalArrangement = Arrangement.spacedBy(14.dp)
                     ) {
-                        // ১. বাণী চিরন্তন + কারেন্ট ডেট (DailyWisdomCard)
+                        // ১. বাণী চিরন্তন + কারেন্ট ৩-ক্যালেন্ডার ডেট (DailyWisdomCard)
                         item {
                             DailyWisdomCard()
                         }
 
-                        // ২. রানিং প্লেয়ার নামাজের সময়সূচি (PrayerTimesCard - IMMEDIATELY AFTER WISDOM)
+                        // ২. রানিং প্লেয়ার নামাজের সময়সূচি (PrayerTimesCard - LIVE DATA DYNAMIC WAQT)
                         item {
                             PrayerTimesCard()
                         }
@@ -221,7 +221,7 @@ fun SucharuWallScreen(
                             }
                         }
 
-                        // ৫. আমাদের সেবা সমূহ (Printing Services Grid)
+                        // ৫. আমাদের সেবা সমূহ (2x2 Large Branded Printing Services Cards)
                         item {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -249,21 +249,7 @@ fun SucharuWallScreen(
                                 )
                             }
                             Spacer(modifier = Modifier.height(4.dp))
-                            val services = listOf(
-                                GridMenuItem("অফসেট", Icons.Default.Print, Color(0xFF1E293B), Color(0xFF38BDF8)) {
-                                    onNavigateToDestination(AppDestination.Public.ProductGallery("Offset", "অফসেট প্রিন্টিং"))
-                                },
-                                GridMenuItem("ডিজিটাল", Icons.Default.PrecisionManufacturing, Color(0xFF1E293B), Color(0xFFA855F7)) {
-                                    onNavigateToDestination(AppDestination.Public.ProductGallery("Digital", "ডিজিটাল প্রিন্ট"))
-                                },
-                                GridMenuItem("প্যাকেজিং", Icons.Default.Inventory, Color(0xFF1E293B), Color(0xFFF97316)) {
-                                    onNavigateToDestination(AppDestination.Public.ProductGallery("Packaging", "কাস্টম প্যাকেজিং"))
-                                },
-                                GridMenuItem("ব্যানার", Icons.Default.Star, Color(0xFF1E293B), Color(0xFF10B981)) {
-                                    onNavigateToDestination(AppDestination.Public.ProductGallery("Banner", "পিভিসি ব্যানার"))
-                                }
-                            )
-                            StandardGridRow(items = services)
+                            ServiceBrandedCardGrid(onNavigateToDestination = onNavigateToDestination)
                         }
 
                         // ৬. জনপ্রিয় পণ্যসমূহ (Popular Products Grid Rows)
@@ -339,6 +325,134 @@ fun SucharuWallScreen(
 }
 
 /**
+ * 2x2 Large Branded Printing Services Cards Grid.
+ */
+@Composable
+fun ServiceBrandedCardGrid(
+    onNavigateToDestination: (destination: AppDestination) -> Unit
+) {
+    val services = listOf(
+        ServiceBrandedItem(
+            title = "অফসেট প্রিন্টিং",
+            subtitle = "কমার্শিয়াল বই, ক্যাটালগ ও ফ্লায়ার প্রিন্টিং",
+            icon = Icons.Default.Print,
+            bgColor = Color(0xFF1E3A8A),
+            accentColor = Color(0xFF38BDF8),
+            destination = AppDestination.Public.ProductGallery("Offset", "অফসেট প্রিন্টিং")
+        ),
+        ServiceBrandedItem(
+            title = "ডিজিটাল প্রিন্ট",
+            subtitle = "জরুরি সেম-ডে ফাস্ট প্রিন্টিং সমাধান",
+            icon = Icons.Default.PrecisionManufacturing,
+            bgColor = Color(0xFF581C87),
+            accentColor = Color(0xFFC084FC),
+            destination = AppDestination.Public.ProductGallery("Digital", "ডিজিটাল প্রিন্ট")
+        ),
+        ServiceBrandedItem(
+            title = "কাস্টম প্যাকেজিং",
+            subtitle = "রিজিড বক্স, পেপার কার্টুন ও ডাই-কাট বক্স",
+            icon = Icons.Default.Inventory,
+            bgColor = Color(0xFF7C2D12),
+            accentColor = Color(0xFFFB923C),
+            destination = AppDestination.Public.ProductGallery("Packaging", "কাস্টম প্যাকেজিং")
+        ),
+        ServiceBrandedItem(
+            title = "পিভিসি ব্যানার",
+            subtitle = "বড় সাইনবোর্ড, এক্স-স্ট্যান্ড ও ব্যানার",
+            icon = Icons.Default.Star,
+            bgColor = Color(0xFF064E3B),
+            accentColor = Color(0xFF34D399),
+            destination = AppDestination.Public.ProductGallery("Banner", "পিভিসি ব্যানার")
+        )
+    )
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            ServiceBrandedCard(item = services[0], onClick = { onNavigateToDestination(services[0].destination) }, modifier = Modifier.weight(1f))
+            ServiceBrandedCard(item = services[1], onClick = { onNavigateToDestination(services[1].destination) }, modifier = Modifier.weight(1f))
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            ServiceBrandedCard(item = services[2], onClick = { onNavigateToDestination(services[2].destination) }, modifier = Modifier.weight(1f))
+            ServiceBrandedCard(item = services[3], onClick = { onNavigateToDestination(services[3].destination) }, modifier = Modifier.weight(1f))
+        }
+    }
+}
+
+data class ServiceBrandedItem(
+    val title: String,
+    val subtitle: String,
+    val icon: ImageVector,
+    val bgColor: Color,
+    val accentColor: Color,
+    val destination: AppDestination
+)
+
+@Composable
+fun ServiceBrandedCard(
+    item: ServiceBrandedItem,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(130.dp)
+            .clickable { onClick() },
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = item.bgColor),
+        border = androidx.compose.foundation.BorderStroke(1.dp, item.accentColor.copy(alpha = 0.5f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(14.dp),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(42.dp)
+                    .background(item.accentColor.copy(alpha = 0.2f), RoundedCornerShape(10.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = item.icon,
+                    contentDescription = item.title,
+                    tint = item.accentColor,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+
+            Column {
+                Text(
+                    text = item.title,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = item.subtitle,
+                    fontSize = 10.sp,
+                    color = Color(0xFFCBD5E1),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+    }
+}
+
+/**
  * Grid menu item model for standard 4-column utility rows.
  */
 data class GridMenuItem(
@@ -364,7 +478,7 @@ fun StandardGridRow(items: List<GridMenuItem>) {
                     .weight(1f)
                     .height(90.dp)
                     .clickable { item.onClick() },
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(10.dp),
                 colors = CardDefaults.cardColors(containerColor = item.bgColor),
                 border = androidx.compose.foundation.BorderStroke(1.dp, item.iconColor.copy(alpha = 0.3f)),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
