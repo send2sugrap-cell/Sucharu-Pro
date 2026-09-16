@@ -39,9 +39,11 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 
 /**
- * Premium Live Prayer Times Utility Widget (নামাজের সময়সূচি).
- * Automatically highlights ONLY the current active Waqt based on astronomical local time calculations
- * and updates countdown continuously.
+ * Premium Live Prayer Times Utility Widget (Hanafi Madhhab Standard).
+ *
+ * Recomposed Portrait Layout:
+ * Top Row: Mosque Icon, Left-Aligned 3-Line Info ("এখন", Waqt Name, "সময় বাকি HH:MM:SS"), Schedule Button.
+ * Bottom Row: 5 Waqts Grid with larger/taller bold digits.
  */
 @Composable
 fun PrayerTimesCard(
@@ -75,131 +77,144 @@ fun PrayerTimesCard(
     )
 
     Card(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable { onCalendarClick() },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color(0xFF0B132B)),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF00B4D8).copy(alpha = 0.4f))
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+                .padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            // Left: Mosque Icon & Dynamic Current Waqt Highlight Box
+            // TOP SECTION: Left Info (Waqt & Countdown) & Right Schedule Action Button
             Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.weight(1.1f)
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(42.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(Color(0xFF00B4D8).copy(alpha = 0.2f)),
-                    contentAlignment = Alignment.Center
+                // LEFT: Mosque Icon & 3-Line Left-Aligned Info (NO WRAPPING)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Mosque,
-                        contentDescription = "Prayer Widget",
-                        tint = Color(0xFF38BDF8),
-                        modifier = Modifier.size(24.dp)
-                    )
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(Color(0xFF00B4D8).copy(alpha = 0.2f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Mosque,
+                            contentDescription = "Prayer Widget",
+                            tint = Color(0xFF38BDF8),
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(10.dp))
+
+                    Column(
+                        horizontalAlignment = Alignment.Start,
+                        verticalArrangement = Arrangement.spacedBy(1.dp)
+                    ) {
+                        // Line 1: "এখন"
+                        Text(
+                            text = "এখন",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = Color(0xFF94A3B8),
+                            maxLines = 1
+                        )
+                        // Line 2 (Larger Bold): Waqt Name
+                        Text(
+                            text = liveState.currentWaqtName,
+                            fontSize = 17.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color(0xFF10B981),
+                            maxLines = 1
+                        )
+                        // Line 3: "সময় বাকি 02:31:00" in English Bold Digits
+                        Text(
+                            text = "সময় বাকি ${liveState.remainingCountdownText}",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF38BDF8),
+                            maxLines = 1,
+                            softWrap = false
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.width(8.dp))
 
-                Column {
+                // RIGHT: Schedule Action Button
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color(0xFF0284C7).copy(alpha = 0.2f))
+                        .border(1.dp, Color(0xFF0284C7), RoundedCornerShape(8.dp))
+                        .clickable { onCalendarClick() }
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                    contentAlignment = Alignment.Center
+                ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = "এখন ",
-                            fontSize = 10.sp,
-                            color = Color(0xFF94A3B8)
+                        Icon(
+                            imageVector = Icons.Default.CalendarToday,
+                            contentDescription = null,
+                            tint = Color(0xFF38BDF8),
+                            modifier = Modifier.size(12.dp)
                         )
+                        Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = "${liveState.currentWaqtName} ${liveState.currentWaqtTimeFormatted}",
+                            text = "সময়সূচী >",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFF10B981)
+                            color = Color(0xFF38BDF8)
                         )
                     }
-                    Text(
-                        text = "পরবর্তী: ${liveState.nextWaqtName} ${liveState.nextWaqtTimeFormatted}",
-                        fontSize = 9.sp,
-                        color = Color(0xFFCBD5E1)
-                    )
-                    Text(
-                        text = "বাকি: ${liveState.remainingCountdownText}",
-                        fontSize = 9.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF38BDF8)
-                    )
                 }
             }
 
-            // Center: 5 Waqts Chips - ONLY CURRENT WAQT GETS GREEN HIGHLIGHT
+            // BOTTOM SECTION: 5 Waqts Grid (Full Width Portrait Layout with Larger/Taller Digits)
             Row(
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.weight(2f)
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 prayerTimes.forEach { (name, time) ->
                     val isCurrent = name == liveState.currentWaqtName
                     Box(
                         modifier = Modifier
                             .weight(1f)
-                            .clip(RoundedCornerShape(6.dp))
+                            .clip(RoundedCornerShape(8.dp))
                             .background(if (isCurrent) Color(0xFF047857) else Color(0xFF1E293B))
-                            .border(1.dp, if (isCurrent) Color(0xFF10B981) else Color(0xFF334155), RoundedCornerShape(6.dp))
-                            .padding(vertical = 4.dp, horizontal = 2.dp),
+                            .border(1.dp, if (isCurrent) Color(0xFF10B981) else Color(0xFF334155), RoundedCornerShape(8.dp))
+                            .padding(vertical = 8.dp, horizontal = 4.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
                                 text = name,
-                                fontSize = 9.sp,
+                                fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = if (isCurrent) Color.White else Color(0xFF94A3B8)
                             )
-                            Spacer(modifier = Modifier.height(1.dp))
+                            Spacer(modifier = Modifier.height(2.dp))
                             Text(
                                 text = time,
-                                fontSize = 8.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = if (isCurrent) Color.White else Color(0xFFCBD5E1)
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = if (isCurrent) Color.White else Color(0xFFE2E8F0),
+                                letterSpacing = 0.5.sp
                             )
                         }
                     }
-                }
-            }
-
-            Spacer(modifier = Modifier.width(6.dp))
-
-            // Right: Full Schedule Action Button
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(Color(0xFF0284C7).copy(alpha = 0.2f))
-                    .border(1.dp, Color(0xFF0284C7), RoundedCornerShape(8.dp))
-                    .clickable { onCalendarClick() }
-                    .padding(horizontal = 8.dp, vertical = 6.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.CalendarToday,
-                        contentDescription = null,
-                        tint = Color(0xFF38BDF8),
-                        modifier = Modifier.size(10.dp)
-                    )
-                    Spacer(modifier = Modifier.width(3.dp))
-                    Text(
-                        text = "সময়সূচী >",
-                        fontSize = 9.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF38BDF8)
-                    )
                 }
             }
         }

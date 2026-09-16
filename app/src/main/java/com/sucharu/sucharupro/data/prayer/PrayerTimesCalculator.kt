@@ -11,10 +11,11 @@ import kotlin.math.sin
 import kotlin.math.tan
 
 /**
- * Astronomical Prayer Time Calculation Engine.
+ * Astronomical Prayer Time Calculation Engine (Hanafi Madhhab Standard).
  *
  * Computes exact daily Islamic prayer times (Fajr, Dhuhr, Asr, Maghrib, Isha)
- * dynamically from solar declination, equation of time, date, latitude, and longitude.
+ * dynamically from solar declination, equation of time, date, latitude, and longitude
+ * according to the Hanafi School of Jurisprudence (Asr shadow factor = 2.0).
  *
  * NO HARDCODED CONSTANTS OR STATIC PRAYER STRINGS.
  */
@@ -52,7 +53,7 @@ data class LiveWaqtState(
 object PrayerTimesCalculator {
 
     /**
-     * Calculates astronomical prayer schedule for a given [date], [latitude], and [longitude].
+     * Calculates Hanafi astronomical prayer schedule for a given [date], [latitude], and [longitude].
      * Default coordinates: Dhaka (23.8103° N, 90.4125° E), UTC+6.
      */
     fun calculateSchedule(
@@ -93,9 +94,9 @@ object PrayerTimesCalculator {
         // Hour angle for Sunset/Sunrise (-0.833 degrees)
         val hSunset = hourAngle(-0.833)
 
-        // Asr angle calculation (Shafi'i shadow factor = 1)
+        // Hanafi Asr angle calculation (Hanafi shadow factor k = 2.0)
         val phiMinusDecl = kotlin.math.abs(latRad - decl)
-        val asrAngleRad = atan(1.0 / (1.0 + tan(phiMinusDecl)))
+        val asrAngleRad = atan(1.0 / (2.0 + tan(phiMinusDecl)))
         val asrAngleDeg = Math.toDegrees(asrAngleRad)
         val hAsr = hourAngle(asrAngleDeg)
 
@@ -157,7 +158,7 @@ object PrayerTimesCalculator {
         val countdownText = if (hours > 0) {
             String.format(Locale.US, "%02d:%02d:%02d", hours, mins, secs)
         } else {
-            String.format(Locale.US, "%02d:%02d", mins, secs)
+            String.format(Locale.US, "%02d:%02d:%02d", 0, mins, secs)
         }
 
         return LiveWaqtState(

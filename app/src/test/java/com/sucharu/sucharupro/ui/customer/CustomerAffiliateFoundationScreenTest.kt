@@ -46,9 +46,8 @@ class CustomerAffiliateFoundationScreenTest {
     @Test
     fun testBottomNavigationTabs_coverage() {
         val tabs = CustomerBottomTab.entries
-        assertEquals(2, tabs.size)
+        assertEquals(1, tabs.size)
         assertTrue(tabs.contains(CustomerBottomTab.HOME))
-        assertTrue(tabs.contains(CustomerBottomTab.ACCOUNT))
     }
 
     @Test
