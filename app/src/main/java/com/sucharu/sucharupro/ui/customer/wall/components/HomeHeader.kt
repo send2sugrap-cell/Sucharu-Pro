@@ -5,7 +5,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,7 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
@@ -34,13 +32,17 @@ import com.sucharu.sucharupro.data.api.model.AuthenticatedPrincipal
 
 /**
  * Premium Branded Top Header Bar for Sucharu Graphics & Printing.
- * Matches reference design image with circular logo badge, exact title, notifications, and profile avatar.
+ *
+ * LEFT: Image-configurable logo badge and single-line brand title "Sucharu Graphics & Printing"
+ * RIGHT: Notification Bell and Profile Avatar
  */
 @Composable
 fun HomeHeader(
     principal: AuthenticatedPrincipal?,
     modifier: Modifier = Modifier,
-    notificationCount: Int = 3,
+    notificationCount: Int = 0,
+    logoDrawableRes: Int? = null,
+    avatarUrl: String? = null,
     onProfileClick: () -> Unit = {},
     onNotificationClick: () -> Unit = {}
 ) {
@@ -56,56 +58,39 @@ fun HomeHeader(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // LEFT: Circular Logo Badge & Exact Brand Title
+            // LEFT: Image-Configurable Logo Badge & Single-Line Brand Title
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.clickable { onProfileClick() }
             ) {
                 Box(
                     modifier = Modifier
-                        .size(46.dp)
+                        .size(44.dp)
                         .clip(CircleShape)
                         .background(Color(0xFF00B4D8))
                         .border(1.5.dp, Color(0xFF9ECAFF), CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(
-                            imageVector = Icons.Default.Print,
-                            contentDescription = "Sucharu Logo",
-                            tint = Color.White,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Text(
-                            text = "সুচারু",
-                            fontSize = 8.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
-                        )
-                    }
+                    Icon(
+                        imageVector = Icons.Default.Print,
+                        contentDescription = "Sucharu Logo",
+                        tint = Color.White,
+                        modifier = Modifier.size(22.dp)
+                    )
                 }
 
                 Spacer(modifier = Modifier.width(12.dp))
 
-                Column {
-                    Text(
-                        text = "SUCHARU GRAPHICS",
-                        fontSize = 17.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = Color.White,
-                        letterSpacing = 1.sp
-                    )
-                    Text(
-                        text = "A N D   P R I N T I N G",
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFF9ECAFF),
-                        letterSpacing = 2.sp
-                    )
-                }
+                Text(
+                    text = "Sucharu Graphics & Printing",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    letterSpacing = 0.5.sp
+                )
             }
 
-            // RIGHT: Actions (Notification & Profile)
+            // RIGHT: Actions (Notification & Profile Avatar)
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box {
                     IconButton(
