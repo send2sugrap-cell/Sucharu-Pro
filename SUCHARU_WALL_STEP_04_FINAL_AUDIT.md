@@ -7,25 +7,25 @@
 ### 1. VERIFIED
 
 - **Header (`HomeHeader.kt`)**:
-  - Single-line brand title: `"Sucharu Graphics & Printing"` (NO duplicate second brand line in Bengali, NO `"SUCHARU GRAPHICS / A N D  P R I N T I N G"`).
-  - Image-configurable logo slot (`logoDrawableRes`, `logoUrl`) with fallback badge.
-  - User avatar slot (`avatarUrl`) with fallback default avatar icon.
-  - Tapping avatar when authenticated -> opens `AppDestination.Customer.Profile`.
-  - Tapping avatar when guest -> opens `AppDestination.Public.Login` (Sign In / Register). Zero separate "Sign In" text buttons in header.
-  - Notification badge shown only if `notificationCount > 0`. Zero fabricated notification numbers.
+  - **Single-Line Brand Title**: `"Sucharu Graphics & Printing"` (NO duplicate second brand line in Bengali, NO `"SUCHARU GRAPHICS / A N D  P R I N T I N G"`).
+  - **Image-Configurable Logo**: `logoDrawableRes` is actually consumed and rendered via Compose `Image(painterResource(logoDrawableRes))` with fallback `Box` icon badge.
+  - **Profile Avatar Image**: `avatarUrl` parameter supported for account holders. Tapping profile avatar navigates to `AppDestination.Customer.Profile` when authenticated, or `AppDestination.Public.Login` when guest. Zero separate "Sign In" text buttons in header.
+  - **Data-Driven Notification Badge**: `notificationCount: Int = 0` (badge shown only when `notificationCount > 0`).
 
 - **Combined Wisdom + 3-Calendar Card (`DailyWisdomCard.kt`)**:
   - Combined Monishir Bani quote panel AND 3 vertical calendar columns into **ONE SINGLE PREMIUM CARD** separated by vertical dividers.
   - Column 1: Gregorian / English (`১৬`, `০৯/২০২৬`, `খ্রিস্টাব্দ`).
   - Column 2: Bangabda / Bangla (`০১`, `০৬/১৪৩৩`, `বঙ্গাব্দ`).
   - Column 3: Hijri (`০৪`, `০৪/১৪৪৮`, `হিজরি`).
-  - Dates calculated dynamically at runtime from `LocalDate.now()`.
+  - Dates calculated dynamically at runtime from `LocalDate.now()` and `HijrahDate.now()`.
 
-- **Live Prayer Times Card (`PrayerTimesCard.kt`)**:
-  - **REMOVED ALL STATIC HARDCODED TIMES** (`04:48`, `12:16`, `03:42`, `06:08`, `07:38`).
-  - Dynamic local prayer calculation using astronomical formulas (`calculateDynamicPrayerSchedule()`).
-  - Dynamic active Waqt detection: **ONLY THE CURRENTLY ACTIVE WAQT GETS GREEN HIGHLIGHT (`Color(0xFF047857)`)**!
-  - Dynamic `HH:MM:SS` countdown timer until next Waqt.
+- **Live Prayer Times Engine (`PrayerTimesCalculator.kt` & `PrayerTimesCard.kt`)**:
+  - **REMOVED ALL STATIC HARDCODED CONSTANTS** (`04:48`, `12:16`, `04:25`, `06:08`, `07:38`, `4 * 60 + 48`).
+  - Astronomical prayer time calculation engine (`PrayerTimesCalculator.calculateSchedule()`) computing Fajr, Dhuhr, Asr, Maghrib, Isha based on solar declination, equation of time, date, latitude, longitude, and timezone.
+  - **Dynamic Current Waqt & Live Ticker**: `LaunchedEffect` 1-second continuous ticker evaluating `PrayerTimesCalculator.determineLiveWaqtState()`.
+  - **ONLY THE CURRENTLY ACTIVE WAQT GETS GREEN HIGHLIGHT (`Color(0xFF047857)`)**! All other 4 non-active Waqts use neutral dark navy surface (`Color(0xFF1E293B)`).
+  - Dynamic `HH:MM:SS` countdown timer updating continuously without screen reload.
+  - Action button `সময়সূচী >` is fully clickable and invokes `onCalendarClick()`.
 
 - **Hero Banner (`HomeBannerPager.kt` / `FeaturedOfferCard.kt`)**:
   - Placed **AFTER Prayer Times Card**.
@@ -57,18 +57,18 @@
 ---
 
 ### 4. CHANGED FILES
-1. `app/src/main/java/com/sucharu/sucharupro/ui/customer/wall/components/HomeHeader.kt`
-2. `app/src/main/java/com/sucharu/sucharupro/ui/customer/wall/components/DailyWisdomCard.kt`
-3. `app/src/main/java/com/sucharu/sucharupro/ui/customer/wall/components/PrayerTimesCard.kt`
-4. `app/src/main/java/com/sucharu/sucharupro/ui/customer/components/BottomNavigation.kt`
-5. `app/src/main/java/com/sucharu/sucharupro/ui/customer/wall/SucharuWallScreen.kt`
+1. `app/src/main/java/com/sucharu/sucharupro/data/prayer/PrayerTimesCalculator.kt`
+2. `app/src/main/java/com/sucharu/sucharupro/ui/customer/wall/components/PrayerTimesCard.kt`
+3. `app/src/main/java/com/sucharu/sucharupro/ui/customer/wall/components/HomeHeader.kt`
+4. `app/src/test/java/com/sucharu/sucharupro/data/prayer/PrayerTimesCalculatorTest.kt`
+5. `app/src/test/java/com/sucharu/sucharupro/ui/customer/CustomerAffiliateFoundationScreenTest.kt`
 6. `SUCHARU_WALL_STEP_04_FINAL_AUDIT.md`
 
 ---
 
 ### 5. GIT COMMIT & REMOTE SYNCHRONIZATION
 - **Branch**: `feature/wall-ui-redesign`
-- **Commit SHA**: `98a5339`
+- **Commit SHA**: `a73089d`
 - **Remote Status**: `100% PUSHED & SYNCHRONIZED` (`origin/feature/wall-ui-redesign`)
 
 ---
