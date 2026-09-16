@@ -113,6 +113,20 @@ fun SucharuGraphicsAppShell(
         sessionManager.restoreSession()
     }
 
+    LaunchedEffect(currentDestination) {
+        when (currentDestination) {
+            is AppDestination.Public.Login -> activeAuthScreenOverride = "login"
+            is AppDestination.Public.Register -> activeAuthScreenOverride = "register"
+            is AppDestination.Public.ForgotPassword -> activeAuthScreenOverride = "forgot_password"
+            is AppDestination.Public.ResetPassword -> activeAuthScreenOverride = "reset_password"
+            else -> {
+                if (currentDestination is AppDestination.Public.Home) {
+                    activeAuthScreenOverride = null
+                }
+            }
+        }
+    }
+
     LaunchedEffect(entryState) {
         when (val state = entryState) {
             is AppEntryState.Authenticated -> {
