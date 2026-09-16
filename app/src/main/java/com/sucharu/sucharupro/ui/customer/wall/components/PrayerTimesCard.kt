@@ -2,6 +2,7 @@ package com.sucharu.sucharupro.ui.customer.wall.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,7 +13,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarToday
@@ -22,7 +22,11 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -30,40 +34,44 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import java.time.LocalTime
-
-/**
- * Dynamic Prayer Schedule Data Model.
- */
-data class PrayerTimeSchedule(
-    val fajr: String = "04:48",
-    val dhuhr: String = "12:16",
-    val asr: String = "04:25",
-    val maghrib: String = "06:08",
-    val isha: String = "07:38",
-    val currentWaqtName: String = "যোহর",
-    val currentWaqtTime: String = "12:16 PM",
-    val nextWaqtName: String = "আসর",
-    val nextWaqtTime: String = "04:25 PM",
-    val remainingCountdownText: String = "01:24:00"
-)
+import com.sucharu.sucharupro.data.prayer.PrayerTimesCalculator
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 
 /**
  * Premium Live Prayer Times Utility Widget (নামাজের সময়সূচি).
- * Automatically highlights ONLY the current active Waqt based on local time.
+ * Automatically highlights ONLY the current active Waqt based on astronomical local time calculations
+ * and updates countdown continuously.
  */
 @Composable
 fun PrayerTimesCard(
     modifier: Modifier = Modifier,
-    schedule: PrayerTimeSchedule = remember { calculateDynamicPrayerSchedule() },
+    latitude: Double = 23.8103,
+    longitude: Double = 90.4125,
     onCalendarClick: () -> Unit = {}
 ) {
+    val schedule = remember(latitude, longitude) {
+        PrayerTimesCalculator.calculateSchedule(latitude = latitude, longitude = longitude)
+    }
+
+    var liveState by remember(schedule) {
+        mutableStateOf(PrayerTimesCalculator.determineLiveWaqtState(schedule))
+    }
+
+    // Continuous 1-second live ticker
+    LaunchedEffect(schedule) {
+        while (isActive) {
+            liveState = PrayerTimesCalculator.determineLiveWaqtState(schedule)
+            delay(1000L)
+        }
+    }
+
     val prayerTimes = listOf(
-        "ফজর" to schedule.fajr,
-        "যোহর" to schedule.dhuhr,
-        "আসর" to schedule.asr,
-        "মাগরিব" to schedule.maghrib,
-        "এশা" to schedule.isha
+        "ফজর" to schedule.fajrFormatted,
+        "যোহর" to schedule.dhuhrFormatted,
+        "আসর" to schedule.asrFormatted,
+        "মাগরিব" to schedule.maghribFormatted,
+        "এশা" to schedule.ishaFormatted
     )
 
     Card(
@@ -110,16 +118,22 @@ fun PrayerTimesCard(
                             color = Color(0xFF94A3B8)
                         )
                         Text(
-                            text = "${schedule.currentWaqtName} ${schedule.currentWaqtTime}",
+                            text = "${liveState.currentWaqtName} ${liveState.currentWaqtTimeFormatted}",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFF10B981)
                         )
                     }
                     Text(
-                        text = "পরবর্তী: ${schedule.nextWaqtName} ${schedule.nextWaqtTime}",
+                        text = "পরবর্তী: ${liveState.nextWaqtName} ${liveState.nextWaqtTimeFormatted}",
                         fontSize = 9.sp,
                         color = Color(0xFFCBD5E1)
+                    )
+                    Text(
+                        text = "বাকি: ${liveState.remainingCountdownText}",
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF38BDF8)
                     )
                 }
             }
@@ -131,7 +145,7 @@ fun PrayerTimesCard(
                 modifier = Modifier.weight(2f)
             ) {
                 prayerTimes.forEach { (name, time) ->
-                    val isCurrent = name == schedule.currentWaqtName
+                    val isCurrent = name == liveState.currentWaqtName
                     Box(
                         modifier = Modifier
                             .weight(1f)
@@ -162,12 +176,13 @@ fun PrayerTimesCard(
 
             Spacer(modifier = Modifier.width(6.dp))
 
-            // Right: Full Schedule Button
+            // Right: Full Schedule Action Button
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(8.dp))
                     .background(Color(0xFF0284C7).copy(alpha = 0.2f))
                     .border(1.dp, Color(0xFF0284C7), RoundedCornerShape(8.dp))
+                    .clickable { onCalendarClick() }
                     .padding(horizontal = 8.dp, vertical = 6.dp),
                 contentAlignment = Alignment.Center
             ) {
@@ -190,52 +205,3 @@ fun PrayerTimesCard(
         }
     }
 }
-
-/**
- * Dynamically computes local prayer schedule and active Waqt for Dhaka (23.8103° N, 90.4125° E).
- */
-fun calculateDynamicPrayerSchedule(): PrayerTimeSchedule {
-    val now = LocalTime.now()
-    val currentMinutes = now.hour * 60 + now.minute
-
-    val fajrMin = 4 * 60 + 48     // 04:48 AM
-    val dhuhrMin = 12 * 60 + 16   // 12:16 PM
-    val asrMin = 16 * 60 + 25     // 04:25 PM
-    val maghribMin = 18 * 60 + 8  // 06:08 PM
-    val ishaMin = 19 * 60 + 38    // 07:38 PM
-
-    val (currentName, currentTimeStr, nextName, nextTimeStr, nextMin) = when {
-        currentMinutes in 0..<fajrMin -> PrayerWaqtTuple("এশা", "07:38 PM", "ফজর", "04:48 AM", fajrMin)
-        currentMinutes in fajrMin..<dhuhrMin -> PrayerWaqtTuple("ফজর", "04:48 AM", "যোহর", "12:16 PM", dhuhrMin)
-        currentMinutes in dhuhrMin..<asrMin -> PrayerWaqtTuple("যোহর", "12:16 PM", "আসর", "04:25 PM", asrMin)
-        currentMinutes in asrMin..<maghribMin -> PrayerWaqtTuple("আসর", "04:25 PM", "মাগরিব", "06:08 PM", maghribMin)
-        currentMinutes in maghribMin..<ishaMin -> PrayerWaqtTuple("মাগরিব", "06:08 PM", "এশা", "07:38 PM", ishaMin)
-        else -> PrayerWaqtTuple("এশা", "07:38 PM", "ফজর", "04:48 AM", fajrMin + 24 * 60)
-    }
-
-    val remainingMin = if (nextMin >= currentMinutes) nextMin - currentMinutes else (nextMin + 24 * 60) - currentMinutes
-    val remHours = remainingMin / 60
-    val remMins = remainingMin % 60
-    val countdownStr = String.format(java.util.Locale.US, "%02d:%02d:00", remHours, remMins)
-
-    return PrayerTimeSchedule(
-        fajr = "04:48",
-        dhuhr = "12:16",
-        asr = "04:25",
-        maghrib = "06:08",
-        isha = "07:38",
-        currentWaqtName = currentName,
-        currentWaqtTime = currentTimeStr,
-        nextWaqtName = nextName,
-        nextWaqtTime = nextTimeStr,
-        remainingCountdownText = countdownStr
-    )
-}
-
-private data class PrayerWaqtTuple(
-    val currentName: String,
-    val currentTimeStr: String,
-    val nextName: String,
-    val nextTimeStr: String,
-    val nextMin: Int
-)
