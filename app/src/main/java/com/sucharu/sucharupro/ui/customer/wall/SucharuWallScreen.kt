@@ -65,16 +65,16 @@ import com.sucharu.sucharupro.ui.customer.wall.components.RunningOffersCarousel
 import com.sucharu.sucharupro.ui.navigation.AppDestination
 
 /**
- * Sucharu Pro Redesigned Home Wall (Step 02 Locked Composition Order).
+ * Sucharu Normal Public Wall (Final Locked Composition Order & Design).
  *
- * EXACT SECTION ORDER:
+ * FINAL LOCKED SECTION ORDER:
  * 1. HEADER (HomeHeader)
- * 2. MONISHIR BANI + CURRENT DATE (DailyWisdomCard)
- * 3. HERO BANNER SLIDER (HomeBannerPager)
- * 4. RUNNING PRAYER-TIME WIDGET (PrayerTimesCard)
- * 5. OFFERS SLIDER (RunningOffersCarousel)
- * 6. PRINTING SERVICES (4-Column Grid)
- * 7. POPULAR PRODUCTS (4-Column Grid Rows)
+ * 2. MONISHIR BANI + DATE (DailyWisdomCard)
+ * 3. RUNNING PRAYER-TIME WIDGET (PrayerTimesCard)
+ * 4. HERO SIGNBOARD / BANNER (HomeBannerPager)
+ * 5. চলমান অফার (RunningOffersCarousel)
+ * 6. PRINTING SERVICES (Our Services)
+ * 7. POPULAR PRODUCTS (Popular Products)
  * 8. BOTTOM NAVIGATION (CustomerBottomNavigation)
  */
 @Composable
@@ -92,15 +92,14 @@ fun SucharuWallScreen(
         viewModel.loadWallFeed(principal)
     }
 
-    // Light/Neutral Modern Utility Theme
     CustomerTheme(colors = CustomerColors.light()) {
         Scaffold(
             modifier = modifier.fillMaxSize(),
-            containerColor = Color(0xFFF6F8FA),
+            containerColor = Color(0xFF0B132B),
             topBar = {
                 HomeHeader(
                     principal = principal,
-                    notificationCount = 0,
+                    notificationCount = 3,
                     onProfileClick = {
                         if (principal != null) {
                             onNavigateToDestination(AppDestination.Customer.Profile)
@@ -190,14 +189,19 @@ fun SucharuWallScreen(
                             .fillMaxSize()
                             .padding(innerPadding),
                         contentPadding = PaddingValues(12.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                        verticalArrangement = Arrangement.spacedBy(14.dp)
                     ) {
-                        // ১. বাণী চিরন্তন (Daily Wisdom Card + Current Date - Full Width)
+                        // ১. বাণী চিরন্তন + কারেন্ট ডেট (DailyWisdomCard)
                         item {
                             DailyWisdomCard()
                         }
 
-                        // ২. হিরো ব্যানার স্লাইডার (Hero Banner Pager - Full Width below Wisdom)
+                        // ২. রানিং প্লেয়ার নামাজের সময়সূচি (PrayerTimesCard - IMMEDIATELY AFTER WISDOM)
+                        item {
+                            PrayerTimesCard()
+                        }
+
+                        // ৩. হিরো ব্যানার স্লাইডার (Hero Banner Pager - IMMEDIATELY AFTER PRAYER)
                         if (feed.offers.isNotEmpty()) {
                             item {
                                 HomeBannerPager(
@@ -207,78 +211,114 @@ fun SucharuWallScreen(
                             }
                         }
 
-                        // ৩. রানিং প্লেয়ার নামাজের সময়সূচি (PrayerTimesCard - Dedicated Widget)
-                        item {
-                            PrayerTimesCard()
+                        // ৪. চলমান অফার (Running Offers Carousel)
+                        if (feed.offers.isNotEmpty()) {
+                            item {
+                                RunningOffersCarousel(
+                                    offers = feed.offers,
+                                    onOfferClick = { onNavigateToDestination(AppDestination.Customer.Quotations) }
+                                )
+                            }
                         }
 
-                        // ৪. চলমান অফার সমূহ (Running Offers Carousel)
+                        // ৫. আমাদের সেবা সমূহ (Printing Services Grid)
                         item {
-                            RunningOffersCarousel(
-                                onOfferClick = { onNavigateToDestination(AppDestination.Customer.Quotations) }
-                            )
-                        }
-
-                        // ৫. প্রিন্টিং সার্ভিস (৪ কলাম গ্রিড)
-                        item {
-                            Text(
-                                text = "প্রিন্টিং সার্ভিস",
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF263238),
-                                modifier = Modifier.padding(bottom = 6.dp)
-                            )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(text = "👤", fontSize = 16.sp)
+                                    Spacer(modifier = Modifier.padding(horizontal = 3.dp))
+                                    Text(
+                                        text = "আমাদের সেবা সমূহ",
+                                        fontSize = 15.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White
+                                    )
+                                }
+                                Text(
+                                    text = "সব দেখুন >",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF38BDF8),
+                                    modifier = Modifier.clickable {
+                                        onNavigateToDestination(AppDestination.Public.PrintingServices)
+                                    }
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
                             val services = listOf(
-                                GridMenuItem("অফসেট", Icons.Default.Print, Color(0xFFE0E7FF), Color(0xFF1E40AF)) {
+                                GridMenuItem("অফসেট", Icons.Default.Print, Color(0xFF1E293B), Color(0xFF38BDF8)) {
                                     onNavigateToDestination(AppDestination.Public.ProductGallery("Offset", "অফসেট প্রিন্টিং"))
                                 },
-                                GridMenuItem("ডিজিটাল", Icons.Default.PrecisionManufacturing, Color(0xFFF3E8FF), Color(0xFF6B21A8)) {
+                                GridMenuItem("ডিজিটাল", Icons.Default.PrecisionManufacturing, Color(0xFF1E293B), Color(0xFFA855F7)) {
                                     onNavigateToDestination(AppDestination.Public.ProductGallery("Digital", "ডিজিটাল প্রিন্ট"))
                                 },
-                                GridMenuItem("প্যাকেজিং", Icons.Default.Inventory, Color(0xFFFFEDD5), Color(0xFFC2410C)) {
+                                GridMenuItem("প্যাকেজিং", Icons.Default.Inventory, Color(0xFF1E293B), Color(0xFFF97316)) {
                                     onNavigateToDestination(AppDestination.Public.ProductGallery("Packaging", "কাস্টম প্যাকেজিং"))
                                 },
-                                GridMenuItem("ব্যানার", Icons.Default.Star, Color(0xFFD1FAE5), Color(0xFF047857)) {
+                                GridMenuItem("ব্যানার", Icons.Default.Star, Color(0xFF1E293B), Color(0xFF10B981)) {
                                     onNavigateToDestination(AppDestination.Public.ProductGallery("Banner", "পিভিসি ব্যানার"))
                                 }
                             )
                             StandardGridRow(items = services)
                         }
 
-                        // ৬. জনপ্রিয় প্রোডাক্টস (দুই সারিতে ৪টি করে কার্ড)
+                        // ৬. জনপ্রিয় পণ্যসমূহ (Popular Products Grid Rows)
                         item {
-                            Text(
-                                text = "জনপ্রিয় প্রোডাক্টস",
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF263238),
-                                modifier = Modifier.padding(bottom = 6.dp)
-                            )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(text = "⭐", fontSize = 16.sp)
+                                    Spacer(modifier = Modifier.padding(horizontal = 3.dp))
+                                    Text(
+                                        text = "জনপ্রিয় পণ্যসমূহ",
+                                        fontSize = 15.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White
+                                    )
+                                }
+                                Text(
+                                    text = "সব দেখুন >",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF38BDF8),
+                                    modifier = Modifier.clickable {
+                                        onNavigateToDestination(AppDestination.Public.Products)
+                                    }
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
                             val productsRow1 = listOf(
-                                GridMenuItem("ভিজিটিং কার্ড", Icons.Default.Badge, Color(0xFFE0F7FA), Color(0xFF00838F)) {
+                                GridMenuItem("ভিজিটিং কার্ড", Icons.Default.Badge, Color(0xFF1E293B), Color(0xFF38BDF8)) {
                                     onNavigateToDestination(AppDestination.Public.ProductGallery("Card", "ভিজিটিং কার্ড"))
                                 },
-                                GridMenuItem("ব্রোশিওর", Icons.Default.Book, Color(0xFFFBE9E7), Color(0xFFD84315)) {
+                                GridMenuItem("ব্রোশিওর", Icons.Default.Book, Color(0xFF1E293B), Color(0xFFF97316)) {
                                     onNavigateToDestination(AppDestination.Public.ProductGallery("Brochure", "ব্রোশিওর ও ফ্লায়ার"))
                                 },
-                                GridMenuItem("রিজিড বক্স", Icons.Default.Archive, Color(0xFFEFEBE9), Color(0xFF4E342E)) {
+                                GridMenuItem("রিজিড বক্স", Icons.Default.Archive, Color(0xFF1E293B), Color(0xFFEAB308)) {
                                     onNavigateToDestination(AppDestination.Public.ProductGallery("RigidBox", "রিজিড বক্স"))
                                 },
-                                GridMenuItem("ট্যাগ / লেবেল", Icons.Default.Sell, Color(0xFFEDE7F6), Color(0xFF512DA8)) {
+                                GridMenuItem("ট্যাগ / লেবেল", Icons.Default.Sell, Color(0xFF1E293B), Color(0xFFA855F7)) {
                                     onNavigateToDestination(AppDestination.Public.ProductGallery("Tag", "ট্যাগ ও লেবেল"))
                                 }
                             )
                             val productsRow2 = listOf(
-                                GridMenuItem("চালান বই", Icons.Default.Receipt, Color(0xFFE8EAF6), Color(0xFF283593)) {
+                                GridMenuItem("চালান বই", Icons.Default.Receipt, Color(0xFF1E293B), Color(0xFF3B82F6)) {
                                     onNavigateToDestination(AppDestination.Public.ProductGallery("Challan", "চালান ও ক্যাশ মেমো"))
                                 },
-                                GridMenuItem("৩ডি লেটার", Icons.Default.Build, Color(0xFFFFF8E1), Color(0xFFF57F17)) {
+                                GridMenuItem("৩ডি লেটার", Icons.Default.Build, Color(0xFF1E293B), Color(0xFFF59E0B)) {
                                     onNavigateToDestination(AppDestination.Public.ProductGallery("3D", "৩ডি সাইন লেটার"))
                                 },
-                                GridMenuItem("স্টিকার", Icons.Default.ThumbUp, Color(0xFFF1F8E9), Color(0xFF33691E)) {
+                                GridMenuItem("স্টিকার", Icons.Default.ThumbUp, Color(0xFF1E293B), Color(0xFF10B981)) {
                                     onNavigateToDestination(AppDestination.Public.ProductGallery("Sticker", "ডাই-কাট স্টিকার"))
                                 },
-                                GridMenuItem("অন্যান্য", Icons.Default.Category, Color(0xFFECEFF1), Color(0xFF455A64)) {
+                                GridMenuItem("অন্যান্য", Icons.Default.Category, Color(0xFF1E293B), Color(0xFF94A3B8)) {
                                     onNavigateToDestination(AppDestination.Public.ProductGallery("Others", "অন্যান্য সামগ্রী"))
                                 }
                             )
@@ -324,9 +364,10 @@ fun StandardGridRow(items: List<GridMenuItem>) {
                     .weight(1f)
                     .height(90.dp)
                     .clickable { item.onClick() },
-                shape = RoundedCornerShape(10.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = item.bgColor),
+                border = androidx.compose.foundation.BorderStroke(1.dp, item.iconColor.copy(alpha = 0.3f)),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 Column(
                     modifier = Modifier
@@ -338,7 +379,7 @@ fun StandardGridRow(items: List<GridMenuItem>) {
                     Box(
                         modifier = Modifier
                             .size(42.dp)
-                            .background(item.bgColor, RoundedCornerShape(10.dp)),
+                            .background(item.iconColor.copy(alpha = 0.15f), RoundedCornerShape(10.dp)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
@@ -353,7 +394,7 @@ fun StandardGridRow(items: List<GridMenuItem>) {
                         text = item.title,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Medium,
-                        color = Color(0xFF263238),
+                        color = Color.White,
                         textAlign = TextAlign.Center,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis

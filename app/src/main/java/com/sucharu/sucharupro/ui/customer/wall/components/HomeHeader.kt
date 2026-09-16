@@ -33,26 +33,21 @@ import androidx.compose.ui.unit.sp
 import com.sucharu.sucharupro.data.api.model.AuthenticatedPrincipal
 
 /**
- * Premium Ink Navy Top Header Bar for Front-Facing Home / Sucharu Wall.
- *
- * LEFT: Sucharu Graphics logo icon and stacked title/subtitle
- * LINE 1: "সুচারু গ্রাফিক্স" (Bold)
- * LINE 2: "এন্ড প্রিন্টিং" (Subtle subtitle)
- * RIGHT: Notification Bell and Profile Avatar
+ * Premium Branded Top Header Bar for Sucharu Graphics & Printing.
+ * Matches reference design image with circular logo badge, exact title, notifications, and profile avatar.
  */
 @Composable
 fun HomeHeader(
     principal: AuthenticatedPrincipal?,
     modifier: Modifier = Modifier,
-    notificationCount: Int = 0,
+    notificationCount: Int = 3,
     onProfileClick: () -> Unit = {},
     onNotificationClick: () -> Unit = {}
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        color = Color(0xFF0F172A),
-        tonalElevation = 2.dp,
-        shadowElevation = 2.dp
+        color = Color(0xFF0B132B),
+        shadowElevation = 4.dp
     ) {
         Row(
             modifier = Modifier
@@ -61,42 +56,51 @@ fun HomeHeader(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // LEFT: Company Logo & Stacked Title Layout
+            // LEFT: Circular Logo Badge & Exact Brand Title
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.clickable { onProfileClick() }
             ) {
                 Box(
                     modifier = Modifier
-                        .size(42.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(Color(0xFF0284C7))
-                        .border(1.dp, Color(0xFF38BDF8), RoundedCornerShape(12.dp)),
+                        .size(46.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFF00B4D8))
+                        .border(1.5.dp, Color(0xFF9ECAFF), CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Print,
-                        contentDescription = "Sucharu Graphics Logo",
-                        tint = Color.White,
-                        modifier = Modifier.size(24.dp)
-                    )
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                            imageVector = Icons.Default.Print,
+                            contentDescription = "Sucharu Logo",
+                            tint = Color.White,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Text(
+                            text = "সুচারু",
+                            fontSize = 8.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.width(12.dp))
 
                 Column {
                     Text(
-                        text = "সুচারু গ্রাফিক্স",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
+                        text = "SUCHARU GRAPHICS",
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.ExtraBold,
                         color = Color.White,
-                        letterSpacing = 0.2.sp
+                        letterSpacing = 1.sp
                     )
                     Text(
-                        text = "এন্ড প্রিন্টিং",
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = Color(0xFF38BDF8)
+                        text = "A N D   P R I N T I N G",
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFF9ECAFF),
+                        letterSpacing = 2.sp
                     )
                 }
             }
@@ -106,39 +110,49 @@ fun HomeHeader(
                 Box {
                     IconButton(
                         onClick = onNotificationClick,
-                        modifier = Modifier.size(40.dp)
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFF1C2541))
                     ) {
                         Icon(
                             imageVector = Icons.Default.Notifications,
                             contentDescription = "Notifications",
-                            tint = Color.White
+                            tint = Color(0xFF9ECAFF)
                         )
                     }
                     if (notificationCount > 0) {
                         Box(
                             modifier = Modifier
                                 .align(Alignment.TopEnd)
-                                .padding(top = 4.dp, end = 4.dp)
-                                .size(8.dp)
+                                .size(16.dp)
                                 .clip(CircleShape)
-                                .background(Color(0xFFEF4444))
-                        )
+                                .background(Color(0xFFEF4444)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "$notificationCount",
+                                color = Color.White,
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
                 }
 
-                Spacer(modifier = Modifier.width(4.dp))
+                Spacer(modifier = Modifier.width(8.dp))
 
                 IconButton(
                     onClick = onProfileClick,
                     modifier = Modifier
                         .size(40.dp)
                         .clip(CircleShape)
-                        .background(Color(0xFF1E293B))
+                        .background(Color(0xFF1C2541))
                 ) {
                     Icon(
                         imageVector = Icons.Default.Person,
                         contentDescription = "User Profile",
-                        tint = Color(0xFF38BDF8)
+                        tint = Color.White
                     )
                 }
             }
