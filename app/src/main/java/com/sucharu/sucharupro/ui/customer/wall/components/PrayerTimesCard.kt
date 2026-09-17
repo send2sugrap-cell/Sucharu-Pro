@@ -287,7 +287,7 @@ fun PrayerTimesCard(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(horizontal = 6.dp, vertical = 4.dp),
+                                    .padding(start = 6.dp, end = 2.dp, top = 4.dp, bottom = 4.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
@@ -313,7 +313,7 @@ fun PrayerTimesCard(
                                 Image(
                                     painter = painterResource(id = R.drawable.ic_prayer_arrow),
                                     contentDescription = "Full Schedule Arrow",
-                                    modifier = Modifier.size(23.dp),
+                                    modifier = Modifier.size(26.dp),
                                     contentScale = ContentScale.Fit
                                 )
                             }
