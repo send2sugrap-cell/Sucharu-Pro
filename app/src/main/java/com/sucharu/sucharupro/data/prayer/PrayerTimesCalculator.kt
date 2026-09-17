@@ -109,7 +109,7 @@ object PrayerTimesCalculator {
         val fajrHours = solarNoonHours - h18 / 15.0
         val dhuhrHours = solarNoonHours + 2.0 / 60.0 // 2 min buffer after solar noon
         val asrHours = solarNoonHours + hAsr / 15.0
-        val maghribHours = solarNoonHours + hSunset / 15.0
+        val maghribHours = solarNoonHours + hSunset / 15.0 + 3.0 / 60.0 // 3 min IFB Ihtiyat safety buffer
         val ishaHours = solarNoonHours + h18 / 15.0
 
         fun hoursToLocalTime(hours: Double): LocalTime {

@@ -88,6 +88,13 @@ fun SucharuWallScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var selectedTab by remember { mutableStateOf(CustomerBottomTab.AI_ASSISTANT) }
+    var showFullPrayerCalendar by remember { mutableStateOf(false) }
+
+    if (showFullPrayerCalendar) {
+        com.sucharu.sucharupro.ui.customer.wall.components.FullPrayerCalendarSheet(
+            onDismiss = { showFullPrayerCalendar = false }
+        )
+    }
 
     LaunchedEffect(principal) {
         viewModel.loadWallFeed(principal)
@@ -205,7 +212,9 @@ fun SucharuWallScreen(
 
                         // ২. রানিং প্লেয়ার নামাজের সময়সূচি (PrayerTimesCard - LIVE DATA DYNAMIC WAQT)
                         item {
-                            PrayerTimesCard()
+                            PrayerTimesCard(
+                                onCalendarClick = { showFullPrayerCalendar = true }
+                            )
                         }
 
                         // ৩. হিরো ব্যানার স্লাইডার (Hero Banner Pager - IMMEDIATELY AFTER PRAYER)
