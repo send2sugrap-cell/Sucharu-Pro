@@ -238,6 +238,16 @@ data class AuthAuditEvent(
 // REQUEST & RESPONSE DTOS (INFRA-03 Step 03)
 // =========================================================================
 
+data class ProvisionAdminRequestDto(
+    val identifier: String = "admin_owner",
+    val password: String,
+    val username: String? = null,
+    val email: String? = null,
+    val phone: String? = null,
+    val displayName: String? = null,
+    val requestedProjectId: String? = null
+)
+
 data class LoginRequestDto(
     val identifier: String,
     val password: String,

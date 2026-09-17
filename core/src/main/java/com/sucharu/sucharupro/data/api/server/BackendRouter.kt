@@ -186,6 +186,16 @@ class BackendRouter(
                 }
 
                 // Authentication API (INFRA-03 Step 01 & Step 04)
+                request.path == "/api/v1/auth/provision-admin" && request.method == "POST" -> {
+                    val provReq = parseProvisionAdminRequestDto(request.body)
+                    val userAgent = request.headers["User-Agent"] ?: request.headers["user-agent"]
+                    if (authService == null) {
+                        throw UnauthenticatedException("Authentication service is not configured.")
+                    }
+                    val resp = authService.provisionInitialAdmin(provReq, correlationId, request.clientIp, userAgent)
+                    HttpResponse(201, ApiSuccessResponse(data = resp, correlationId = correlationId), correlationId)
+                }
+
                 request.path == "/api/v1/auth/register" && request.method == "POST" -> {
                     val regReq = parseRegisterRequestDto(request.body)
                     val userAgent = request.headers["User-Agent"] ?: request.headers["user-agent"]

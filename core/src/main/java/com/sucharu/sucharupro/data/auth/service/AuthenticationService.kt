@@ -493,6 +493,119 @@ class AuthenticationService(
     }
 
     /**
+     * Secure Initial Owner/Admin Provisioning (One-Time Bootstrap).
+     *
+     * Creates the first system ADMIN account if and ONLY if no active/valid ADMIN account exists
+     * for the target project/tenant scope.
+     *
+     * Once an ADMIN account exists for the project, subsequent provisioning requests are
+     * permanently rejected with ConflictException ("Initial admin provisioning is unavailable...").
+     */
+    suspend fun provisionInitialAdmin(
+        request: ProvisionAdminRequestDto,
+        correlationId: String,
+        clientIp: String? = null,
+        userAgent: String? = null
+    ): AuthResponseDto {
+        val projectId = request.requestedProjectId ?: "TENANT-001"
+
+        // 1. One-Time Only Check: Verify if an ADMIN already exists for this project
+        if (accountDataSource.hasAdminAccount(projectId)) {
+            recordAudit(
+                projectId = projectId,
+                userId = null,
+                sessionId = null,
+                eventType = AuthEventType.AUTH_REGISTER_FAILURE,
+                outcome = AuthEventOutcome.DENIED,
+                ipAddress = clientIp,
+                userAgent = userAgent,
+                correlationId = correlationId,
+                details = mapOf("reason" to "initial_admin_already_provisioned")
+            )
+            throw ConflictException(message = "Initial admin provisioning is unavailable. An Admin account already exists for project '$projectId'.")
+        }
+
+        // 2. Validate input credentials
+        val trimmedIdentifier = request.identifier.trim()
+        val trimmedEmail = request.email?.trim()?.ifBlank { null }
+        val trimmedPhone = request.phone?.trim()?.ifBlank { null }
+        val username = request.username?.trim()?.ifBlank { null } ?: trimmedIdentifier.ifBlank { "admin_owner" }
+
+        if (trimmedIdentifier.isBlank() && trimmedEmail == null && trimmedPhone == null) {
+            throw ValidationException("Admin identifier, email, or phone is required.")
+        }
+        if (request.password.length < 8) {
+            throw ValidationException("Admin password must be at least 8 characters long.")
+        }
+
+        // 3. Existing Account Collision Check
+        val existing = accountDataSource.getAccount(projectId, username)
+            ?: (trimmedEmail?.let { accountDataSource.getAccount(projectId, it) })
+            ?: (trimmedPhone?.let { accountDataSource.getAccount(projectId, it) })
+
+        if (existing != null) {
+            throw ConflictException(message = "Account with identifier '${existing.username}' already exists.")
+        }
+
+        // 4. Create Initial ADMIN Account using Canonical Password Hashing & Role
+        val userId = "USR-ADMIN-${UUID.randomUUID().toString().take(8)}"
+        val hashed = PasswordHasher.hashPassword(request.password)
+
+        val adminAccount = AuthAccount(
+            projectId = projectId,
+            userId = userId,
+            username = username,
+            email = trimmedEmail ?: if (trimmedIdentifier.contains("@")) trimmedIdentifier else null,
+            phone = trimmedPhone ?: if (trimmedIdentifier.startsWith("+") || trimmedIdentifier.all { it.isDigit() }) trimmedIdentifier else null,
+            passwordHash = hashed.hashHex,
+            passwordSalt = hashed.saltHex,
+            passwordAlgorithm = hashed.algorithm,
+            role = UserRole.ADMIN,
+            accountStatus = AccountStatus.ACTIVE
+        )
+
+        val createAccRes = accountDataSource.createAccount(adminAccount)
+        if (createAccRes is DomainResult.Error) {
+            throw ConflictException(message = createAccRes.message)
+        }
+
+        // 5. Create Profile for Admin Owner
+        val adminProfile = UserProfile(
+            projectId = projectId,
+            userId = userId,
+            displayName = request.displayName?.trim()?.ifBlank { null } ?: username,
+            email = adminAccount.email,
+            phone = adminAccount.phone
+        )
+        profileDataSource?.createOrUpdateProfile(adminProfile)
+
+        // 6. Record Audit Event
+        recordAudit(
+            projectId = projectId,
+            userId = userId,
+            sessionId = null,
+            eventType = AuthEventType.AUTH_REGISTER_SUCCESS,
+            outcome = AuthEventOutcome.SUCCESS,
+            ipAddress = clientIp,
+            userAgent = userAgent,
+            correlationId = correlationId,
+            details = mapOf("role" to UserRole.ADMIN.name, "provisioning" to "INITIAL_OWNER_ADMIN")
+        )
+
+        // 7. Login through normal AuthenticationService.login flow
+        return login(
+            request = LoginRequestDto(
+                identifier = username,
+                password = request.password,
+                requestedProjectId = projectId
+            ),
+            correlationId = correlationId,
+            clientIp = clientIp,
+            userAgent = userAgent
+        )
+    }
+
+    /**
      * Public user registration flow (INFRA-03 Step 04).
      * Enforces public role policy (CUSTOMER default, AFFILIATE if referral code provided; rejects ADMIN, MANAGER, STAFF, AI_AGENT).
      */

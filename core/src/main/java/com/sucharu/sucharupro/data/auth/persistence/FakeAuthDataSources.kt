@@ -1,5 +1,6 @@
 package com.sucharu.sucharupro.data.auth.persistence
 
+import com.sucharu.sucharupro.data.api.model.UserRole
 import com.sucharu.sucharupro.data.auth.datasource.*
 import com.sucharu.sucharupro.data.auth.model.*
 import com.sucharu.sucharupro.domain.model.common.DomainResult
@@ -90,6 +91,12 @@ class FakeAuthAccountDataSource : AuthAccountDataSource {
             updatedAt = System.currentTimeMillis(),
             version = existing.version + 1
         )
+    }
+
+    override suspend fun hasAdminAccount(projectId: String): Boolean {
+        return accounts.values.any {
+            it.projectId == projectId && it.role == UserRole.ADMIN && it.accountStatus != AccountStatus.DELETED
+        }
     }
 }
 

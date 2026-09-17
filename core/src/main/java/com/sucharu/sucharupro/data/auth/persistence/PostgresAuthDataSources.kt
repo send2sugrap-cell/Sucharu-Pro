@@ -195,6 +195,19 @@ class PostgresAuthAccountDataSource(
             )
         }
     }
+
+    override suspend fun hasAdminAccount(projectId: String): Boolean {
+        val tenant = TenantContext(projectId)
+        return transactionManager.inReadOnly(tenant) { ctx ->
+            val sql = """
+                SELECT COUNT(*) FROM auth_accounts
+                WHERE project_id = ? AND role = 'ADMIN' AND account_status NOT IN ('DELETED')
+            """.trimIndent()
+
+            val count = ctx.sqlExecutor.querySingleOrNull(sql, listOf(projectId)) { rs -> rs.getLong(1) } ?: 0L
+            count > 0L
+        }
+    }
 }
 
 /**

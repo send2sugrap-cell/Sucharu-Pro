@@ -83,8 +83,8 @@ class NotFoundException(message: String = "Requested resource not found") :
     ApiException(ApiErrorResponse(errorCode = ErrorCode.NOT_FOUND, message = message))
 
 class ConflictException(
-    val errorCode: ErrorCode = ErrorCode.CONFLICT,
-    message: String = "Resource state conflict detected"
+    message: String = "Resource state conflict detected",
+    val errorCode: ErrorCode = ErrorCode.CONFLICT
 ) : ApiException(ApiErrorResponse(errorCode = errorCode, message = message))
 
 class ValidationException(message: String, details: List<ApiErrorDetail> = emptyList()) :

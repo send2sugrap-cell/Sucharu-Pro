@@ -14,6 +14,7 @@ interface AuthAccountDataSource {
     suspend fun recordSuccessfulLogin(projectId: String, userId: String, loginTime: Long)
     suspend fun updatePassword(projectId: String, userId: String, passwordHash: String, salt: String, algorithm: String)
     suspend fun updateAccountStatus(projectId: String, userId: String, status: AccountStatus)
+    suspend fun hasAdminAccount(projectId: String): Boolean
 }
 
 /**
