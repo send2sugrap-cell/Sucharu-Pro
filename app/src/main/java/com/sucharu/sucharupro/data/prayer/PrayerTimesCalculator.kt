@@ -50,6 +50,11 @@ data class LiveWaqtState(
     val remainingCountdownText: String
 )
 
+data class SehriCountdownState(
+    val isActiveWindow: Boolean,
+    val remainingCountdownText: String
+)
+
 object PrayerTimesCalculator {
 
     /**
@@ -169,6 +174,32 @@ object PrayerTimesCalculator {
             remainingSeconds = remSec,
             remainingCountdownText = countdownText
         )
+    }
+
+    /**
+     * Calculates Sehri countdown state. Active from 12:00 AM midnight until 5 minutes before Fajr.
+     * Outside this window, returns isActiveWindow = false and "00:00:00".
+     */
+    fun calculateSehriCountdownState(
+        schedule: CalculatedPrayerSchedule,
+        currentTime: LocalTime = LocalTime.now(ZoneId.of("Asia/Dhaka"))
+    ): SehriCountdownState {
+        val sehriDeadline = schedule.fajrTime.minusMinutes(5)
+        val currentSec = currentTime.toSecondOfDay().toLong()
+        val deadlineSec = sehriDeadline.toSecondOfDay().toLong()
+
+        val isActive = currentSec in 0..<deadlineSec
+
+        return if (isActive) {
+            val remSec = (deadlineSec - currentSec).coerceAtLeast(0)
+            val hours = remSec / 3600
+            val mins = (remSec % 3600) / 60
+            val secs = remSec % 60
+            val countdownText = String.format(Locale.US, "%02d:%02d:%02d", hours, mins, secs)
+            SehriCountdownState(isActiveWindow = true, remainingCountdownText = countdownText)
+        } else {
+            SehriCountdownState(isActiveWindow = false, remainingCountdownText = "00:00:00")
+        }
     }
 
     private data class PrayerWaqtTuple(

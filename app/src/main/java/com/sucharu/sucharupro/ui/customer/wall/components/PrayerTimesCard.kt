@@ -64,11 +64,19 @@ fun PrayerTimesCard(
         mutableStateOf(PrayerTimesCalculator.determineLiveWaqtState(schedule))
     }
 
-    // Continuous 1-second live ticker
+    var sehriState by remember(schedule) {
+        mutableStateOf(PrayerTimesCalculator.calculateSehriCountdownState(schedule))
+    }
+
+    var blinkPhase by remember { mutableStateOf(true) }
+
+    // Continuous 500ms live ticker for time & blinking effect
     LaunchedEffect(schedule) {
         while (isActive) {
             liveState = PrayerTimesCalculator.determineLiveWaqtState(schedule)
-            delay(1000L)
+            sehriState = PrayerTimesCalculator.calculateSehriCountdownState(schedule)
+            blinkPhase = !blinkPhase
+            delay(500L)
         }
     }
 
@@ -124,7 +132,7 @@ fun PrayerTimesCard(
                     ) {
                         Text(
                             text = "এখন",
-                            fontSize = 11.sp,
+                            fontSize = 16.sp,
                             fontWeight = FontWeight.Medium,
                             color = Color(0xFFCBD5E1),
                             maxLines = 1,
@@ -234,11 +242,16 @@ fun PrayerTimesCard(
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
                                 )
+                                val sehriColor = if (sehriState.isActiveWindow || blinkPhase) {
+                                    Color.White
+                                } else {
+                                    Color.White.copy(alpha = 0.2f)
+                                }
                                 Text(
-                                    text = liveState.remainingCountdownText,
+                                    text = sehriState.remainingCountdownText,
                                     fontSize = 10.5.sp,
                                     fontWeight = FontWeight.ExtraBold,
-                                    color = Color.White,
+                                    color = sehriColor,
                                     lineHeight = 11.sp
                                 )
                             }
