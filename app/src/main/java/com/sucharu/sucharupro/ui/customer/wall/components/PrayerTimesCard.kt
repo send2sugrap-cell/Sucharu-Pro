@@ -96,15 +96,15 @@ fun PrayerTimesCard(
                     .padding(10.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // FAR-LEFT: Artistic Mosque Image & Left Info Column
+                // FAR-LEFT: Artistic Mosque Image & Left Info Column (Shifted Left for High Visibility)
                 Row(
-                    modifier = Modifier.weight(1.3f),
+                    modifier = Modifier.weight(1.4f),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Box(
                         modifier = Modifier
-                            .width(76.dp)
-                            .height(96.dp)
+                            .width(56.dp)
+                            .height(92.dp)
                             .clip(RoundedCornerShape(10.dp))
                     ) {
                         Image(
@@ -115,7 +115,7 @@ fun PrayerTimesCard(
                         )
                     }
 
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
 
                     // Left-Aligned Waqt & Countdown Info
                     Column(
@@ -132,11 +132,11 @@ fun PrayerTimesCard(
                         )
                         Text(
                             text = liveState.currentWaqtName,
-                            fontSize = 20.sp,
+                            fontSize = 21.sp,
                             fontWeight = FontWeight.ExtraBold,
                             color = Color.White,
                             maxLines = 1,
-                            lineHeight = 20.sp
+                            lineHeight = 21.sp
                         )
                         Text(
                             text = "সময় শেষ হতে বাকি",
@@ -148,12 +148,12 @@ fun PrayerTimesCard(
                         )
                         Text(
                             text = liveState.remainingCountdownText,
-                            fontSize = 18.sp,
+                            fontSize = 19.sp,
                             fontWeight = FontWeight.ExtraBold,
                             color = Color.White,
                             maxLines = 1,
                             softWrap = false,
-                            lineHeight = 18.sp
+                            lineHeight = 19.sp
                         )
                     }
                 }
@@ -313,7 +313,7 @@ fun PrayerTimesCard(
                                 Image(
                                     painter = painterResource(id = R.drawable.ic_prayer_arrow),
                                     contentDescription = "Full Schedule Arrow",
-                                    modifier = Modifier.size(18.dp),
+                                    modifier = Modifier.size(23.dp),
                                     contentScale = ContentScale.Fit
                                 )
                             }
