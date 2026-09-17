@@ -43,10 +43,10 @@ import kotlinx.coroutines.isActive
 /**
  * Premium Live Prayer & Fasting Times Utility Widget (Hanafi Madhhab Standard).
  *
- * Exact 2-Row Grid Layout matching reference design image:
+ * Compact 2-Row Grid Layout with reduced line spacing and tight vertical padding:
  * - Far-Left Artistic Mosque Image (R.drawable.ic_prayer_art)
  * - Left-Aligned Waqt & Countdown Info ("এখন", Waqt Name, "সময় শেষ হতে বাকি", "00:00:00")
- * - Top Row: 5 Prayer Waqts Chips (Fajr, Dhuhr, Asr, Maghrib, Isha)
+ * - Top Row: 5 Prayer Waqts Chips (Fajr, Dhuhr, Asr, Maghrib, Isha) with compact line spacing
  * - Bottom Row: Sahri Start, Vertical Divider, Time Remaining, Iftar Time, Full Schedule Button + 3D Arrow (R.drawable.ic_prayer_arrow)
  */
 @Composable
@@ -84,16 +84,16 @@ fun PrayerTimesCard(
         modifier = modifier
             .fillMaxWidth()
             .clickable { onCalendarClick() },
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color(0xFF0B132B)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF00B4D8).copy(alpha = 0.5f))
     ) {
         Box(modifier = Modifier.fillMaxWidth()) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(12.dp),
+                    .padding(10.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // FAR-LEFT: Artistic Mosque Image & Left Info Column
@@ -103,9 +103,9 @@ fun PrayerTimesCard(
                 ) {
                     Box(
                         modifier = Modifier
-                            .width(80.dp)
-                            .height(110.dp)
-                            .clip(RoundedCornerShape(12.dp))
+                            .width(76.dp)
+                            .height(96.dp)
+                            .clip(RoundedCornerShape(10.dp))
                     ) {
                         Image(
                             painter = painterResource(id = R.drawable.ic_prayer_art),
@@ -115,53 +115,57 @@ fun PrayerTimesCard(
                         )
                     }
 
-                    Spacer(modifier = Modifier.width(10.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
 
                     // Left-Aligned Waqt & Countdown Info
                     Column(
                         horizontalAlignment = Alignment.Start,
-                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                        verticalArrangement = Arrangement.spacedBy(1.dp)
                     ) {
                         Text(
                             text = "এখন",
-                            fontSize = 12.sp,
+                            fontSize = 11.sp,
                             fontWeight = FontWeight.Medium,
                             color = Color(0xFFCBD5E1),
-                            maxLines = 1
+                            maxLines = 1,
+                            lineHeight = 12.sp
                         )
                         Text(
                             text = liveState.currentWaqtName,
-                            fontSize = 22.sp,
+                            fontSize = 20.sp,
                             fontWeight = FontWeight.ExtraBold,
                             color = Color.White,
-                            maxLines = 1
+                            maxLines = 1,
+                            lineHeight = 20.sp
                         )
                         Text(
                             text = "সময় শেষ হতে বাকি",
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Medium,
                             color = Color(0xFF94A3B8),
-                            maxLines = 1
+                            maxLines = 1,
+                            lineHeight = 11.sp
                         )
                         Text(
                             text = liveState.remainingCountdownText,
-                            fontSize = 20.sp,
+                            fontSize = 18.sp,
                             fontWeight = FontWeight.ExtraBold,
                             color = Color.White,
                             maxLines = 1,
-                            softWrap = false
+                            softWrap = false,
+                            lineHeight = 18.sp
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.width(10.dp))
+                Spacer(modifier = Modifier.width(8.dp))
 
-                // RIGHT SIDE: 2-Row Grid Layout
+                // RIGHT SIDE: 2-Row Compact Grid Layout
                 Column(
                     modifier = Modifier.weight(2.2f),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    // ROW 1: 5 Prayer Waqts Chips
+                    // ROW 1: 5 Prayer Waqts Chips (Compact Height & Tight Line Spacing)
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -172,25 +176,29 @@ fun PrayerTimesCard(
                             Box(
                                 modifier = Modifier
                                     .weight(1f)
-                                    .clip(RoundedCornerShape(10.dp))
+                                    .clip(RoundedCornerShape(8.dp))
                                     .background(if (isCurrent) Color(0xFF047857) else Color(0xFF1E293B))
-                                    .border(1.dp, if (isCurrent) Color(0xFF10B981) else Color(0xFF334155), RoundedCornerShape(10.dp))
-                                    .padding(vertical = 6.dp, horizontal = 2.dp),
+                                    .border(1.dp, if (isCurrent) Color(0xFF10B981) else Color(0xFF334155), RoundedCornerShape(8.dp))
+                                    .padding(vertical = 4.dp, horizontal = 2.dp),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(0.dp)
+                                ) {
                                     Text(
                                         text = name,
-                                        fontSize = 10.sp,
+                                        fontSize = 11.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = if (isCurrent) Color.White else Color(0xFF38BDF8)
+                                        color = if (isCurrent) Color.White else Color(0xFF38BDF8),
+                                        lineHeight = 12.sp
                                     )
-                                    Spacer(modifier = Modifier.height(2.dp))
                                     Text(
                                         text = time,
-                                        fontSize = 12.sp,
+                                        fontSize = 12.5.sp,
                                         fontWeight = FontWeight.ExtraBold,
-                                        color = Color.White
+                                        color = Color.White,
+                                        lineHeight = 13.sp
                                     )
                                 }
                             }
@@ -200,57 +208,67 @@ fun PrayerTimesCard(
                     // ROW 2: Sahri Start, Divider, Remaining, Iftar, Full Schedule Button
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         // Sahri Start + Divider + Remaining Box
                         Card(
                             modifier = Modifier.weight(2f),
-                            shape = RoundedCornerShape(10.dp),
+                            shape = RoundedCornerShape(8.dp),
                             colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B)),
                             border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF334155))
                         ) {
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(horizontal = 6.dp, vertical = 6.dp),
+                                    .padding(horizontal = 4.dp, vertical = 4.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(0.dp)
+                                ) {
                                     Text(
                                         text = "সাহরী শুরু",
-                                        fontSize = 9.sp,
+                                        fontSize = 8.5.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = Color(0xFF38BDF8)
+                                        color = Color(0xFF38BDF8),
+                                        lineHeight = 9.sp
                                     )
                                     Text(
                                         text = schedule.fajrFormatted,
-                                        fontSize = 11.sp,
+                                        fontSize = 10.5.sp,
                                         fontWeight = FontWeight.ExtraBold,
-                                        color = Color.White
+                                        color = Color.White,
+                                        lineHeight = 11.sp
                                     )
                                 }
 
                                 Box(
                                     modifier = Modifier
                                         .width(1.dp)
-                                        .height(28.dp)
+                                        .height(22.dp)
                                         .background(Color(0xFF475569))
                                 )
 
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(0.dp)
+                                ) {
                                     Text(
                                         text = "বাকি আছে",
-                                        fontSize = 9.sp,
+                                        fontSize = 8.5.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = Color(0xFF38BDF8)
+                                        color = Color(0xFF38BDF8),
+                                        lineHeight = 9.sp
                                     )
                                     Text(
                                         text = liveState.remainingCountdownText,
-                                        fontSize = 11.sp,
+                                        fontSize = 10.5.sp,
                                         fontWeight = FontWeight.ExtraBold,
-                                        color = Color.White
+                                        color = Color.White,
+                                        lineHeight = 11.sp
                                     )
                                 }
                             }
@@ -259,27 +277,30 @@ fun PrayerTimesCard(
                         // Iftar Time Box
                         Card(
                             modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(10.dp),
+                            shape = RoundedCornerShape(8.dp),
                             colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B)),
                             border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF334155))
                         ) {
                             Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(vertical = 6.dp, horizontal = 2.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally
+                                    .padding(vertical = 4.dp, horizontal = 2.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(0.dp)
                             ) {
                                 Text(
                                     text = "ইফতার",
-                                    fontSize = 9.sp,
+                                    fontSize = 8.5.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF38BDF8)
+                                    color = Color(0xFF38BDF8),
+                                    lineHeight = 9.sp
                                 )
                                 Text(
                                     text = schedule.maghribFormatted,
-                                    fontSize = 11.sp,
+                                    fontSize = 10.5.sp,
                                     fontWeight = FontWeight.ExtraBold,
-                                    color = Color.White
+                                    color = Color.White,
+                                    lineHeight = 11.sp
                                 )
                             }
                         }
@@ -289,38 +310,40 @@ fun PrayerTimesCard(
                             modifier = Modifier
                                 .weight(2f)
                                 .clickable { onCalendarClick() },
-                            shape = RoundedCornerShape(10.dp),
+                            shape = RoundedCornerShape(8.dp),
                             colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B)),
                             border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF0284C7))
                         ) {
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                                    .padding(horizontal = 6.dp, vertical = 4.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
                                         text = "নামাজের",
-                                        fontSize = 9.sp,
+                                        fontSize = 8.5.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = Color(0xFF38BDF8)
+                                        color = Color(0xFF38BDF8),
+                                        lineHeight = 9.sp
                                     )
                                     Text(
                                         text = "পূর্ণাঙ্গ সময়সূচি",
-                                        fontSize = 10.sp,
+                                        fontSize = 9.5.sp,
                                         fontWeight = FontWeight.ExtraBold,
                                         color = Color.White,
                                         maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
+                                        overflow = TextOverflow.Ellipsis,
+                                        lineHeight = 10.sp
                                     )
                                 }
 
                                 Image(
                                     painter = painterResource(id = R.drawable.ic_prayer_arrow),
                                     contentDescription = "Full Schedule Arrow",
-                                    modifier = Modifier.size(22.dp),
+                                    modifier = Modifier.size(18.dp),
                                     contentScale = ContentScale.Fit
                                 )
                             }
