@@ -211,66 +211,36 @@ fun PrayerTimesCard(
                         horizontalArrangement = Arrangement.spacedBy(4.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // Sahri Start + Divider + Remaining Box
+                        // Sahri End Countdown Box ("সেহরী শেষ হতে বাকী")
                         Card(
                             modifier = Modifier.weight(2f),
                             shape = RoundedCornerShape(8.dp),
                             colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B)),
                             border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF334155))
                         ) {
-                            Row(
+                            Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(horizontal = 4.dp, vertical = 4.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
+                                    .padding(vertical = 4.dp, horizontal = 4.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(0.dp)
                             ) {
-                                Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.spacedBy(0.dp)
-                                ) {
-                                    Text(
-                                        text = "সাহরী শুরু",
-                                        fontSize = 8.5.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color(0xFF38BDF8),
-                                        lineHeight = 9.sp
-                                    )
-                                    Text(
-                                        text = schedule.fajrFormatted,
-                                        fontSize = 10.5.sp,
-                                        fontWeight = FontWeight.ExtraBold,
-                                        color = Color.White,
-                                        lineHeight = 11.sp
-                                    )
-                                }
-
-                                Box(
-                                    modifier = Modifier
-                                        .width(1.dp)
-                                        .height(22.dp)
-                                        .background(Color(0xFF475569))
+                                Text(
+                                    text = "সেহরী শেষ হতে বাকী",
+                                    fontSize = 8.5.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF38BDF8),
+                                    lineHeight = 9.sp,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
-
-                                Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.spacedBy(0.dp)
-                                ) {
-                                    Text(
-                                        text = "বাকি আছে",
-                                        fontSize = 8.5.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color(0xFF38BDF8),
-                                        lineHeight = 9.sp
-                                    )
-                                    Text(
-                                        text = liveState.remainingCountdownText,
-                                        fontSize = 10.5.sp,
-                                        fontWeight = FontWeight.ExtraBold,
-                                        color = Color.White,
-                                        lineHeight = 11.sp
-                                    )
-                                }
+                                Text(
+                                    text = liveState.remainingCountdownText,
+                                    fontSize = 10.5.sp,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = Color.White,
+                                    lineHeight = 11.sp
+                                )
                             }
                         }
 
