@@ -189,10 +189,13 @@ fun SucharuWallScreen(
                     val feed = state.feedData
 
                     LazyColumn(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(innerPadding),
-                        contentPadding = PaddingValues(12.dp),
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(
+                            start = 12.dp,
+                            end = 12.dp,
+                            top = innerPadding.calculateTopPadding() + 4.dp,
+                            bottom = innerPadding.calculateBottomPadding() + 4.dp
+                        ),
                         verticalArrangement = Arrangement.spacedBy(14.dp)
                     ) {
                         // ১. বাণী চিরন্তন + কারেন্ট ৩-ক্যালেন্ডার ডেট (DailyWisdomCard)
