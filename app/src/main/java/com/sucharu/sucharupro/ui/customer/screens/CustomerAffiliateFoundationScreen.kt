@@ -55,7 +55,7 @@ fun CustomerAffiliateFoundationScreen(
     modifier: Modifier = Modifier,
     onNavigateBack: (() -> Unit)? = null
 ) {
-    var selectedTab by remember { mutableStateOf(CustomerBottomTab.HOME) }
+    var selectedTab by remember { mutableStateOf(CustomerBottomTab.AI_ASSISTANT) }
     var isLoading by remember { mutableStateOf(false) }
     var showEmptyState by remember { mutableStateOf(false) }
 

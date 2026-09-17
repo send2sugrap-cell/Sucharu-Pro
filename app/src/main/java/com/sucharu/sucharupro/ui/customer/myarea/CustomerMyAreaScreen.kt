@@ -89,10 +89,9 @@ fun CustomerMyAreaScreen(
             },
             bottomBar = {
                 CustomerBottomNavigation(
-                    selectedTab = CustomerBottomTab.HOME,
+                    selectedTab = CustomerBottomTab.AI_ASSISTANT,
                     onTabSelect = { tab ->
                         when (tab) {
-                            CustomerBottomTab.HOME -> onNavigateToDestination(AppDestination.Public.Home)
                             CustomerBottomTab.AI_ASSISTANT -> onNavigateToDestination(AppDestination.Customer.AiAssistant)
                         }
                     },

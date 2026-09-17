@@ -87,7 +87,7 @@ fun SucharuWallScreen(
     onNavigateBack: (() -> Unit)? = null
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    var selectedTab by remember { mutableStateOf(CustomerBottomTab.HOME) }
+    var selectedTab by remember { mutableStateOf(CustomerBottomTab.AI_ASSISTANT) }
 
     LaunchedEffect(principal) {
         viewModel.loadWallFeed(principal)
@@ -126,9 +126,6 @@ fun SucharuWallScreen(
                     onTabSelect = { tab ->
                         selectedTab = tab
                         when (tab) {
-                            CustomerBottomTab.HOME -> {
-                                onNavigateToDestination(AppDestination.Public.Home)
-                            }
                             CustomerBottomTab.AI_ASSISTANT -> {
                                 when (principal?.role) {
                                     UserRole.CUSTOMER -> onNavigateToDestination(AppDestination.Customer.AiAssistant)
