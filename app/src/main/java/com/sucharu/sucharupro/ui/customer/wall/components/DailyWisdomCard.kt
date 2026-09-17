@@ -138,11 +138,11 @@ fun DailyWisdomCard(
             ) {
                 CalendarColumnItem("খ্রিস্টাব্দ", calendarData.gregorianDay, calendarData.gregorianMonthYear)
 
-                Box(modifier = Modifier.width(1.dp).height(44.dp).background(Color(0xFF334155)))
+                Box(modifier = Modifier.width(1.dp).height(64.dp).background(Color(0xFF334155)))
 
                 CalendarColumnItem("বঙ্গাব্দ", calendarData.banglaDay, calendarData.banglaMonthYear)
 
-                Box(modifier = Modifier.width(1.dp).height(44.dp).background(Color(0xFF334155)))
+                Box(modifier = Modifier.width(1.dp).height(64.dp).background(Color(0xFF334155)))
 
                 CalendarColumnItem("হিজরী", calendarData.hijriDay, calendarData.hijriMonthYear)
             }
