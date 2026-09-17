@@ -1,33 +1,20 @@
 package com.sucharu.sucharupro.ui.customer.components
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.sucharu.sucharupro.R
 import com.sucharu.sucharupro.data.api.model.UserRole
 
@@ -43,7 +30,7 @@ enum class CustomerBottomTab(
 }
 
 /**
- * Premium Glowing Bottom Navigation Bar (AI Button Centered with User Asset R.drawable.ic_bottom_ai).
+ * Premium Glowing Bottom Navigation Bar (Renders full-width user asset R.drawable.ic_bottom_ai across screen width).
  */
 @Composable
 fun CustomerBottomNavigation(
@@ -52,44 +39,18 @@ fun CustomerBottomNavigation(
     selectedTab: CustomerBottomTab = CustomerBottomTab.AI_ASSISTANT,
     userRole: UserRole? = null
 ) {
-    Surface(
+    Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(68.dp),
-        color = Color(0xFF0B132B),
-        border = BorderStroke(1.5.dp, Color(0xFF00B4D8).copy(alpha = 0.6f))
+            .height(68.dp)
+            .clickable { onTabSelect(CustomerBottomTab.AI_ASSISTANT) },
+        contentAlignment = Alignment.Center
     ) {
-        Box(
-            modifier = Modifier.fillMaxWidth(),
-            contentAlignment = Alignment.Center
-        ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier
-                    .clickable { onTabSelect(CustomerBottomTab.AI_ASSISTANT) }
-                    .padding(vertical = 4.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(46.dp)
-                        .clip(CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.ic_bottom_ai),
-                        contentDescription = "সুচারু এআই",
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Fit
-                    )
-                }
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = "সুচারু এআই",
-                    fontSize = 10.5.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF38BDF8)
-                )
-            }
-        }
+        Image(
+            painter = painterResource(id = R.drawable.ic_bottom_ai),
+            contentDescription = "সুচারু এআই বটম বার",
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.FillWidth
+        )
     }
 }
