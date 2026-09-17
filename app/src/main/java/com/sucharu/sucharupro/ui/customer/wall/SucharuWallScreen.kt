@@ -50,6 +50,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sucharu.sucharupro.data.api.model.AuthenticatedPrincipal
+import com.sucharu.sucharupro.data.api.model.UserRole
 import com.sucharu.sucharupro.ui.customer.components.CardSkeletonLoader
 import com.sucharu.sucharupro.ui.customer.components.CustomerBottomNavigation
 import com.sucharu.sucharupro.ui.customer.components.CustomerBottomTab
@@ -125,7 +126,17 @@ fun SucharuWallScreen(
                     onTabSelect = { tab ->
                         selectedTab = tab
                         when (tab) {
-                            CustomerBottomTab.HOME -> { /* Stay on Home */ }
+                            CustomerBottomTab.HOME -> {
+                                onNavigateToDestination(AppDestination.Public.Home)
+                            }
+                            CustomerBottomTab.AI_ASSISTANT -> {
+                                when (principal?.role) {
+                                    UserRole.CUSTOMER -> onNavigateToDestination(AppDestination.Customer.AiAssistant)
+                                    UserRole.AFFILIATE -> onNavigateToDestination(AppDestination.Affiliate.AiAssistant)
+                                    UserRole.STAFF, UserRole.MANAGER, UserRole.ADMIN -> onNavigateToDestination(AppDestination.Admin.PrepressOrchestration)
+                                    else -> onNavigateToDestination(AppDestination.Public.PublicAiAssistant)
+                                }
+                            }
                         }
                     },
                     userRole = principal?.role

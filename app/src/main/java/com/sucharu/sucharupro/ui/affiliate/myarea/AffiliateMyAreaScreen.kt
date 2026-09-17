@@ -87,6 +87,7 @@ fun AffiliateMyAreaScreen(
                     onTabSelect = { tab ->
                         when (tab) {
                             CustomerBottomTab.HOME -> onNavigateToDestination(AppDestination.Public.Home)
+                            CustomerBottomTab.AI_ASSISTANT -> onNavigateToDestination(AppDestination.Affiliate.AiAssistant)
                         }
                     },
                     userRole = principal?.role
