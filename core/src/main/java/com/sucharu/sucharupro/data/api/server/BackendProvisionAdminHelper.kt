@@ -1,5 +1,7 @@
 package com.sucharu.sucharupro.data.api.server
 
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import com.sucharu.sucharupro.data.api.model.ValidationException
 import com.sucharu.sucharupro.data.auth.model.ProvisionAdminRequestDto
 
@@ -8,9 +10,38 @@ import com.sucharu.sucharupro.data.auth.model.ProvisionAdminRequestDto
  */
 fun parseProvisionAdminRequestDto(body: Any?): ProvisionAdminRequestDto {
     if (body is ProvisionAdminRequestDto) return body
-    val map = if (body is Map<*, *>) {
-        body.entries.associate { (it.key?.toString() ?: "") to (it.value) }
-    } else emptyMap()
+
+    val map: Map<String, Any?> = when (body) {
+        is Map<*, *> -> @Suppress("UNCHECKED_CAST") (body as Map<String, Any?>)
+        is String -> {
+            try {
+                val type = object : TypeToken<Map<String, Any?>>() {}.type
+                val parsed: Map<String, Any?>? = Gson().fromJson(body, type)
+                if (parsed != null && parsed.isNotEmpty()) {
+                    parsed
+                } else {
+                    val regex = "\"([^\"]+)\"\\s*:\\s*(\"[^\"]*\"|\\d+(?:\\.\\d+)?|true|false|null)".toRegex()
+                    val result = mutableMapOf<String, Any?>()
+                    regex.findAll(body).forEach { match ->
+                        val key = match.groupValues[1]
+                        val rawVal = match.groupValues[2]
+                        val value = when {
+                            rawVal.startsWith("\"") && rawVal.endsWith("\"") -> rawVal.substring(1, rawVal.length - 1)
+                            rawVal == "true" -> true
+                            rawVal == "false" -> false
+                            rawVal == "null" -> null
+                            else -> rawVal
+                        }
+                        result[key] = value
+                    }
+                    result
+                }
+            } catch (_: Exception) {
+                emptyMap()
+            }
+        }
+        else -> emptyMap()
+    }
 
     if (map.isNotEmpty()) {
         val password = (map["password"] as? String)?.ifBlank { null }
