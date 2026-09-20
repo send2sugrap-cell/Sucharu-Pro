@@ -16,20 +16,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.sucharu.sucharupro.ui.admin.theme.AdminTheme
 
 /**
- * Reusable KPI Metric Card for Sucharu Pro Admin Dashboard and Analytics screens.
- *
- * @param title Metric title label.
- * @param value Formatted KPI number string (e.g. "৳1,450,000.00" or "98.4%").
- * @param modifier Optional modifier.
- * @param subtitle Optional secondary subtitle text.
- * @param trendDeltaPercentage Optional trend percentage delta (e.g. +12.5 or -3.2).
- * @param icon Optional leading metric icon.
- * @param accentColor Accent color for icon container and highlights.
- * @param onClick Optional click listener.
+ * Reusable KPI Metric Card for Sucharu Pro Admin Dashboard and Analytics screens with compact typography.
  */
 @Composable
 fun AdminKpiCard(
@@ -54,8 +47,10 @@ fun AdminKpiCard(
         ) {
             Text(
                 text = title,
-                style = AdminTheme.typography.caption,
+                style = AdminTheme.typography.caption.copy(lineHeight = 14.sp),
                 color = AdminTheme.colors.secondaryText,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f)
             )
             if (icon != null) {
@@ -64,22 +59,24 @@ fun AdminKpiCard(
                     iconTint = accentColor,
                     containerColor = accentColor.copy(alpha = 0.15f),
                     borderColor = accentColor.copy(alpha = 0.3f),
-                    boxSize = 36.dp,
-                    iconSize = 18.dp
+                    boxSize = 32.dp,
+                    iconSize = 16.dp
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(AdminTheme.spacing.sm))
+        Spacer(modifier = Modifier.height(4.dp))
 
         Text(
             text = value,
-            style = AdminTheme.typography.kpiNumber,
-            color = AdminTheme.colors.primaryText
+            style = AdminTheme.typography.kpiNumber.copy(lineHeight = 28.sp),
+            color = AdminTheme.colors.primaryText,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
         )
 
         if (subtitle != null || trendDeltaPercentage != null) {
-            Spacer(modifier = Modifier.height(AdminTheme.spacing.xs))
+            Spacer(modifier = Modifier.height(2.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if (trendDeltaPercentage != null) {
                     val isPositive = trendDeltaPercentage >= 0
@@ -95,8 +92,10 @@ fun AdminKpiCard(
                     Spacer(modifier = Modifier.width(2.dp))
                     Text(
                         text = "${if (isPositive) "+" else ""}${String.format(java.util.Locale.US, "%.1f%%", trendDeltaPercentage)}",
-                        style = AdminTheme.typography.caption,
-                        color = trendColor
+                        style = AdminTheme.typography.caption.copy(lineHeight = 12.sp),
+                        color = trendColor,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                     if (subtitle != null) {
                         Spacer(modifier = Modifier.width(AdminTheme.spacing.xs))
@@ -105,8 +104,10 @@ fun AdminKpiCard(
                 if (subtitle != null) {
                     Text(
                         text = subtitle,
-                        style = AdminTheme.typography.caption,
-                        color = AdminTheme.colors.mutedText
+                        style = AdminTheme.typography.caption.copy(lineHeight = 12.sp),
+                        color = AdminTheme.colors.mutedText,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
             }

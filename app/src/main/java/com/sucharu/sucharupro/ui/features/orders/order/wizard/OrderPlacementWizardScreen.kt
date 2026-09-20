@@ -10,6 +10,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -203,36 +204,120 @@ private fun StepCustomerContent(
         Column {
             Text("Step 1: Customer Context", fontWeight = FontWeight.Bold, color = Color(0xFF9ECAFF), fontSize = 16.sp)
             Spacer(modifier = Modifier.height(4.dp))
-            Text("Select or verify the customer placing this order.", color = Color(0xFFB7C8D8), fontSize = 12.sp)
+            Text("Select or enter customer details for this quotation/order.", color = Color(0xFFB7C8D8), fontSize = 12.sp)
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            OutlinedTextField(
-                value = state.customerId,
-                onValueChange = { viewModel.onCustomerInfoChange(it, state.customerName, state.customerEmail) },
-                label = { Text("Customer ID") },
+            // Auto-generated Unique Customer ID
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                OutlinedTextField(
+                    value = state.customerId,
+                    onValueChange = {
+                        viewModel.onCustomerInfoChange(
+                            it, state.customerName, state.companyName,
+                            state.customerMobile, state.customerEmail, state.deliveryAddress
+                        )
+                    },
+                    label = { Text("Customer ID (Auto-Generated)") },
+                    modifier = Modifier.weight(1f),
+                    singleLine = true
+                )
+
+                IconButton(
+                    onClick = { viewModel.generateUniqueCustomerId() },
+                    modifier = Modifier.padding(top = 6.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Refresh,
+                        contentDescription = "Generate Fresh ID",
+                        tint = Color(0xFF48CAE4)
+                    )
+                }
+            }
 
             Spacer(modifier = Modifier.height(12.dp))
 
+            // Full Name *
             OutlinedTextField(
                 value = state.customerName,
-                onValueChange = { viewModel.onCustomerInfoChange(state.customerId, it, state.customerEmail) },
-                label = { Text("Customer Name / Company") },
+                onValueChange = {
+                    viewModel.onCustomerInfoChange(
+                        state.customerId, it, state.companyName,
+                        state.customerMobile, state.customerEmail, state.deliveryAddress
+                    )
+                },
+                label = { Text("Full Name *") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
 
             Spacer(modifier = Modifier.height(12.dp))
 
+            // Company / Shop Name
             OutlinedTextField(
-                value = state.customerEmail,
-                onValueChange = { viewModel.onCustomerInfoChange(state.customerId, state.customerName, it) },
-                label = { Text("Contact Email") },
+                value = state.companyName,
+                onValueChange = {
+                    viewModel.onCustomerInfoChange(
+                        state.customerId, state.customerName, it,
+                        state.customerMobile, state.customerEmail, state.deliveryAddress
+                    )
+                },
+                label = { Text("Company / Shop Name") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Mobile Number *
+            OutlinedTextField(
+                value = state.customerMobile,
+                onValueChange = {
+                    viewModel.onCustomerInfoChange(
+                        state.customerId, state.customerName, state.companyName,
+                        it, state.customerEmail, state.deliveryAddress
+                    )
+                },
+                label = { Text("Mobile Number *") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Contact Email (Optional)
+            OutlinedTextField(
+                value = state.customerEmail,
+                onValueChange = {
+                    viewModel.onCustomerInfoChange(
+                        state.customerId, state.customerName, state.companyName,
+                        state.customerMobile, it, state.deliveryAddress
+                    )
+                },
+                label = { Text("Contact Email (Optional)") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Delivery Address (Optional)
+            OutlinedTextField(
+                value = state.deliveryAddress,
+                onValueChange = {
+                    viewModel.onCustomerInfoChange(
+                        state.customerId, state.customerName, state.companyName,
+                        state.customerMobile, state.customerEmail, it
+                    )
+                },
+                label = { Text("Delivery Address (Optional)") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = false,
+                maxLines = 3
             )
         }
     }

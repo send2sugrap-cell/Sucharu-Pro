@@ -16,9 +16,12 @@ data class OrderPlacementWizardUiState(
     val currentStep: WizardStep = WizardStep.CUSTOMER,
     
     // Step 1: Customer Context
-    val customerId: String = "CUST-DEFAULT-001",
-    val customerName: String = "Standard Commercial Client",
-    val customerEmail: String = "client@sucharu.pro",
+    val customerId: String = "CUST-2026-7842",
+    val customerName: String = "",
+    val companyName: String = "",
+    val customerMobile: String = "",
+    val customerEmail: String = "",
+    val deliveryAddress: String = "",
     
     // Step 2: Product Selection
     val selectedProductCategory: String = "Flyers / Brochures",
