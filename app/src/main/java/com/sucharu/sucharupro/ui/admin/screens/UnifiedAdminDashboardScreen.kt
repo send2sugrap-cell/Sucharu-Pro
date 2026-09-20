@@ -208,6 +208,13 @@ private fun AdminOperationsDashboardBody(
         Spacer(modifier = Modifier.height(14.dp))
         AdminQuickControlsWidget(onNavigateToDestination = onNavigateToDestination)
     }
+
+    Spacer(modifier = Modifier.height(16.dp))
+
+    // 6. 24-MODULE MASTER CONTROL CENTER GRID WIDGET
+    com.sucharu.sucharupro.ui.admin.components.AdminMasterModulesGridCard(
+        onNavigateToDestination = onNavigateToDestination
+    )
 }
 
 /**
