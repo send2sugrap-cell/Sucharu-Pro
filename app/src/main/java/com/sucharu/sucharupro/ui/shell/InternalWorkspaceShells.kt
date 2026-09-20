@@ -16,11 +16,93 @@ import com.sucharu.sucharupro.data.api.model.AuthenticatedPrincipal
 import com.sucharu.sucharupro.data.api.model.UserRole
 import com.sucharu.sucharupro.ui.features.dashboard.DashboardScreen
 import com.sucharu.sucharupro.ui.navigation.AppDestination
-
 import com.sucharu.sucharupro.data.composition.AppRuntimeComposition
 
 /**
- * Responsive Dark Navy Foundation Workspace Shell for Internal ERP Roles: STAFF, MANAGER, ADMIN (INFRA-03 Step 06 & INFRA-05 Step 03).
+ * Command Center Workspace Shell for ADMIN Role (INFRA-05 Step 03 & Admin Operations Center).
+ */
+@Composable
+fun AdminWorkspaceShell(
+    principal: AuthenticatedPrincipal,
+    currentDestination: AppDestination,
+    onNavigate: (AppDestination) -> Unit,
+    composition: AppRuntimeComposition? = null,
+    modifier: Modifier = Modifier
+) {
+    com.sucharu.sucharupro.ui.admin.shell.AdminShell(
+        currentDestination = currentDestination,
+        principal = principal,
+        modifier = modifier,
+        onNavigateTo = onNavigate
+    ) {
+        val dashRepo = remember(composition) {
+            composition?.dashboardRepository ?: com.sucharu.sucharupro.data.repository.FakeDashboardRepository()
+        }
+        val dashboardViewModel: com.sucharu.sucharupro.ui.features.dashboard.DashboardViewModel = viewModel {
+            com.sucharu.sucharupro.ui.features.dashboard.DashboardViewModel(repository = dashRepo)
+        }
+
+        when (currentDestination) {
+            AppDestination.Admin.FullAdministration -> {
+                com.sucharu.sucharupro.ui.admin.screens.UnifiedAdminDashboardScreen(
+                    viewModel = dashboardViewModel,
+                    principal = principal,
+                    onNavigateToDestination = onNavigate
+                )
+            }
+            AppDestination.Admin.Users -> {
+                com.sucharu.sucharupro.ui.admin.screens.AdminCustomerManagementScreen(
+                    principal = principal,
+                    onNavigateToDestination = onNavigate
+                )
+            }
+            AppDestination.Admin.PrepressOrchestration -> {
+                com.sucharu.sucharupro.ui.admin.screens.AdminProductionOperationsScreen(
+                    principal = principal,
+                    onNavigateToDestination = onNavigate
+                )
+            }
+            AppDestination.Admin.Finance -> {
+                com.sucharu.sucharupro.ui.admin.screens.AdminFinanceOperationsScreen(
+                    principal = principal,
+                    onNavigateToDestination = onNavigate
+                )
+            }
+            AppDestination.Admin.Reports -> {
+                com.sucharu.sucharupro.ui.admin.screens.AdminReportsAnalyticsScreen(
+                    principal = principal,
+                    onNavigateToDestination = onNavigate
+                )
+            }
+            AppDestination.Admin.AffiliateManagement -> {
+                com.sucharu.sucharupro.ui.admin.screens.AdminAffiliateGovernanceScreen(
+                    principal = principal,
+                    onNavigateToDestination = onNavigate
+                )
+            }
+            AppDestination.Admin.SubstrateReservation -> {
+                com.sucharu.sucharupro.ui.admin.screens.AdminInventoryLogisticsScreen(
+                    principal = principal,
+                    onNavigateToDestination = onNavigate
+                )
+            }
+            AppDestination.Admin.ShopFloorTracking -> {
+                com.sucharu.sucharupro.ui.admin.screens.AdminMachineOeeScreen(
+                    principal = principal,
+                    onNavigateToDestination = onNavigate
+                )
+            }
+            else -> {
+                com.sucharu.sucharupro.ui.admin.screens.AdminPanelFoundationScreen(
+                    onNavigateBack = { onNavigate(AppDestination.Admin.FullAdministration) }
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Responsive Dark Navy Foundation Workspace Shell for Internal ERP Roles: STAFF & MANAGER (INFRA-03 Step 06 & INFRA-05 Step 03).
  */
 @Composable
 fun InternalWorkspaceShell(
@@ -122,26 +204,9 @@ fun InternalWorkspaceShell(
                     FilterChip(selected = currentDestination == AppDestination.Manager.DynamicNesting, onClick = { onNavigate(AppDestination.Manager.DynamicNesting) }, label = { Text("2D Dynamic Nesting") })
                     FilterChip(selected = currentDestination == AppDestination.Manager.SignatureImposition, onClick = { onNavigate(AppDestination.Manager.SignatureImposition) }, label = { Text("Signature Imposition") })
                     FilterChip(selected = currentDestination == AppDestination.Manager.CtpOutput, onClick = { onNavigate(AppDestination.Manager.CtpOutput) }, label = { Text("CTP Plates & Marks") })
-                    FilterChip(selected = currentDestination == AppDestination.Manager.FinanceVisibility, onClick = { onNavigate(AppDestination.Manager.FinanceVisibility) }, label = { Text("Finance Summary") })
-                    FilterChip(selected = currentDestination == AppDestination.Manager.Reports, onClick = { onNavigate(AppDestination.Manager.Reports) }, label = { Text("Reports") })
-                }
-                UserRole.ADMIN -> {
-                    FilterChip(selected = currentDestination == AppDestination.Admin.FullAdministration, onClick = { onNavigate(AppDestination.Admin.FullAdministration) }, label = { Text("System Dashboard") })
-                    FilterChip(selected = currentDestination == AppDestination.Admin.Workflows, onClick = { onNavigate(AppDestination.Admin.Workflows) }, label = { Text("Workflow Control") })
-                    FilterChip(selected = currentDestination == AppDestination.Admin.ProductionScheduling, onClick = { onNavigate(AppDestination.Admin.ProductionScheduling) }, label = { Text("Scheduling Engine") })
-                    FilterChip(selected = currentDestination == AppDestination.Admin.ShopFloorTracking, onClick = { onNavigate(AppDestination.Admin.ShopFloorTracking) }, label = { Text("Live Tracking") })
-                    FilterChip(selected = currentDestination == AppDestination.Admin.FinalQcPackaging, onClick = { onNavigate(AppDestination.Admin.FinalQcPackaging) }, label = { Text("Final QC & Pack") })
-                    FilterChip(selected = currentDestination == AppDestination.Admin.ProductionJobCosting, onClick = { onNavigate(AppDestination.Admin.ProductionJobCosting) }, label = { Text("Job Cost & Variance") })
-                    FilterChip(selected = currentDestination == AppDestination.Admin.ProductionJobClosure, onClick = { onNavigate(AppDestination.Admin.ProductionJobClosure) }, label = { Text("Job Closure & Seal") })
-                    FilterChip(selected = currentDestination == AppDestination.Admin.Imposition, onClick = { onNavigate(AppDestination.Admin.Imposition) }, label = { Text("Dynamic Imposition") })
-                    FilterChip(selected = currentDestination == AppDestination.Admin.GangRun, onClick = { onNavigate(AppDestination.Admin.GangRun) }, label = { Text("Gang-Run Optimizer") })
-                    FilterChip(selected = currentDestination == AppDestination.Admin.DynamicNesting, onClick = { onNavigate(AppDestination.Admin.DynamicNesting) }, label = { Text("2D Dynamic Nesting") })
-                    FilterChip(selected = currentDestination == AppDestination.Admin.SignatureImposition, onClick = { onNavigate(AppDestination.Admin.SignatureImposition) }, label = { Text("Signature Imposition") })
-                    FilterChip(selected = currentDestination == AppDestination.Admin.CtpOutput, onClick = { onNavigate(AppDestination.Admin.CtpOutput) }, label = { Text("CTP Plates & Marks") })
-                    FilterChip(selected = currentDestination == AppDestination.Admin.Users, onClick = { onNavigate(AppDestination.Admin.Users) }, label = { Text("Users & Roles") })
-                    FilterChip(selected = currentDestination == AppDestination.Admin.Security, onClick = { onNavigate(AppDestination.Admin.Security) }, label = { Text("Audit Security") })
-                    FilterChip(selected = currentDestination == AppDestination.Admin.Finance, onClick = { onNavigate(AppDestination.Admin.Finance) }, label = { Text("ERP Ledger") })
-                    FilterChip(selected = currentDestination == AppDestination.Admin.Configuration, onClick = { onNavigate(AppDestination.Admin.Configuration) }, label = { Text("Config") })
+                    FilterChip(selected = currentDestination == AppDestination.Manager.FinalQcPackaging, onClick = { onNavigate(AppDestination.Manager.FinalQcPackaging) }, label = { Text("Final QC") })
+                    FilterChip(selected = currentDestination == AppDestination.Manager.Inventory, onClick = { onNavigate(AppDestination.Manager.Inventory) }, label = { Text("Inventory") })
+                    FilterChip(selected = currentDestination == AppDestination.Manager.Delivery, onClick = { onNavigate(AppDestination.Manager.Delivery) }, label = { Text("Delivery") })
                 }
                 else -> {}
             }

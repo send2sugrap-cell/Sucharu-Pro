@@ -546,7 +546,15 @@ fun SucharuGraphicsAppShell(
                                             composition = composition
                                         )
                                     }
-                                    UserRole.STAFF, UserRole.MANAGER, UserRole.ADMIN -> {
+                                    UserRole.ADMIN -> {
+                                        AdminWorkspaceShell(
+                                            principal = principal,
+                                            currentDestination = currentDestination,
+                                            onNavigate = { dest -> navigationManager.navigateTo(dest, principal) },
+                                            composition = composition
+                                        )
+                                    }
+                                    UserRole.STAFF, UserRole.MANAGER -> {
                                         InternalWorkspaceShell(
                                             principal = principal,
                                             currentDestination = currentDestination,
