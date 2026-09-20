@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Engineering
 import androidx.compose.material.icons.filled.Error
+import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.MonetizationOn
 import androidx.compose.material.icons.filled.Notifications
@@ -50,14 +51,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sucharu.sucharupro.data.api.model.AuthenticatedPrincipal
+import com.sucharu.sucharupro.ui.admin.components.AdminAffiliateNodeGraph
 import com.sucharu.sucharupro.ui.admin.components.AdminButton
 import com.sucharu.sucharupro.ui.admin.components.AdminButtonStyle
 import com.sucharu.sucharupro.ui.admin.components.AdminCard
 import com.sucharu.sucharupro.ui.admin.components.AdminCardSkeleton
+import com.sucharu.sucharupro.ui.admin.components.AdminCashCollectionCard
 import com.sucharu.sucharupro.ui.admin.components.AdminDonutCompletionChart
 import com.sucharu.sucharupro.ui.admin.components.AdminEmptyState
 import com.sucharu.sucharupro.ui.admin.components.AdminIconContainer
 import com.sucharu.sucharupro.ui.admin.components.AdminKpiGridSkeleton
+import com.sucharu.sucharupro.ui.admin.components.AdminProductionLoadCard
 import com.sucharu.sucharupro.ui.admin.components.AdminSalesTrendChart
 import com.sucharu.sucharupro.ui.admin.components.AdminWorkflowSwiper
 import com.sucharu.sucharupro.ui.admin.theme.AdminTheme
@@ -66,7 +70,7 @@ import com.sucharu.sucharupro.ui.features.dashboard.DashboardViewModel
 import com.sucharu.sucharupro.ui.navigation.AppDestination
 
 /**
- * Primary Unified ERP Command Center Dashboard Screen matching reference design image (Step 2 Implementation).
+ * Primary Unified ERP Command Center Dashboard Screen matching reference design image (Step 3 Complete Implementation).
  */
 @Composable
 fun UnifiedAdminDashboardScreen(
@@ -85,7 +89,7 @@ fun UnifiedAdminDashboardScreen(
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(bottom = 24.dp)
+            .padding(bottom = 28.dp)
     ) {
         when (val state = uiState) {
             is DashboardUiState.Loading -> {
@@ -139,7 +143,31 @@ fun UnifiedAdminDashboardScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // 3. INTERACTIVE 13-STAGE WORKFLOW PIPELINE SWIPER
+                // 3. AFFILIATE INTELLIGENCE & CASH/PRODUCTION CARDS SECTION
+                if (isDesktop) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(14.dp)
+                    ) {
+                        Column(modifier = Modifier.weight(1.2f)) {
+                            AdminAffiliateIntelligenceCard(onNavigateToDestination = onNavigateToDestination)
+                        }
+                        Column(modifier = Modifier.weight(0.8f), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                            AdminCashCollectionCard(onNavigateToDestination = onNavigateToDestination)
+                            AdminProductionLoadCard(onNavigateToDestination = onNavigateToDestination)
+                        }
+                    }
+                } else {
+                    AdminAffiliateIntelligenceCard(onNavigateToDestination = onNavigateToDestination)
+                    Spacer(modifier = Modifier.height(14.dp))
+                    AdminCashCollectionCard(onNavigateToDestination = onNavigateToDestination)
+                    Spacer(modifier = Modifier.height(14.dp))
+                    AdminProductionLoadCard(onNavigateToDestination = onNavigateToDestination)
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // 4. INTERACTIVE 13-STAGE WORKFLOW PIPELINE SWIPER
                 Surface(
                     shape = RoundedCornerShape(16.dp),
                     color = Color(0xFF0F172A),
@@ -157,7 +185,7 @@ fun UnifiedAdminDashboardScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // 4. PRIORITY ALERTS & QUICK CONTROLS
+                // 5. PRIORITY ALERTS & QUICK CONTROLS
                 if (isDesktop) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -331,6 +359,82 @@ private data class KpiChipData(
     val accentColor: Color,
     val onClick: () -> Unit
 )
+
+/**
+ * Affiliate Intelligence Network Orbital Graph Card matching Image 1 & Image 2.
+ */
+@Composable
+private fun AdminAffiliateIntelligenceCard(
+    onNavigateToDestination: (AppDestination) -> Unit
+) {
+    Surface(
+        shape = RoundedCornerShape(16.dp),
+        color = Color(0xFF0F172A),
+        border = BorderStroke(1.dp, Color(0xFF00B4D8).copy(alpha = 0.4f)),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(14.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(32.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFF00B4D8).copy(alpha = 0.2f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(imageVector = Icons.Default.Campaign, contentDescription = null, tint = Color(0xFF38BDF8), modifier = Modifier.size(18.dp))
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Column {
+                        Text(text = "Affiliate Intelligence", fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
+                        Text(text = "আমাদের পার্টনার, আমাদের শক্তি", fontSize = 10.sp, color = Color(0xFF94A3B8))
+                    }
+                }
+
+                Text(
+                    text = "বিস্তারিত দেখুন >",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF38BDF8),
+                    modifier = Modifier.clickable { onNavigateToDestination(AppDestination.Admin.AffiliateManagement) }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Orbital Node Graph
+            AdminAffiliateNodeGraph(partnerCount = 28)
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column {
+                    Text(text = "সক্রিয় পার্টনার", fontSize = 9.5.sp, color = Color(0xFF94A3B8))
+                    Text(text = "২৮ জন", fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
+                    Text(text = "↑ +৮ জন গত মাসে", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color(0xFF10B981))
+                }
+                Column {
+                    Text(text = "রেফারেল বিক্রি", fontSize = 9.5.sp, color = Color(0xFF94A3B8))
+                    Text(text = "৳ ১,৭৩,২০০", fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
+                    Text(text = "↑ +৩২.৫%", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color(0xFF10B981))
+                }
+                Column {
+                    Text(text = "কমিশন প্রদান", fontSize = 9.5.sp, color = Color(0xFF94A3B8))
+                    Text(text = "৳ ১২,৪৫০", fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
+                    Text(text = "৫ জন পার্টনার", fontSize = 9.sp, color = Color(0xFF38BDF8))
+                }
+            }
+        }
+    }
+}
 
 /**
  * Priority Alerts Widget (অগ্রাধিকার সতর্কতা).
