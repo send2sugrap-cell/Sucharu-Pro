@@ -196,6 +196,7 @@ sealed class AppDestination(
 
 
         object Profitability : Admin("admin/profitability", "Profit & Cost Intelligence", AuthorizationCapability.ADMIN_ALL)
+        object PrintingCalculator : Admin("admin/printing-calculator", "Smart Printing Calculator Engine", AuthorizationCapability.ADMIN_ALL)
         object Reports : Admin("admin/reports", "Executive Analytics", AuthorizationCapability.ADMIN_ALL)
         object SystemMonitoring : Admin("admin/monitoring", "Infrastructure Health", AuthorizationCapability.ADMIN_ALL)
         object Notifications : Admin("admin/notifications", "System Alerts", AuthorizationCapability.READ_OWN_IDENTITY)

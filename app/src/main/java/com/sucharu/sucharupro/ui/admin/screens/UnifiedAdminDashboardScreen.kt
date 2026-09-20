@@ -540,7 +540,7 @@ private fun AdminQuickControlsWidget(
 
             val controls = listOf(
                 Triple("নতুন অর্ডার", Icons.Default.Add, AppDestination.Customer.Quotations),
-                Triple("প্রিন্টিং ক্যালকুলেটর", Icons.Default.Calculate, AppDestination.Customer.Quotations),
+                Triple("প্রিন্টিং ক্যালকুলেটর", Icons.Default.Calculate, AppDestination.Admin.PrintingCalculator),
                 Triple("উৎপাদন নিয়ন্ত্রণ", Icons.Default.Engineering, AppDestination.Staff.Production),
                 Triple("আর্থিক ব্যবস্থাপনা", Icons.Default.MonetizationOn, AppDestination.Admin.Finance),
                 Triple("অ্যাফিলিয়েট ব্যবস্থাপনা", Icons.Default.Campaign, AppDestination.Admin.AffiliateManagement),

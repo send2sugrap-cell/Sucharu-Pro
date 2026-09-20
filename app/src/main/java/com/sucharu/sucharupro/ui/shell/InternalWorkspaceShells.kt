@@ -67,6 +67,28 @@ fun AdminWorkspaceShell(
                     onOrderCreated = { onNavigate(AppDestination.Customer.Orders) }
                 )
             }
+            AppDestination.Admin.PrintingCalculator -> {
+                val calcService = remember(composition) {
+                    composition?.printingCalculatorService ?: com.sucharu.sucharupro.domain.service.printingcalculator.PrintingCalculatorServiceImpl(
+                        repository = com.sucharu.sucharupro.data.repository.printingcalculator.PrintingCalculatorRepositoryImpl(
+                            dataSource = com.sucharu.sucharupro.data.datasource.printingcalculator.FakePrintingCalculatorDataSource()
+                        )
+                    )
+                }
+                val calcViewModel: com.sucharu.sucharupro.ui.features.printing.calculator.PrintingCalculatorViewModel = viewModel {
+                    com.sucharu.sucharupro.ui.features.printing.calculator.PrintingCalculatorViewModel(
+                        calculatorService = calcService
+                    )
+                }
+                val calcUiState by calcViewModel.uiState.collectAsState()
+                com.sucharu.sucharupro.ui.features.printing.calculator.PrintingCalculatorScreen(
+                    onCalculate = { calcViewModel.calculate(it) },
+                    calculationResult = calcUiState.calculationResult,
+                    validationResult = calcUiState.validationResult,
+                    isLoading = calcUiState.isLoading,
+                    errorMessage = calcUiState.errorMessage
+                )
+            }
             AppDestination.Customer.Orders -> {
                 val orderListViewModel: com.sucharu.sucharupro.ui.features.orders.order.OrderListViewModel = viewModel {
                     com.sucharu.sucharupro.ui.features.orders.order.OrderListViewModel(repository = orderRepo)
