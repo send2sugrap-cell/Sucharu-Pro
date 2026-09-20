@@ -58,7 +58,6 @@ import com.sucharu.sucharupro.ui.admin.components.AdminCard
 import com.sucharu.sucharupro.ui.admin.components.AdminCardSkeleton
 import com.sucharu.sucharupro.ui.admin.components.AdminCashCollectionCard
 import com.sucharu.sucharupro.ui.admin.components.AdminDonutCompletionChart
-import com.sucharu.sucharupro.ui.admin.components.AdminEmptyState
 import com.sucharu.sucharupro.ui.admin.components.AdminIconContainer
 import com.sucharu.sucharupro.ui.admin.components.AdminKpiGridSkeleton
 import com.sucharu.sucharupro.ui.admin.components.AdminProductionLoadCard
@@ -70,7 +69,7 @@ import com.sucharu.sucharupro.ui.features.dashboard.DashboardViewModel
 import com.sucharu.sucharupro.ui.navigation.AppDestination
 
 /**
- * Primary Unified ERP Command Center Dashboard Screen matching reference design image (Step 3 Complete Implementation).
+ * Primary Unified ERP Command Center Dashboard Screen matching reference design image (Complete Implementation).
  */
 @Composable
 fun UnifiedAdminDashboardScreen(
@@ -117,94 +116,97 @@ fun UnifiedAdminDashboardScreen(
                 }
             }
 
-            is DashboardUiState.Empty -> {
-                AdminEmptyState(
-                    message = "No Active Operational Data",
-                    subtitle = "Initialize commercial orders or production job cards.",
-                    actionLabel = "New Order",
-                    onActionClick = { onNavigateToDestination(AppDestination.Customer.Orders) }
-                )
-            }
-
-            is DashboardUiState.Success -> {
-                // 1. TODAY'S OPERATIONS & ORDER HEALTH SECTION
-                AdminTodayOperationsSection(
+            else -> {
+                // Renders full Admin Operations Dashboard for both Empty and Success states
+                AdminOperationsDashboardBody(
                     isDesktop = isDesktop,
                     onNavigateToDestination = onNavigateToDestination
                 )
-
-                Spacer(modifier = Modifier.height(14.dp))
-
-                // 2. 4 STAT KPI CHIPS ROW
-                AdminFourKpiChipsRow(
-                    isDesktop = isDesktop,
-                    onNavigateToDestination = onNavigateToDestination
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // 3. AFFILIATE INTELLIGENCE & CASH/PRODUCTION CARDS SECTION
-                if (isDesktop) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(14.dp)
-                    ) {
-                        Column(modifier = Modifier.weight(1.2f)) {
-                            AdminAffiliateIntelligenceCard(onNavigateToDestination = onNavigateToDestination)
-                        }
-                        Column(modifier = Modifier.weight(0.8f), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                            AdminCashCollectionCard(onNavigateToDestination = onNavigateToDestination)
-                            AdminProductionLoadCard(onNavigateToDestination = onNavigateToDestination)
-                        }
-                    }
-                } else {
-                    AdminAffiliateIntelligenceCard(onNavigateToDestination = onNavigateToDestination)
-                    Spacer(modifier = Modifier.height(14.dp))
-                    AdminCashCollectionCard(onNavigateToDestination = onNavigateToDestination)
-                    Spacer(modifier = Modifier.height(14.dp))
-                    AdminProductionLoadCard(onNavigateToDestination = onNavigateToDestination)
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // 4. INTERACTIVE 13-STAGE WORKFLOW PIPELINE SWIPER
-                Surface(
-                    shape = RoundedCornerShape(16.dp),
-                    color = Color(0xFF0F172A),
-                    border = BorderStroke(1.dp, Color(0xFF00B4D8).copy(alpha = 0.4f)),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Box(modifier = Modifier.padding(14.dp)) {
-                        AdminWorkflowSwiper(
-                            onStageClick = { stage ->
-                                onNavigateToDestination(AppDestination.Staff.Production)
-                            }
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // 5. PRIORITY ALERTS & QUICK CONTROLS
-                if (isDesktop) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(14.dp)
-                    ) {
-                        Column(modifier = Modifier.weight(1.2f)) {
-                            AdminPriorityAlertsWidget(onNavigateToDestination = onNavigateToDestination)
-                        }
-                        Column(modifier = Modifier.weight(0.8f)) {
-                            AdminQuickControlsWidget(onNavigateToDestination = onNavigateToDestination)
-                        }
-                    }
-                } else {
-                    AdminPriorityAlertsWidget(onNavigateToDestination = onNavigateToDestination)
-                    Spacer(modifier = Modifier.height(14.dp))
-                    AdminQuickControlsWidget(onNavigateToDestination = onNavigateToDestination)
-                }
             }
         }
+    }
+}
+
+@Composable
+private fun AdminOperationsDashboardBody(
+    isDesktop: Boolean,
+    onNavigateToDestination: (destination: AppDestination) -> Unit
+) {
+    // 1. TODAY'S OPERATIONS & ORDER HEALTH SECTION
+    AdminTodayOperationsSection(
+        isDesktop = isDesktop,
+        onNavigateToDestination = onNavigateToDestination
+    )
+
+    Spacer(modifier = Modifier.height(14.dp))
+
+    // 2. 4 STAT KPI CHIPS ROW
+    AdminFourKpiChipsRow(
+        isDesktop = isDesktop,
+        onNavigateToDestination = onNavigateToDestination
+    )
+
+    Spacer(modifier = Modifier.height(16.dp))
+
+    // 3. AFFILIATE INTELLIGENCE & CASH/PRODUCTION CARDS SECTION
+    if (isDesktop) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            Column(modifier = Modifier.weight(1.2f)) {
+                AdminAffiliateIntelligenceCard(onNavigateToDestination = onNavigateToDestination)
+            }
+            Column(modifier = Modifier.weight(0.8f), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                AdminCashCollectionCard(onNavigateToDestination = onNavigateToDestination)
+                AdminProductionLoadCard(onNavigateToDestination = onNavigateToDestination)
+            }
+        }
+    } else {
+        AdminAffiliateIntelligenceCard(onNavigateToDestination = onNavigateToDestination)
+        Spacer(modifier = Modifier.height(14.dp))
+        AdminCashCollectionCard(onNavigateToDestination = onNavigateToDestination)
+        Spacer(modifier = Modifier.height(14.dp))
+        AdminProductionLoadCard(onNavigateToDestination = onNavigateToDestination)
+    }
+
+    Spacer(modifier = Modifier.height(16.dp))
+
+    // 4. INTERACTIVE 13-STAGE WORKFLOW PIPELINE SWIPER
+    Surface(
+        shape = RoundedCornerShape(16.dp),
+        color = Color(0xFF0F172A),
+        border = BorderStroke(1.dp, Color(0xFF00B4D8).copy(alpha = 0.4f)),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Box(modifier = Modifier.padding(14.dp)) {
+            AdminWorkflowSwiper(
+                onStageClick = { stage ->
+                    onNavigateToDestination(AppDestination.Staff.Production)
+                }
+            )
+        }
+    }
+
+    Spacer(modifier = Modifier.height(16.dp))
+
+    // 5. PRIORITY ALERTS & QUICK CONTROLS
+    if (isDesktop) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            Column(modifier = Modifier.weight(1.2f)) {
+                AdminPriorityAlertsWidget(onNavigateToDestination = onNavigateToDestination)
+            }
+            Column(modifier = Modifier.weight(0.8f)) {
+                AdminQuickControlsWidget(onNavigateToDestination = onNavigateToDestination)
+            }
+        }
+    } else {
+        AdminPriorityAlertsWidget(onNavigateToDestination = onNavigateToDestination)
+        Spacer(modifier = Modifier.height(14.dp))
+        AdminQuickControlsWidget(onNavigateToDestination = onNavigateToDestination)
     }
 }
 
