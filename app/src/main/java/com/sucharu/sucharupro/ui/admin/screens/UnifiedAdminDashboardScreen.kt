@@ -24,6 +24,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Analytics
+import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.CheckCircle
@@ -69,7 +70,7 @@ import com.sucharu.sucharupro.ui.features.dashboard.DashboardViewModel
 import com.sucharu.sucharupro.ui.navigation.AppDestination
 
 /**
- * Primary Unified ERP Command Center Dashboard Screen matching reference design image (Complete Implementation).
+ * Primary Unified ERP Command Center Dashboard Screen matching reference design image.
  */
 @Composable
 fun UnifiedAdminDashboardScreen(
@@ -469,7 +470,13 @@ private fun AdminPriorityAlertsWidget(
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(text = "অগ্রাধিকার সতর্কতা (Priority Alerts)", fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
                 }
-                Text(text = "সব দেখুন >", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF38BDF8))
+                Text(
+                    text = "সব দেখুন >",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF38BDF8),
+                    modifier = Modifier.clickable { onNavigateToDestination(AppDestination.Admin.Notifications) }
+                )
             }
 
             Spacer(modifier = Modifier.height(10.dp))
@@ -533,6 +540,7 @@ private fun AdminQuickControlsWidget(
 
             val controls = listOf(
                 Triple("নতুন অর্ডার", Icons.Default.Add, AppDestination.Customer.Quotations),
+                Triple("প্রিন্টিং ক্যালকুলেটর", Icons.Default.Calculate, AppDestination.Customer.Quotations),
                 Triple("উৎপাদন নিয়ন্ত্রণ", Icons.Default.Engineering, AppDestination.Staff.Production),
                 Triple("আর্থিক ব্যবস্থাপনা", Icons.Default.MonetizationOn, AppDestination.Admin.Finance),
                 Triple("অ্যাফিলিয়েট ব্যবস্থাপনা", Icons.Default.Campaign, AppDestination.Admin.AffiliateManagement),
@@ -560,10 +568,20 @@ private fun AdminQuickControlsWidget(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.weight(1f, fill = false)
+                                    ) {
                                         Icon(imageVector = icon, contentDescription = null, tint = Color(0xFF38BDF8), modifier = Modifier.size(16.dp))
                                         Spacer(modifier = Modifier.width(6.dp))
-                                        Text(text = label, fontSize = 10.5.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                        Text(
+                                            text = label,
+                                            fontSize = 10.5.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.White,
+                                            maxLines = 1,
+                                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                        )
                                     }
                                     Icon(imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = Color(0xFF94A3B8), modifier = Modifier.size(14.dp))
                                 }
