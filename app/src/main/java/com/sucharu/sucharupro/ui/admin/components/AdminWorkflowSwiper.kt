@@ -19,7 +19,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Check
@@ -107,7 +106,11 @@ fun AdminWorkflowSwiper(
     if (selectedStageForDetail != null) {
         WorkflowStageDetailSheet(
             node = selectedStageForDetail!!,
-            onDismiss = { selectedStageForDetail = null }
+            onDismiss = { selectedStageForDetail = null },
+            onOpenStageWorkspace = { stage ->
+                selectedStageForDetail = null
+                onStageClick(stage)
+            }
         )
     }
 
@@ -154,7 +157,6 @@ fun AdminWorkflowSwiper(
                         .clip(RoundedCornerShape(12.dp))
                         .clickable {
                             selectedStageForDetail = node
-                            onStageClick(node.stageType)
                         },
                     color = Color(0xFF0F172A),
                     border = BorderStroke(1.dp, node.accentColor.copy(alpha = 0.5f))
@@ -211,7 +213,8 @@ fun AdminWorkflowSwiper(
 @Composable
 private fun WorkflowStageDetailSheet(
     node: WorkflowNodeItem,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onOpenStageWorkspace: (ProductionStageType) -> Unit = {}
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
@@ -270,6 +273,28 @@ private fun WorkflowStageDetailSheet(
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(text = "• অর্ডারের নাম: রিজিড গিফট বক্স ১০০ পিস (সুচারু ব্র্যান্ড)", fontSize = 11.5.sp, color = Color.White)
                     Text(text = "  বর্তমান অগ্রগতি: ৪৫% সম্পন্ন", fontSize = 10.5.sp, color = Color(0xFF94A3B8))
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .clickable { onOpenStageWorkspace(node.stageType) },
+                color = Color(0xFF00B4D8)
+            ) {
+                Box(
+                    modifier = Modifier.padding(vertical = 12.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "প্রোডাকশন মডিউলে বিস্তারিত দেখুন",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
                 }
             }
         }
