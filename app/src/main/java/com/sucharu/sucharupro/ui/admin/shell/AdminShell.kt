@@ -141,7 +141,6 @@ private fun AdminShellScaffold(
                 principal = principal,
                 notificationCount = 0,
                 onToggleNavigation = onToggleNavigation,
-                onSearchClick = null,
                 onNotificationsClick = { onNavigateTo(AppDestination.Admin.Notifications) }
             )
         }

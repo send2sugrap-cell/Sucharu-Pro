@@ -41,6 +41,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sucharu.sucharupro.data.api.model.AuthenticatedPrincipal
@@ -80,7 +81,7 @@ fun AdminSidebar(
         )
     }
 
-    val sidebarWidth = if (isCompact) 76.dp else 250.dp
+    val sidebarWidth = if (isCompact) 72.dp else 240.dp
 
     Surface(
         modifier = modifier
@@ -98,14 +99,14 @@ fun AdminSidebar(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 14.dp, vertical = 4.dp),
+                    .padding(horizontal = 12.dp, vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = if (isCompact) Arrangement.Center else Arrangement.SpaceBetween
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         modifier = Modifier
-                            .size(42.dp)
+                            .size(38.dp)
                             .clip(CircleShape)
                             .background(Color(0xFF00B4D8).copy(alpha = 0.2f))
                             .border(1.5.dp, Color(0xFF38BDF8), CircleShape),
@@ -115,32 +116,38 @@ fun AdminSidebar(
                             imageVector = Icons.Default.Print,
                             contentDescription = "Sucharu Graphics",
                             tint = Color(0xFF38BDF8),
-                            modifier = Modifier.size(22.dp)
+                            modifier = Modifier.size(20.dp)
                         )
                     }
 
                     if (!isCompact) {
-                        Spacer(modifier = Modifier.width(10.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
                         Column {
                             Text(
                                 text = "SUCHARU GRAPHICS",
-                                fontSize = 13.sp,
+                                fontSize = 12.sp,
+                                lineHeight = 14.sp,
                                 fontWeight = FontWeight.ExtraBold,
                                 color = Color.White,
-                                letterSpacing = 0.5.sp
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                letterSpacing = 0.3.sp
                             )
                             Text(
                                 text = "PRINTING IDEAS TO REALITY",
-                                fontSize = 8.sp,
+                                fontSize = 7.5.sp,
+                                lineHeight = 9.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFF38BDF8)
+                                color = Color(0xFF38BDF8),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                     }
                 }
 
                 if (!isCompact && onToggleCompact != null) {
-                    IconButton(onClick = onToggleCompact, modifier = Modifier.size(28.dp)) {
+                    IconButton(onClick = onToggleCompact, modifier = Modifier.size(26.dp)) {
                         Icon(
                             imageVector = Icons.Default.ChevronRight,
                             contentDescription = "Compact Sidebar",
@@ -150,7 +157,7 @@ fun AdminSidebar(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
             // MAIN NAVIGATION ITEMS
             Column(
@@ -184,7 +191,7 @@ fun AdminSidebar(
                                 shape = RoundedCornerShape(10.dp)
                             )
                             .clickable { onDestinationSelect(item.destination) }
-                            .padding(horizontal = 12.dp, vertical = 10.dp)
+                            .padding(horizontal = 10.dp, vertical = 9.dp)
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -200,12 +207,15 @@ fun AdminSidebar(
                                 )
 
                                 if (!isCompact) {
-                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Spacer(modifier = Modifier.width(10.dp))
                                     Text(
                                         text = item.title,
-                                        fontSize = 12.5.sp,
+                                        fontSize = 12.sp,
+                                        lineHeight = 14.sp,
                                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                        color = if (isSelected) Color.White else Color(0xFFCBD5E1)
+                                        color = if (isSelected) Color.White else Color(0xFFCBD5E1),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
                                     )
                                 }
                             }
@@ -228,7 +238,7 @@ fun AdminSidebar(
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 10.dp, vertical = 8.dp),
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
                     shape = RoundedCornerShape(12.dp),
                     color = Color(0xFF0F172A),
                     border = BorderStroke(1.dp, Color(0xFF00B4D8).copy(alpha = 0.4f))
@@ -238,23 +248,32 @@ fun AdminSidebar(
                     ) {
                         Text(
                             text = "স্বাগতম, অ্যাডমিন",
-                            fontSize = 13.sp,
+                            fontSize = 12.sp,
+                            lineHeight = 14.sp,
                             fontWeight = FontWeight.ExtraBold,
-                            color = Color.White
+                            color = Color.White,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
                             text = "সবকিছু নিয়ন্ত্রণে, এগিয়ে যাচ্ছে সুচারু",
-                            fontSize = 9.5.sp,
-                            color = Color(0xFF94A3B8)
+                            fontSize = 9.sp,
+                            lineHeight = 11.sp,
+                            color = Color(0xFF94A3B8),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
-                        Spacer(modifier = Modifier.height(6.dp))
+                        Spacer(modifier = Modifier.height(5.dp))
                         Text(
                             text = "QUALITY PRINT • STRONGER BRANDS",
                             fontSize = 7.5.sp,
+                            lineHeight = 9.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFF38BDF8),
-                            letterSpacing = 0.5.sp
+                            letterSpacing = 0.3.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
