@@ -35,19 +35,76 @@ fun AdminWorkspaceShell(
         modifier = modifier,
         onNavigateTo = onNavigate
     ) {
-        val dashRepo = remember(composition) {
-            composition?.dashboardRepository ?: com.sucharu.sucharupro.data.repository.FakeDashboardRepository()
+        val orderRepo = remember(composition) {
+            composition?.orderRepository ?: com.sucharu.sucharupro.data.repository.OrderRepositoryImpl(
+                dataSource = com.sucharu.sucharupro.data.datasource.FakeOrderDataSource()
+            )
         }
-        val dashboardViewModel: com.sucharu.sucharupro.ui.features.dashboard.DashboardViewModel = viewModel {
-            com.sucharu.sucharupro.ui.features.dashboard.DashboardViewModel(repository = dashRepo)
+        val dashboardRepo = remember(composition) {
+            composition?.dashboardRepository ?: com.sucharu.sucharupro.data.repository.FakeDashboardRepository()
         }
 
         when (currentDestination) {
             AppDestination.Admin.FullAdministration -> {
+                val dashboardViewModel: com.sucharu.sucharupro.ui.features.dashboard.DashboardViewModel = viewModel {
+                    com.sucharu.sucharupro.ui.features.dashboard.DashboardViewModel(repository = dashboardRepo)
+                }
                 com.sucharu.sucharupro.ui.admin.screens.UnifiedAdminDashboardScreen(
                     viewModel = dashboardViewModel,
                     principal = principal,
                     onNavigateToDestination = onNavigate
+                )
+            }
+            AppDestination.Customer.Quotations -> {
+                val wizardViewModel: com.sucharu.sucharupro.ui.features.orders.order.wizard.OrderPlacementWizardViewModel = viewModel {
+                    com.sucharu.sucharupro.ui.features.orders.order.wizard.OrderPlacementWizardViewModel(
+                        orderRepository = orderRepo
+                    )
+                }
+                com.sucharu.sucharupro.ui.features.orders.order.wizard.OrderPlacementWizardScreen(
+                    viewModel = wizardViewModel,
+                    onBackClick = { onNavigate(AppDestination.Admin.FullAdministration) },
+                    onOrderCreated = { onNavigate(AppDestination.Customer.Orders) }
+                )
+            }
+            AppDestination.Customer.Orders -> {
+                val orderListViewModel: com.sucharu.sucharupro.ui.features.orders.order.OrderListViewModel = viewModel {
+                    com.sucharu.sucharupro.ui.features.orders.order.OrderListViewModel(repository = orderRepo)
+                }
+                com.sucharu.sucharupro.ui.features.orders.order.OrderListScreen(
+                    viewModel = orderListViewModel,
+                    onOrderClick = { orderId -> onNavigate(AppDestination.Customer.OrderDetails(orderId)) }
+                )
+            }
+            AppDestination.Staff.Production, AppDestination.Manager.Production -> {
+                val prodRepo: com.sucharu.sucharupro.domain.repository.ProductionJobRepository = remember {
+                    com.sucharu.sucharupro.data.repository.ProductionJobRepositoryImpl(
+                        dataSource = com.sucharu.sucharupro.data.datasource.FakeProductionJobDataSource()
+                    )
+                }
+                val prodViewModel: com.sucharu.sucharupro.ui.features.production.job.list.ProductionJobListViewModel = viewModel {
+                    com.sucharu.sucharupro.ui.features.production.job.list.ProductionJobListViewModel(repository = prodRepo)
+                }
+                com.sucharu.sucharupro.ui.features.production.job.list.ProductionJobListScreen(
+                    viewModel = prodViewModel,
+                    onJobClick = {}
+                )
+            }
+            AppDestination.Staff.Delivery, AppDestination.Manager.Delivery -> {
+                val delRepo: com.sucharu.sucharupro.domain.repository.DeliveryOrderRepository = remember {
+                    com.sucharu.sucharupro.data.repository.DeliveryOrderRepositoryImpl(
+                        dataSource = com.sucharu.sucharupro.data.datasource.FakeDeliveryOrderDataSource()
+                    )
+                }
+                val delViewModel: com.sucharu.sucharupro.ui.features.delivery.DeliveryOrderListViewModel = viewModel {
+                    com.sucharu.sucharupro.ui.features.delivery.DeliveryOrderListViewModel(repository = delRepo)
+                }
+                com.sucharu.sucharupro.ui.features.delivery.DeliveryOrderListScreen(
+                    projectId = principal.projectId,
+                    viewModel = delViewModel,
+                    onCreateDeliveryOrder = {},
+                    onDeliveryOrderClick = {},
+                    onViewDispatchRequests = {}
                 )
             }
             AppDestination.Admin.Users -> {
