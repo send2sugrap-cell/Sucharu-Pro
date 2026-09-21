@@ -27,7 +27,7 @@ import com.sucharu.sucharupro.ui.features.printing.calculator.sections.StampSect
 import com.sucharu.sucharupro.ui.features.printing.calculator.sections.WeddingSection
 
 /**
- * Authoritative 8-Sector Commercial Printing Calculator Hub matching E:\App\Calculetor project.
+ * Full-Screen Authoritative 8-Sector Commercial Printing Calculator Hub.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,7 +37,8 @@ fun PrintingCalculatorScreen(
     validationResult: ValidationResponseDto? = null,
     isLoading: Boolean = false,
     errorMessage: String? = null,
-    initialSectorId: Int = 0
+    initialSectorId: Int = 0,
+    onCloseFullScreen: () -> Unit = {}
 ) {
     var selectedSectorId by remember { mutableIntStateOf(initialSectorId) }
 
@@ -58,32 +59,37 @@ fun PrintingCalculatorScreen(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        // Top Header
+        // Full Screen Top Header Bar
         Surface(
             color = MaterialTheme.colorScheme.surface,
-            tonalElevation = 2.dp,
+            tonalElevation = 3.dp,
             modifier = Modifier.fillMaxWidth()
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (selectedSectorId != 0) {
-                        IconButton(onClick = { selectedSectorId = 0 }) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back to Hub",
-                                tint = MaterialTheme.colorScheme.primary
-                            )
+                    IconButton(onClick = {
+                        if (selectedSectorId != 0) {
+                            selectedSectorId = 0
+                        } else {
+                            onCloseFullScreen()
                         }
+                    }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
                     }
+                    Spacer(modifier = Modifier.width(4.dp))
                     Column {
                         Text(
-                            text = "স্মার্ট প্রিন্টিং ক্যালকুলেটর (Commercial Estimator)",
+                            text = "স্মার্ট প্রিন্টিং ক্যালকুলেটর (Full Screen Estimator)",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary,
@@ -98,9 +104,19 @@ fun PrintingCalculatorScreen(
                     }
                 }
 
-                if (selectedSectorId != 0) {
-                    TextButton(onClick = { selectedSectorId = 0 }) {
-                        Text("সব সেক্টর ⊞", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (selectedSectorId != 0) {
+                        TextButton(onClick = { selectedSectorId = 0 }) {
+                            Text("সব সেক্টর ⊞", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        }
+                        Spacer(modifier = Modifier.width(4.dp))
+                    }
+
+                    FilledTonalButton(
+                        onClick = onCloseFullScreen,
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
+                    ) {
+                        Text("✕ ড্যাশবোর্ড", fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -128,8 +144,8 @@ fun PrintingCalculatorScreen(
             }
         }
 
-        // Sector Active Screen View
-        Box(modifier = Modifier.weight(1f)) {
+        // Full Screen Active View Content
+        Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
             when (selectedSectorId) {
                 0 -> DashboardGrid(onSectorSelected = { sectorId -> selectedSectorId = sectorId })
                 1 -> OffsetSection()
