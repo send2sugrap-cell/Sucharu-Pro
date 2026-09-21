@@ -77,6 +77,7 @@ fun UnifiedAdminDashboardScreen(
     viewModel: DashboardViewModel,
     principal: AuthenticatedPrincipal?,
     modifier: Modifier = Modifier,
+    scrollState: androidx.compose.foundation.ScrollState = androidx.compose.runtime.saveable.rememberSaveable(saver = androidx.compose.foundation.ScrollState.Saver) { androidx.compose.foundation.ScrollState(0) },
     onNavigateToDestination: (destination: AppDestination) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -88,7 +89,7 @@ fun UnifiedAdminDashboardScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
+            .verticalScroll(scrollState)
             .padding(bottom = 28.dp)
     ) {
         when (val state = uiState) {

@@ -29,6 +29,12 @@ fun AdminWorkspaceShell(
     composition: AppRuntimeComposition? = null,
     modifier: Modifier = Modifier
 ) {
+    val dashboardScrollState = androidx.compose.runtime.saveable.rememberSaveable(
+        saver = androidx.compose.foundation.ScrollState.Saver
+    ) {
+        androidx.compose.foundation.ScrollState(0)
+    }
+
     com.sucharu.sucharupro.ui.admin.shell.AdminShell(
         currentDestination = currentDestination,
         principal = principal,
@@ -52,6 +58,7 @@ fun AdminWorkspaceShell(
                 com.sucharu.sucharupro.ui.admin.screens.UnifiedAdminDashboardScreen(
                     viewModel = dashboardViewModel,
                     principal = principal,
+                    scrollState = dashboardScrollState,
                     onNavigateToDestination = onNavigate
                 )
             }
