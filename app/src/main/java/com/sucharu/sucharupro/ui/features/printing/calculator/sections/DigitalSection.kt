@@ -5,7 +5,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.sucharu.sucharupro.domain.model.printingcalculator.DigitalLaminationType
@@ -101,190 +100,12 @@ fun DigitalSection(modifier: Modifier = Modifier) {
         )
     }
 
-    Box(modifier = modifier.fillMaxSize()) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(scrollState)
-                .padding(start = 12.dp, end = 12.dp, top = 110.dp, bottom = 24.dp)
-        ) {
-            // 1. Material & Size
-            SectionHeaderCard(
-                title = "১. মেটেরিয়াল ও সাইন পরিমাপ (Dimensions in Feet)",
-                subtitle = "ডিজিটাল/ব্যানার মেটেরিয়াল, দৈর্ঘ্য ও প্রস্থ (ফুট হিসেবে)"
-            ) {
-                DropdownMenuField(
-                    selectedOption = selectedMaterialName,
-                    options = DigitalMaterial.entries.map { it.displayName },
-                    onOptionSelected = { selectedMaterialName = it },
-                    label = "মেটেরিয়াল টাইপ (Material Type)"
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    NumberInputField(
-                        value = widthFeetStr,
-                        onValueChange = { widthFeetStr = it },
-                        label = "দৈর্ঘ্য/চওড়া (Width)",
-                        suffix = "ft",
-                        modifier = Modifier.weight(1f)
-                    )
-                    NumberInputField(
-                        value = heightFeetStr,
-                        onValueChange = { heightFeetStr = it },
-                        label = "প্রস্থ/উচ্চতা (Height)",
-                        suffix = "ft",
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    NumberInputField(
-                        value = materialRateStr,
-                        onValueChange = { materialRateStr = it },
-                        label = "মেটেরিয়াল দর (Rate/sq.ft)",
-                        suffix = "৳/sq.ft",
-                        modifier = Modifier.weight(1f)
-                    )
-                    NumberInputField(
-                        value = quantityStr,
-                        onValueChange = { quantityStr = it },
-                        label = "পরিমাণ (Quantity)",
-                        suffix = "pcs",
-                        isInteger = true,
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-                Spacer(modifier = Modifier.height(6.dp))
-                Text(
-                    text = "মোট ক্ষেত্রফল: ${formatMoney(result.totalSqFtPerUnit)} বর্গফুট/পিস | সর্বমোট: ${formatMoney(result.totalSqFtAll)} বর্গফুট",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-
-            // 2. Square Foot Lamination
-            SectionHeaderCard(
-                title = "২. ডিজিটাল ল্যামিনেশন (Square Foot Lamination)",
-                subtitle = "কোল্ড ম্যাট, কোল্ড গ্লসি বা ফ্লোর ল্যামিনেশন"
-            ) {
-                SwitchRowField(
-                    title = "ডিজিটাল ল্যামিনেশন যোগ করুন",
-                    checked = isDigitalLamEnabled,
-                    onCheckedChange = { isDigitalLamEnabled = it }
-                )
-                if (isDigitalLamEnabled) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    DropdownMenuField(
-                        selectedOption = selectedDigitalLamType,
-                        options = DigitalLaminationType.entries.map { it.displayName },
-                        onOptionSelected = { selectedDigitalLamType = it },
-                        label = "ল্যামিনেশন টাইপ"
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        NumberInputField(
-                            value = lamRatePerSqFtStr,
-                            onValueChange = { lamRatePerSqFtStr = it },
-                            label = "দর প্রতি বর্গফুট",
-                            suffix = "৳/sq.ft",
-                            modifier = Modifier.weight(1f)
-                        )
-                        NumberInputField(
-                            value = digitalLamMinChargeStr,
-                            onValueChange = { digitalLamMinChargeStr = it },
-                            label = "মিনিমাম ল্যামিনেশন চার্জ",
-                            suffix = "৳",
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                }
-            }
-
-            // 3. Finishing & Accessories
-            SectionHeaderCard(
-                title = "৩. ফিনিশিং, এক্সেসরিজ ও মাউন্টিং",
-                subtitle = "গ্রোমেট, সাইড হেমিং, ফোম বোর্ড মাউন্টিং ও স্ট্যান্ড"
-            ) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    NumberInputField(
-                        value = grommetsPerUnitStr,
-                        onValueChange = { grommetsPerUnitStr = it },
-                        label = "গ্রোমেট/আইলেট সংখ্যা (পিস/ইউনিট)",
-                        isInteger = true,
-                        modifier = Modifier.weight(1f)
-                    )
-                    NumberInputField(
-                        value = ratePerGrommetStr,
-                        onValueChange = { ratePerGrommetStr = it },
-                        label = "প্রতি গ্রোমেট দর",
-                        suffix = "৳/pc",
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                SwitchRowField(
-                    title = "সাইড হেমিং/সিলিং (Side Hemming)",
-                    checked = isHemmingEnabled,
-                    onCheckedChange = { isHemmingEnabled = it }
-                )
-                if (isHemmingEnabled) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    NumberInputField(
-                        value = hemmingRatePerFootStr,
-                        onValueChange = { hemmingRatePerFootStr = it },
-                        label = "হেমিং রেট প্রতি রানিং ফুট",
-                        suffix = "৳/ft"
-                    )
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                SwitchRowField(
-                    title = "মাউন্টিং বোর্ড (PVC Foam / Acrylic Sheet)",
-                    checked = isBoardMountEnabled,
-                    onCheckedChange = { isBoardMountEnabled = it }
-                )
-                if (isBoardMountEnabled) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    NumberInputField(
-                        value = boardMountRatePerSqFtStr,
-                        onValueChange = { boardMountRatePerSqFtStr = it },
-                        label = "বোর্ড মাউন্টিং দর/বর্গফুট",
-                        suffix = "৳/sq.ft"
-                    )
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                NumberInputField(
-                    value = standUnitPriceStr,
-                    onValueChange = { standUnitPriceStr = it },
-                    label = "স্ট্যান্ড মেকানিজম (Roll-up / X-Stand) দর/পিস",
-                    suffix = "৳/pc"
-                )
-            }
-
-            // 4. Design & Profit
-            SectionHeaderCard(
-                title = "৪. ডিজাইন চার্জ ও প্রফিট মার্জিন",
-                subtitle = "ডিজাইন ফি ও লাভের শতাংশ"
-            ) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    NumberInputField(
-                        value = designChargeStr,
-                        onValueChange = { designChargeStr = it },
-                        label = "ডিজাইন চার্জ",
-                        suffix = "৳",
-                        modifier = Modifier.weight(1f)
-                    )
-                    NumberInputField(
-                        value = profitPercentStr,
-                        onValueChange = { profitPercentStr = it },
-                        label = "লাভের শতাংশ (Profit Percent)",
-                        suffix = "%",
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-            }
-            Spacer(modifier = Modifier.height(24.dp))
-        }
-
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .verticalScroll(scrollState)
+            .padding(horizontal = 10.dp, vertical = 6.dp)
+    ) {
         // Sticky Cost Summary Header
         CostSummaryCard(
             grandTotal = result.grandTotal,
@@ -302,10 +123,185 @@ fun DigitalSection(modifier: Modifier = Modifier) {
                 "স্ট্যান্ড মেকানিজম (Roll-up / X-Stand)" to result.standCost,
                 "ডিজাইন চার্জ" to (designChargeStr.toDoubleOrNull() ?: 0.0)
             ),
-            initialExpanded = false,
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(horizontal = 8.dp, vertical = 2.dp)
+            initialExpanded = false
         )
+
+        Spacer(modifier = Modifier.height(6.dp))
+
+        // 1. Material & Size
+        SectionHeaderCard(
+            title = "১. মেটেরিয়াল ও সাইন পরিমাপ (Dimensions in Feet)",
+            subtitle = "ডিজিটাল/ব্যানার মেটেরিয়াল, দৈর্ঘ্য ও প্রস্থ (ফুট হিসেবে)"
+        ) {
+            DropdownMenuField(
+                selectedOption = selectedMaterialName,
+                options = DigitalMaterial.entries.map { it.displayName },
+                onOptionSelected = { selectedMaterialName = it },
+                label = "মেটেরিয়াল টাইপ (Material Type)"
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                NumberInputField(
+                    value = widthFeetStr,
+                    onValueChange = { widthFeetStr = it },
+                    label = "দৈর্ঘ্য/চওড়া (Width)",
+                    suffix = "ft",
+                    modifier = Modifier.weight(1f)
+                )
+                NumberInputField(
+                    value = heightFeetStr,
+                    onValueChange = { heightFeetStr = it },
+                    label = "প্রস্থ/উচ্চতা (Height)",
+                    suffix = "ft",
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                NumberInputField(
+                    value = materialRateStr,
+                    onValueChange = { materialRateStr = it },
+                    label = "মেটেরিয়াল দর (Rate/sq.ft)",
+                    suffix = "৳/sq.ft",
+                    modifier = Modifier.weight(1f)
+                )
+                NumberInputField(
+                    value = quantityStr,
+                    onValueChange = { quantityStr = it },
+                    label = "পরিমাণ (Quantity)",
+                    suffix = "pcs",
+                    isInteger = true,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(
+                text = "মোট ক্ষেত্রফল: ${formatMoney(result.totalSqFtPerUnit)} বর্গফুট/পিস | সর্বমোট: ${formatMoney(result.totalSqFtAll)} বর্গফুট",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
+
+        // 2. Square Foot Lamination
+        SectionHeaderCard(
+            title = "২. ডিজিটাল ল্যামিনেশন (Square Foot Lamination)",
+            subtitle = "কোল্ড ম্যাট, কোল্ড গ্লসি বা ফ্লোর ল্যামিনেশন"
+        ) {
+            SwitchRowField(
+                title = "ডিজিটাল ল্যামিনেশন যোগ করুন",
+                checked = isDigitalLamEnabled,
+                onCheckedChange = { isDigitalLamEnabled = it }
+            )
+            if (isDigitalLamEnabled) {
+                Spacer(modifier = Modifier.height(8.dp))
+                DropdownMenuField(
+                    selectedOption = selectedDigitalLamType,
+                    options = DigitalLaminationType.entries.map { it.displayName },
+                    onOptionSelected = { selectedDigitalLamType = it },
+                    label = "ল্যামিনেশন টাইপ"
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    NumberInputField(
+                        value = lamRatePerSqFtStr,
+                        onValueChange = { lamRatePerSqFtStr = it },
+                        label = "দর প্রতি বর্গফুট",
+                        suffix = "৳/sq.ft",
+                        modifier = Modifier.weight(1f)
+                    )
+                    NumberInputField(
+                        value = digitalLamMinChargeStr,
+                        onValueChange = { digitalLamMinChargeStr = it },
+                        label = "মিনিমাম ল্যামিনেশন চার্জ",
+                        suffix = "৳",
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+        }
+
+        // 3. Finishing & Accessories
+        SectionHeaderCard(
+            title = "৩. ফিনিশিং, এক্সেসরিজ ও মাউন্টিং",
+            subtitle = "গ্রোমেট, সাইড হেমিং, ফোম বোর্ড মাউন্টিং ও স্ট্যান্ড"
+        ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                NumberInputField(
+                    value = grommetsPerUnitStr,
+                    onValueChange = { grommetsPerUnitStr = it },
+                    label = "গ্রোমেট/আইলেট সংখ্যা (পিস/ইউনিট)",
+                    isInteger = true,
+                    modifier = Modifier.weight(1f)
+                )
+                NumberInputField(
+                    value = ratePerGrommetStr,
+                    onValueChange = { ratePerGrommetStr = it },
+                    label = "প্রতি গ্রোমেট দর",
+                    suffix = "৳/pc",
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            SwitchRowField(
+                title = "সাইড হেমিং/সিলিং (Side Hemming)",
+                checked = isHemmingEnabled,
+                onCheckedChange = { isHemmingEnabled = it }
+            )
+            if (isHemmingEnabled) {
+                Spacer(modifier = Modifier.height(4.dp))
+                NumberInputField(
+                    value = hemmingRatePerFootStr,
+                    onValueChange = { hemmingRatePerFootStr = it },
+                    label = "হেমিং রেট প্রতি রানিং ফুট",
+                    suffix = "৳/ft"
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            SwitchRowField(
+                title = "মাউন্টিং বোর্ড (PVC Foam / Acrylic Sheet)",
+                checked = isBoardMountEnabled,
+                onCheckedChange = { isBoardMountEnabled = it }
+            )
+            if (isBoardMountEnabled) {
+                Spacer(modifier = Modifier.height(4.dp))
+                NumberInputField(
+                    value = boardMountRatePerSqFtStr,
+                    onValueChange = { boardMountRatePerSqFtStr = it },
+                    label = "বোর্ড মাউন্টিং দর/বর্গফুট",
+                    suffix = "৳/sq.ft"
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            NumberInputField(
+                value = standUnitPriceStr,
+                onValueChange = { standUnitPriceStr = it },
+                label = "স্ট্যান্ড মেকানিজম (Roll-up / X-Stand) দর/পিস",
+                suffix = "৳/pc"
+            )
+        }
+
+        // 4. Design & Profit
+        SectionHeaderCard(
+            title = "৪. ডিজাইন চার্জ ও প্রফিট মার্জিন",
+            subtitle = "ডিজাইন ফি ও লাভের শতাংশ"
+        ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                NumberInputField(
+                    value = designChargeStr,
+                    onValueChange = { designChargeStr = it },
+                    label = "ডিজাইন চার্জ",
+                    suffix = "৳",
+                    modifier = Modifier.weight(1f)
+                )
+                NumberInputField(
+                    value = profitPercentStr,
+                    onValueChange = { profitPercentStr = it },
+                    label = "লাভের শতাংশ (Profit Percent)",
+                    suffix = "%",
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(24.dp))
     }
 }

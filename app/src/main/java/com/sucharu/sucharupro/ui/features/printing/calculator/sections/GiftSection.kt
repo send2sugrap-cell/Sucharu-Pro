@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.sucharu.sucharupro.domain.model.printingcalculator.GiftCategoryItem
@@ -93,189 +92,12 @@ fun GiftSection(modifier: Modifier = Modifier) {
         )
     }
 
-    Box(modifier = modifier.fillMaxSize()) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(scrollState)
-                .padding(start = 12.dp, end = 12.dp, top = 110.dp, bottom = 24.dp)
-        ) {
-            // 1. Item Selection & Quantity
-            SectionHeaderCard(
-                title = "১. গিফট আইটেম ও বডি ক্রয়মূল্য",
-                subtitle = "আইটেমের নাম, কাস্টমাইজেশন টাইপ ও ব্ল্যাংক বডি রেট"
-            ) {
-                DropdownMenuField(
-                    selectedOption = selectedItemName,
-                    options = GiftCategoryItem.entries.map { it.displayName },
-                    onOptionSelected = { selectedItemName = it },
-                    label = "গিফট ক্যাটাগরি আইটেম"
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    NumberInputField(
-                        value = blankPurchaseRateStr,
-                        onValueChange = { blankPurchaseRateStr = it },
-                        label = "ব্ল্যাংক আইটেম ক্রয়মূল্য",
-                        suffix = "৳/pc",
-                        modifier = Modifier.weight(1f)
-                    )
-                    NumberInputField(
-                        value = quantityStr,
-                        onValueChange = { quantityStr = it },
-                        label = "পরিমাণ (Quantity)",
-                        suffix = "pcs",
-                        isInteger = true,
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-            }
-
-            // 2. Customization Method
-            SectionHeaderCard(
-                title = "২. কাস্টমাইজেশন মেথড ও প্রিন্টিং রেট",
-                subtitle = "সাবলিমেশন, ডিটিএফ, স্ক্রিন প্রিন্ট বা ইউভি"
-            ) {
-                DropdownMenuField(
-                    selectedOption = selectedMethodName,
-                    options = GiftCustomizationMethod.entries.map { it.displayName },
-                    onOptionSelected = { selectedMethodName = it },
-                    label = "প্রিন্ট/কাস্টমাইজেশন পদ্ধতি"
-                )
-                Spacer(modifier = Modifier.height(10.dp))
-
-                when {
-                    selectedMethodName.contains("Sublimation") || selectedMethodName.contains("সাবলিমেশন") -> {
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            NumberInputField(
-                                value = sublimationPaperAndInkRateStr,
-                                onValueChange = { sublimationPaperAndInkRateStr = it },
-                                label = "কাগজ ও ইনক কালি খরচ",
-                                suffix = "৳/pc",
-                                modifier = Modifier.weight(1f)
-                            )
-                            NumberInputField(
-                                value = heatPressLabourPerPcStr,
-                                onValueChange = { heatPressLabourPerPcStr = it },
-                                label = "হিট প্রেস লেবার চার্জ",
-                                suffix = "৳/pc",
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
-                    }
-                    selectedMethodName.contains("Screen") || selectedMethodName.contains("স্ক্রিন") -> {
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            NumberInputField(
-                                value = screenMakingCostPerColorStr,
-                                onValueChange = { screenMakingCostPerColorStr = it },
-                                label = "স্ক্রিন মেকিং ফি (Fixed)",
-                                suffix = "৳/color",
-                                modifier = Modifier.weight(1f)
-                            )
-                            NumberInputField(
-                                value = colorCountStr,
-                                onValueChange = { colorCountStr = it },
-                                label = "রঙের সংখ্যা",
-                                isInteger = true,
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        NumberInputField(
-                            value = printRunRatePerPcStr,
-                            onValueChange = { printRunRatePerPcStr = it },
-                            label = "প্রিন্ট ড্রাগিং/রানিং লেবার",
-                            suffix = "৳/pc"
-                        )
-                    }
-                    selectedMethodName.contains("DTF") || selectedMethodName.contains("ডিটিএফ") -> {
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            NumberInputField(
-                                value = totalPrintAreaSqInStr,
-                                onValueChange = { totalPrintAreaSqInStr = it },
-                                label = "প্রিন্ট এরিয়া",
-                                suffix = "sq.in",
-                                modifier = Modifier.weight(1f)
-                            )
-                            NumberInputField(
-                                value = dtfRatePerSqFtStr,
-                                onValueChange = { dtfRatePerSqFtStr = it },
-                                label = "DTF দর/বর্গফুট",
-                                suffix = "৳/sq.ft",
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
-                    }
-                    selectedMethodName.contains("UV") || selectedMethodName.contains("ইউভি") -> {
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            NumberInputField(
-                                value = totalPrintAreaSqInStr,
-                                onValueChange = { totalPrintAreaSqInStr = it },
-                                label = "প্রিন্ট এরিয়া",
-                                suffix = "sq.in",
-                                modifier = Modifier.weight(1f)
-                            )
-                            NumberInputField(
-                                value = uvRatePerSqInStr,
-                                onValueChange = { uvRatePerSqInStr = it },
-                                label = "UV ফ্ল্যাটবেড দর/sq.in",
-                                suffix = "৳",
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
-                    }
-                    selectedMethodName.contains("Laser") || selectedMethodName.contains("লেজার") -> {
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            NumberInputField(
-                                value = timeInMinutesStr,
-                                onValueChange = { timeInMinutesStr = it },
-                                label = "এনগ্রেভিং সময় (মিনিট)",
-                                modifier = Modifier.weight(1f)
-                            )
-                            NumberInputField(
-                                value = engraveRatePerMinuteStr,
-                                onValueChange = { engraveRatePerMinuteStr = it },
-                                label = "মেশিন রেট/মিনিট",
-                                suffix = "৳/min",
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
-                    }
-                }
-            }
-
-            // 3. Packaging & Profit
-            SectionHeaderCard(
-                title = "৩. প্যাকেজিং ও প্রফিট মার্জিন",
-                subtitle = "বক্স প্যাকেজিং, ডিজাইন ও লাভ"
-            ) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    NumberInputField(
-                        value = packagingBoxRateStr,
-                        onValueChange = { packagingBoxRateStr = it },
-                        label = "ব্যক্তিগত বক্স/ভেলভেট বক্স",
-                        suffix = "৳/pc",
-                        modifier = Modifier.weight(1f)
-                    )
-                    NumberInputField(
-                        value = designSetupFeeStr,
-                        onValueChange = { designSetupFeeStr = it },
-                        label = "ডিজাইন ও সেটআপ ফি",
-                        suffix = "৳",
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                NumberInputField(
-                    value = profitPercentStr,
-                    onValueChange = { profitPercentStr = it },
-                    label = "লাভের শতাংশ (Profit Percent)",
-                    suffix = "%"
-                )
-            }
-            Spacer(modifier = Modifier.height(24.dp))
-        }
-
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .verticalScroll(scrollState)
+            .padding(horizontal = 10.dp, vertical = 6.dp)
+    ) {
         // Sticky Cost Summary Header
         CostSummaryCard(
             grandTotal = result.grandTotal,
@@ -290,10 +112,184 @@ fun GiftSection(modifier: Modifier = Modifier) {
                 "বক্স/প্যাকেজিং খরচ" to result.packagingCost,
                 "ডিজাইন ও সেটআপ ফি" to (designSetupFeeStr.toDoubleOrNull() ?: 0.0)
             ),
-            initialExpanded = false,
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(horizontal = 8.dp, vertical = 2.dp)
+            initialExpanded = false
         )
+
+        Spacer(modifier = Modifier.height(6.dp))
+
+        // 1. Item Selection & Quantity
+        SectionHeaderCard(
+            title = "১. গিফট আইটেম ও বডি ক্রয়মূল্য",
+            subtitle = "আইটেমের নাম, কাস্টমাইজেশন টাইপ ও ব্ল্যাংক বডি রেট"
+        ) {
+            DropdownMenuField(
+                selectedOption = selectedItemName,
+                options = GiftCategoryItem.entries.map { it.displayName },
+                onOptionSelected = { selectedItemName = it },
+                label = "গিফট ক্যাটাগরি আইটেম"
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                NumberInputField(
+                    value = blankPurchaseRateStr,
+                    onValueChange = { blankPurchaseRateStr = it },
+                    label = "ব্ল্যাংক আইটেম ক্রয়মূল্য",
+                    suffix = "৳/pc",
+                    modifier = Modifier.weight(1f)
+                )
+                NumberInputField(
+                    value = quantityStr,
+                    onValueChange = { quantityStr = it },
+                    label = "পরিমাণ (Quantity)",
+                    suffix = "pcs",
+                    isInteger = true,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+
+        // 2. Customization Method
+        SectionHeaderCard(
+            title = "২. কাস্টমাইজেশন মেথড ও প্রিন্টিং রেট",
+            subtitle = "সাবলিমেশন, ডিটিএফ, স্ক্রিন প্রিন্ট বা ইউভি"
+        ) {
+            DropdownMenuField(
+                selectedOption = selectedMethodName,
+                options = GiftCustomizationMethod.entries.map { it.displayName },
+                onOptionSelected = { selectedMethodName = it },
+                label = "প্রিন্ট/কাস্টমাইজেশন পদ্ধতি"
+            )
+            Spacer(modifier = Modifier.height(10.dp))
+
+            when {
+                selectedMethodName.contains("Sublimation") || selectedMethodName.contains("সাবলিমেশন") -> {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        NumberInputField(
+                            value = sublimationPaperAndInkRateStr,
+                            onValueChange = { sublimationPaperAndInkRateStr = it },
+                            label = "কাগজ ও ইনক কালি খরচ",
+                            suffix = "৳/pc",
+                            modifier = Modifier.weight(1f)
+                        )
+                        NumberInputField(
+                            value = heatPressLabourPerPcStr,
+                            onValueChange = { heatPressLabourPerPcStr = it },
+                            label = "হিট প্রেস লেবার চার্জ",
+                            suffix = "৳/pc",
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+                selectedMethodName.contains("Screen") || selectedMethodName.contains("স্ক্রিন") -> {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        NumberInputField(
+                            value = screenMakingCostPerColorStr,
+                            onValueChange = { screenMakingCostPerColorStr = it },
+                            label = "স্ক্রিন মেকিং ফি (Fixed)",
+                            suffix = "৳/color",
+                            modifier = Modifier.weight(1f)
+                        )
+                        NumberInputField(
+                            value = colorCountStr,
+                            onValueChange = { colorCountStr = it },
+                            label = "রঙের সংখ্যা",
+                            isInteger = true,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    NumberInputField(
+                        value = printRunRatePerPcStr,
+                        onValueChange = { printRunRatePerPcStr = it },
+                        label = "প্রিন্ট ড্রাগিং/রানিং লেবার",
+                        suffix = "৳/pc"
+                    )
+                }
+                selectedMethodName.contains("DTF") || selectedMethodName.contains("ডিটিএফ") -> {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        NumberInputField(
+                            value = totalPrintAreaSqInStr,
+                            onValueChange = { totalPrintAreaSqInStr = it },
+                            label = "প্রিন্ট এরিয়া",
+                            suffix = "sq.in",
+                            modifier = Modifier.weight(1f)
+                        )
+                        NumberInputField(
+                            value = dtfRatePerSqFtStr,
+                            onValueChange = { dtfRatePerSqFtStr = it },
+                            label = "DTF দর/বর্গফুট",
+                            suffix = "৳/sq.ft",
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+                selectedMethodName.contains("UV") || selectedMethodName.contains("ইউভি") -> {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        NumberInputField(
+                            value = totalPrintAreaSqInStr,
+                            onValueChange = { totalPrintAreaSqInStr = it },
+                            label = "প্রিন্ট এরিয়া",
+                            suffix = "sq.in",
+                            modifier = Modifier.weight(1f)
+                        )
+                        NumberInputField(
+                            value = uvRatePerSqInStr,
+                            onValueChange = { uvRatePerSqInStr = it },
+                            label = "UV ফ্ল্যাটবেড দর/sq.in",
+                            suffix = "৳",
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+                selectedMethodName.contains("Laser") || selectedMethodName.contains("লেজার") -> {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        NumberInputField(
+                            value = timeInMinutesStr,
+                            onValueChange = { timeInMinutesStr = it },
+                            label = "এনগ্রেভিং সময় (মিনিট)",
+                            modifier = Modifier.weight(1f)
+                        )
+                        NumberInputField(
+                            value = engraveRatePerMinuteStr,
+                            onValueChange = { engraveRatePerMinuteStr = it },
+                            label = "মেশিন রেট/মিনিট",
+                            suffix = "৳/min",
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+            }
+        }
+
+        // 3. Packaging & Profit
+        SectionHeaderCard(
+            title = "৩. প্যাকেজিং ও প্রফিট মার্জিন",
+            subtitle = "বক্স প্যাকেজিং, ডিজাইন ও লাভ"
+        ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                NumberInputField(
+                    value = packagingBoxRateStr,
+                    onValueChange = { packagingBoxRateStr = it },
+                    label = "ব্যক্তিগত বক্স/ভেলভেট বক্স",
+                    suffix = "৳/pc",
+                    modifier = Modifier.weight(1f)
+                )
+                NumberInputField(
+                    value = designSetupFeeStr,
+                    onValueChange = { designSetupFeeStr = it },
+                    label = "ডিজাইন ও সেটআপ ফি",
+                    suffix = "৳",
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            NumberInputField(
+                value = profitPercentStr,
+                onValueChange = { profitPercentStr = it },
+                label = "লাভের শতাংশ (Profit Percent)",
+                suffix = "%"
+            )
+        }
+        Spacer(modifier = Modifier.height(24.dp))
     }
 }

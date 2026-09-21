@@ -147,330 +147,13 @@ fun OffsetSection(modifier: Modifier = Modifier) {
         )
     }
 
-    Box(modifier = modifier.fillMaxSize()) {
-        // Scrollable Input List
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(scrollState)
-                .padding(start = 12.dp, end = 12.dp, top = 110.dp, bottom = 24.dp)
-        ) {
-            // 1. Job & Paper Dimensions
-            SectionHeaderCard(
-                title = "১. জব ও কাগজের সাইজ (Job & Paper Specs)",
-                subtitle = "আইটেম ও কাগজের পরিমাপ দিন"
-            ) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    NumberInputField(
-                        value = itemWidthStr,
-                        onValueChange = { itemWidthStr = it },
-                        label = "আইটেমের চওড়া (Width)",
-                        suffix = "in",
-                        modifier = Modifier.weight(1f)
-                    )
-                    NumberInputField(
-                        value = itemHeightStr,
-                        onValueChange = { itemHeightStr = it },
-                        label = "আইটেমের উচ্চতা (Height)",
-                        suffix = "in",
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    NumberInputField(
-                        value = paperWidthStr,
-                        onValueChange = { paperWidthStr = it },
-                        label = "কাগজের চওড়া (Paper W)",
-                        suffix = "in",
-                        modifier = Modifier.weight(1f)
-                    )
-                    NumberInputField(
-                        value = paperHeightStr,
-                        onValueChange = { paperHeightStr = it },
-                        label = "কাগজের উচ্চতা (Paper H)",
-                        suffix = "in",
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    NumberInputField(
-                        value = paperRateStr,
-                        onValueChange = { paperRateStr = it },
-                        label = "কাগজের রিম দর (Paper Rate)",
-                        suffix = "৳/ream",
-                        modifier = Modifier.weight(1f)
-                    )
-                    NumberInputField(
-                        value = itemQuantityStr,
-                        onValueChange = { itemQuantityStr = it },
-                        label = "আইটেম সংখ্যা (Quantity)",
-                        suffix = "pcs",
-                        isInteger = true,
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                NumberInputField(
-                    value = cutsPerMainSheetStr,
-                    onValueChange = { cutsPerMainSheetStr = it },
-                    label = "মেইন কাগজ থেকে মেশিন সাইজ কাট (Cuts per Sheet)",
-                    isInteger = true
-                )
-            }
-
-            // 2. Plate & Printing Specs
-            SectionHeaderCard(
-                title = "২. প্লেট ও প্রিন্টিং (Plate & Impression)",
-                subtitle = "প্লেট সাইজ, কালার টাইপ ও প্রিন্টিং রেট"
-            ) {
-                DropdownMenuField(
-                    selectedOption = selectedPlateSize,
-                    options = PlateSizeOption.entries.map { it.displayName },
-                    onOptionSelected = { selectedPlateSize = it },
-                    label = "প্লেট সাইজ (Plate Size)"
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                DropdownMenuField(
-                    selectedOption = selectedColorType,
-                    options = ColorTypeOption.entries.map { it.displayName },
-                    onOptionSelected = { selectedColorType = it },
-                    label = "কালার টাইপ (Color Type)"
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    SwitchRowField(
-                        title = "জুরি (Work & Turn / Juri)",
-                        checked = isJuri,
-                        onCheckedChange = {
-                            isJuri = it
-                            if (it) isBackToBack = false
-                        },
-                        modifier = Modifier.weight(1f)
-                    )
-                    SwitchRowField(
-                        title = "এপিঠ-ওপিঠ (Back to Back)",
-                        checked = isBackToBack,
-                        onCheckedChange = {
-                            isBackToBack = it
-                            if (it) isJuri = false
-                        },
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    NumberInputField(
-                        value = plateRateStr,
-                        onValueChange = { plateRateStr = it },
-                        label = "প্লেট দর (Plate Rate)",
-                        suffix = "৳/pc",
-                        modifier = Modifier.weight(1f)
-                    )
-                    NumberInputField(
-                        value = printingRate1kStr,
-                        onValueChange = { printingRate1kStr = it },
-                        label = "প্রতি ১০০০ ইমপ্রেশন দর",
-                        suffix = "৳/1k",
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                NumberInputField(
-                    value = printingMinChargeStr,
-                    onValueChange = { printingMinChargeStr = it },
-                    label = "প্রিন্টিং মিনিমাম চার্জ (Min Print Charge)",
-                    suffix = "৳"
-                )
-            }
-
-            // 3. Lamination Specs
-            SectionHeaderCard(
-                title = "৩. ল্যামিনেশন (Lamination - Square Inch)",
-                subtitle = "স্কয়ার ইঞ্চি ভিত্তিক ল্যামিনেশন হিসাব"
-            ) {
-                SwitchRowField(
-                    title = "ল্যামিনেশন যোগ করুন (Enable Lamination)",
-                    checked = isLaminationEnabled,
-                    onCheckedChange = { isLaminationEnabled = it }
-                )
-                if (isLaminationEnabled) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    DropdownMenuField(
-                        selectedOption = selectedLamType,
-                        options = LaminationType.entries.map { it.displayName },
-                        onOptionSelected = { selectedLamType = it },
-                        label = "ল্যামিনেশন টাইপ"
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    DropdownMenuField(
-                        selectedOption = if (laminationSides == "Both") "উভয় পাশ (Both Sides)" else "এক পাশ (Single Side)",
-                        options = listOf("এক পাশ (Single Side)", "উভয় পাশ (Both Sides)"),
-                        onOptionSelected = { laminationSides = if (it.contains("Both") || it.contains("উভয়")) "Both" else "Single" },
-                        label = "ল্যামিনেশন পাশ (Sides)"
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        NumberInputField(
-                            value = laminationRateStr,
-                            onValueChange = { laminationRateStr = it },
-                            label = "প্রতি স্কয়ার ইঞ্চি দর (Rate/sq.in)",
-                            suffix = "৳",
-                            modifier = Modifier.weight(1f)
-                        )
-                        NumberInputField(
-                            value = laminationMinChargeStr,
-                            onValueChange = { laminationMinChargeStr = it },
-                            label = "মিনিমাম ল্যামিনেশন চার্জ",
-                            suffix = "৳",
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                }
-            }
-
-            // 4. Finishing & Die-Cutting
-            SectionHeaderCard(
-                title = "৪. ফিনিশিং ও প্রসেসিং (Finishing & Processing)",
-                subtitle = "ডাই কাটিং, ফয়েল স্ট্যাম্পিং, পেস্টিং, নাম্বারিং"
-            ) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    NumberInputField(
-                        value = dieBlockCostStr,
-                        onValueChange = { dieBlockCostStr = it },
-                        label = "ডাই ব্লক চার্জ (Fixed)",
-                        suffix = "৳",
-                        modifier = Modifier.weight(1f)
-                    )
-                    NumberInputField(
-                        value = dieCuttingRate1kStr,
-                        onValueChange = { dieCuttingRate1kStr = it },
-                        label = "ডাই কাটিং রানিং রেট",
-                        suffix = "৳/1k",
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    NumberInputField(
-                        value = foilBlockCostStr,
-                        onValueChange = { foilBlockCostStr = it },
-                        label = "ফয়েল ব্লক মেকিং খরচ",
-                        suffix = "৳",
-                        modifier = Modifier.weight(1f)
-                    )
-                    NumberInputField(
-                        value = foilRatePerPcStr,
-                        onValueChange = { foilRatePerPcStr = it },
-                        label = "ফয়েল স্ট্যাম্পিং দর/পিস",
-                        suffix = "৳/pc",
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    NumberInputField(
-                        value = pastingRate1kStr,
-                        onValueChange = { pastingRate1kStr = it },
-                        label = "পেস্টিং রেট (প্রতি ১০০০ শিট)",
-                        suffix = "৳/1k",
-                        modifier = Modifier.weight(1f)
-                    )
-                    NumberInputField(
-                        value = pastingMinChargeStr,
-                        onValueChange = { pastingMinChargeStr = it },
-                        label = "পেস্টিং মিনিমাম চার্জ",
-                        suffix = "৳",
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    NumberInputField(
-                        value = numberingRate1kStr,
-                        onValueChange = { numberingRate1kStr = it },
-                        label = "নাম্বারিং রেট/১০০০",
-                        suffix = "৳/1k",
-                        modifier = Modifier.weight(1f)
-                    )
-                    NumberInputField(
-                        value = perforationRate1kStr,
-                        onValueChange = { perforationRate1kStr = it },
-                        label = "পারফোরেশন রেট/১০০০",
-                        suffix = "৳/1k",
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-            }
-
-            // 5. Binding, Packaging & Others
-            SectionHeaderCard(
-                title = "৫. বাইন্ডিং, প্যাকেজিং ও লাভ মার্জিন",
-                subtitle = "প্যাকেজিং, ডিজাইন চার্জ, ডেলিভারি ও প্রফিট"
-            ) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    NumberInputField(
-                        value = pagesPerBookStr,
-                        onValueChange = { pagesPerBookStr = it },
-                        label = "বই/প্যাডের পাতা সংখ্যা",
-                        isInteger = true,
-                        modifier = Modifier.weight(1f)
-                    )
-                    NumberInputField(
-                        value = bindingRatePerPcStr,
-                        onValueChange = { bindingRatePerPcStr = it },
-                        label = "বাইন্ডিং দর (প্রতি পিস)",
-                        suffix = "৳/pc",
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    NumberInputField(
-                        value = itemsPerPacketStr,
-                        onValueChange = { itemsPerPacketStr = it },
-                        label = "প্যাকেট প্রতি পিস",
-                        isInteger = true,
-                        modifier = Modifier.weight(1f)
-                    )
-                    NumberInputField(
-                        value = costPerPacketStr,
-                        onValueChange = { costPerPacketStr = it },
-                        label = "প্যাকেট প্রতি খরচ",
-                        suffix = "৳/pkt",
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    NumberInputField(
-                        value = designChargeStr,
-                        onValueChange = { designChargeStr = it },
-                        label = "ডিজাইন চার্জ",
-                        suffix = "৳",
-                        modifier = Modifier.weight(1f)
-                    )
-                    NumberInputField(
-                        value = shippingEstimateStr,
-                        onValueChange = { shippingEstimateStr = it },
-                        label = "শিপিং/ডেলিভারি খরচ",
-                        suffix = "৳",
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                NumberInputField(
-                    value = profitPercentStr,
-                    onValueChange = { profitPercentStr = it },
-                    label = "লাভের শতাংশ (Profit Percent)",
-                    suffix = "%"
-                )
-            }
-            Spacer(modifier = Modifier.height(24.dp))
-        }
-
-        // Sticky Cost Summary Header
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .verticalScroll(scrollState)
+            .padding(horizontal = 10.dp, vertical = 6.dp)
+    ) {
+        // 1. Cost Summary Card
         CostSummaryCard(
             grandTotal = result.grandTotal,
             perUnitCost = result.perUnitCost,
@@ -489,10 +172,323 @@ fun OffsetSection(modifier: Modifier = Modifier) {
                 "ডিজাইন চার্জ" to (designChargeStr.toDoubleOrNull() ?: 0.0),
                 "শিপিং/ডেলিভারি খরচ" to (shippingEstimateStr.toDoubleOrNull() ?: 0.0)
             ),
-            initialExpanded = false,
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(horizontal = 8.dp, vertical = 2.dp)
+            initialExpanded = false
         )
+
+        Spacer(modifier = Modifier.height(6.dp))
+
+        // 2. Job & Paper Dimensions
+        SectionHeaderCard(
+            title = "১. জব ও কাগজের সাইজ (Job & Paper Specs)",
+            subtitle = "আইটেম ও কাগজের পরিমাপ দিন"
+        ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                NumberInputField(
+                    value = itemWidthStr,
+                    onValueChange = { itemWidthStr = it },
+                    label = "আইটেমের চওড়া (Width)",
+                    suffix = "in",
+                    modifier = Modifier.weight(1f)
+                )
+                NumberInputField(
+                    value = itemHeightStr,
+                    onValueChange = { itemHeightStr = it },
+                    label = "আইটেমের উচ্চতা (Height)",
+                    suffix = "in",
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                NumberInputField(
+                    value = paperWidthStr,
+                    onValueChange = { paperWidthStr = it },
+                    label = "কাগজের চওড়া (Paper W)",
+                    suffix = "in",
+                    modifier = Modifier.weight(1f)
+                )
+                NumberInputField(
+                    value = paperHeightStr,
+                    onValueChange = { paperHeightStr = it },
+                    label = "কাগজের উচ্চতা (Paper H)",
+                    suffix = "in",
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                NumberInputField(
+                    value = paperRateStr,
+                    onValueChange = { paperRateStr = it },
+                    label = "কাগজের রিম দর (Paper Rate)",
+                    suffix = "৳/ream",
+                    modifier = Modifier.weight(1f)
+                )
+                NumberInputField(
+                    value = itemQuantityStr,
+                    onValueChange = { itemQuantityStr = it },
+                    label = "আইটেম সংখ্যা (Quantity)",
+                    suffix = "pcs",
+                    isInteger = true,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            NumberInputField(
+                value = cutsPerMainSheetStr,
+                onValueChange = { cutsPerMainSheetStr = it },
+                label = "মেইন কাগজ থেকে মেশিন সাইজ কাট (Cuts per Sheet)",
+                isInteger = true
+            )
+        }
+
+        // 3. Plate & Printing Specs
+        SectionHeaderCard(
+            title = "২. প্লেট ও প্রিন্টিং (Plate & Impression)",
+            subtitle = "প্লেট সাইজ, কালার টাইপ ও প্রিন্টিং রেট"
+        ) {
+            DropdownMenuField(
+                selectedOption = selectedPlateSize,
+                options = PlateSizeOption.entries.map { it.displayName },
+                onOptionSelected = { selectedPlateSize = it },
+                label = "প্লেট সাইজ (Plate Size)"
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            DropdownMenuField(
+                selectedOption = selectedColorType,
+                options = ColorTypeOption.entries.map { it.displayName },
+                onOptionSelected = { selectedColorType = it },
+                label = "কালার টাইপ (Color Type)"
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                SwitchRowField(
+                    title = "জুরি (Work & Turn / Juri)",
+                    checked = isJuri,
+                    onCheckedChange = {
+                        isJuri = it
+                        if (it) isBackToBack = false
+                    },
+                    modifier = Modifier.weight(1f)
+                )
+                SwitchRowField(
+                    title = "এপিঠ-ওপিঠ (Back to Back)",
+                    checked = isBackToBack,
+                    onCheckedChange = {
+                        isBackToBack = it
+                        if (it) isJuri = false
+                    },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                NumberInputField(
+                    value = plateRateStr,
+                    onValueChange = { plateRateStr = it },
+                    label = "প্লেট দর (Plate Rate)",
+                    suffix = "৳/pc",
+                    modifier = Modifier.weight(1f)
+                )
+                NumberInputField(
+                    value = printingRate1kStr,
+                    onValueChange = { printingRate1kStr = it },
+                    label = "প্রতি ১০০০ ইমপ্রেশন দর",
+                    suffix = "৳/1k",
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            NumberInputField(
+                value = printingMinChargeStr,
+                onValueChange = { printingMinChargeStr = it },
+                label = "প্রিন্টিং মিনিমাম চার্জ (Min Print Charge)",
+                suffix = "৳"
+            )
+        }
+
+        // 4. Lamination Specs
+        SectionHeaderCard(
+            title = "৩. ল্যামিনেশন (Lamination - Square Inch)",
+            subtitle = "স্কয়ার ইঞ্চি ভিত্তিক ল্যামিনেশন হিসাব"
+        ) {
+            SwitchRowField(
+                title = "ল্যামিনেশন যোগ করুন (Enable Lamination)",
+                checked = isLaminationEnabled,
+                onCheckedChange = { isLaminationEnabled = it }
+            )
+            if (isLaminationEnabled) {
+                Spacer(modifier = Modifier.height(8.dp))
+                DropdownMenuField(
+                    selectedOption = selectedLamType,
+                    options = LaminationType.entries.map { it.displayName },
+                    onOptionSelected = { selectedLamType = it },
+                    label = "ল্যামিনেশন টাইপ"
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                DropdownMenuField(
+                    selectedOption = if (laminationSides == "Both") "উভয় পাশ (Both Sides)" else "এক পাশ (Single Side)",
+                    options = listOf("এক পাশ (Single Side)", "উভয় পাশ (Both Sides)"),
+                    onOptionSelected = { laminationSides = if (it.contains("Both") || it.contains("উভয়")) "Both" else "Single" },
+                    label = "ল্যামিনেশন পাশ (Sides)"
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    NumberInputField(
+                        value = laminationRateStr,
+                        onValueChange = { laminationRateStr = it },
+                        label = "প্রতি স্কয়ার ইঞ্চি দর (Rate/sq.in)",
+                        suffix = "৳",
+                        modifier = Modifier.weight(1f)
+                    )
+                    NumberInputField(
+                        value = laminationMinChargeStr,
+                        onValueChange = { laminationMinChargeStr = it },
+                        label = "মিনিমাম ল্যামিনেশন চার্জ",
+                        suffix = "৳",
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+        }
+
+        // 5. Finishing & Die-Cutting
+        SectionHeaderCard(
+            title = "৪. ফিনিশিং ও প্রসেসিং (Finishing & Processing)",
+            subtitle = "ডাই কাটিং, ফয়েল স্ট্যাম্পিং, পেস্টিং, নাম্বারিং"
+        ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                NumberInputField(
+                    value = dieBlockCostStr,
+                    onValueChange = { dieBlockCostStr = it },
+                    label = "ডাই ব্লক চার্জ (Fixed)",
+                    suffix = "৳",
+                    modifier = Modifier.weight(1f)
+                )
+                NumberInputField(
+                    value = dieCuttingRate1kStr,
+                    onValueChange = { dieCuttingRate1kStr = it },
+                    label = "ডাই কাটিং রানিং রেট",
+                    suffix = "৳/1k",
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                NumberInputField(
+                    value = foilBlockCostStr,
+                    onValueChange = { foilBlockCostStr = it },
+                    label = "ফয়েল ব্লক মেকিং খরচ",
+                    suffix = "৳",
+                    modifier = Modifier.weight(1f)
+                )
+                NumberInputField(
+                    value = foilRatePerPcStr,
+                    onValueChange = { foilRatePerPcStr = it },
+                    label = "ফয়েল স্ট্যাম্পিং দর/পিস",
+                    suffix = "৳/pc",
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                NumberInputField(
+                    value = pastingRate1kStr,
+                    onValueChange = { pastingRate1kStr = it },
+                    label = "পেস্টিং রেট (প্রতি ১০০০ শিট)",
+                    suffix = "৳/1k",
+                    modifier = Modifier.weight(1f)
+                )
+                NumberInputField(
+                    value = pastingMinChargeStr,
+                    onValueChange = { pastingMinChargeStr = it },
+                    label = "পেস্টিং মিনিমাম চার্জ",
+                    suffix = "৳",
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                NumberInputField(
+                    value = numberingRate1kStr,
+                    onValueChange = { numberingRate1kStr = it },
+                    label = "নাম্বারিং রেট/১০০০",
+                    suffix = "৳/1k",
+                    modifier = Modifier.weight(1f)
+                )
+                NumberInputField(
+                    value = perforationRate1kStr,
+                    onValueChange = { perforationRate1kStr = it },
+                    label = "পারফোরেশন রেট/১০০০",
+                    suffix = "৳/1k",
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+
+        // 6. Binding, Packaging & Others
+        SectionHeaderCard(
+            title = "৫. বাইন্ডিং, প্যাকেজিং ও লাভ মার্জিন",
+            subtitle = "প্যাকেজিং, ডিজাইন চার্জ, ডেলিভারি ও প্রফিট"
+        ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                NumberInputField(
+                    value = pagesPerBookStr,
+                    onValueChange = { pagesPerBookStr = it },
+                    label = "বই/প্যাডের পাতা সংখ্যা",
+                    isInteger = true,
+                    modifier = Modifier.weight(1f)
+                )
+                NumberInputField(
+                    value = bindingRatePerPcStr,
+                    onValueChange = { bindingRatePerPcStr = it },
+                    label = "বাইন্ডিং দর (প্রতি পিস)",
+                    suffix = "৳/pc",
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                NumberInputField(
+                    value = itemsPerPacketStr,
+                    onValueChange = { itemsPerPacketStr = it },
+                    label = "প্যাকেট প্রতি পিস",
+                    isInteger = true,
+                    modifier = Modifier.weight(1f)
+                )
+                NumberInputField(
+                    value = costPerPacketStr,
+                    onValueChange = { costPerPacketStr = it },
+                    label = "প্যাকেট প্রতি খরচ",
+                    suffix = "৳/pkt",
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                NumberInputField(
+                    value = designChargeStr,
+                    onValueChange = { designChargeStr = it },
+                    label = "ডিজাইন চার্জ",
+                    suffix = "৳",
+                    modifier = Modifier.weight(1f)
+                )
+                NumberInputField(
+                    value = shippingEstimateStr,
+                    onValueChange = { shippingEstimateStr = it },
+                    label = "শিপিং/ডেলিভারি খরচ",
+                    suffix = "৳",
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            NumberInputField(
+                value = profitPercentStr,
+                onValueChange = { profitPercentStr = it },
+                label = "লাভের শতাংশ (Profit Percent)",
+                suffix = "%"
+            )
+        }
+        Spacer(modifier = Modifier.height(24.dp))
     }
 }

@@ -89,17 +89,19 @@ fun PrintingCalculatorScreen(
                     Spacer(modifier = Modifier.width(4.dp))
                     Column {
                         Text(
-                            text = "স্মার্ট প্রিন্টিং ক্যালকুলেটর (Full Screen Estimator)",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
+                            text = "প্রিন্টিং ক্যালকুলেটর",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.ExtraBold,
                             color = MaterialTheme.colorScheme.primary,
-                            fontSize = 15.sp
+                            fontSize = 18.sp,
+                            lineHeight = 22.sp
                         )
                         Text(
-                            text = if (selectedSectorId == 0) "৮টি বাণিজ্যিক সেক্টর নির্বাচন করুন" else sectorTabs.getOrNull(selectedSectorId)?.first ?: "",
+                            text = if (selectedSectorId == 0) "৮টি বাণিজ্যিক সেক্টর • স্মার্ট কোটেশন হাব" else sectorTabs.getOrNull(selectedSectorId)?.first ?: "",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontSize = 11.sp
+                            fontSize = 11.sp,
+                            lineHeight = 13.sp
                         )
                     }
                 }

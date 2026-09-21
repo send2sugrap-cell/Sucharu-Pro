@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.sucharu.sucharupro.domain.model.printingcalculator.ColorTypeOption
@@ -277,373 +276,12 @@ fun DiarySection(modifier: Modifier = Modifier) {
         )
     }
 
-    Box(modifier = modifier.fillMaxSize()) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(scrollState)
-                .padding(start = 12.dp, end = 12.dp, top = 110.dp, bottom = 24.dp)
-        ) {
-            // 1. Basic Diary Specs
-            SectionHeaderCard(
-                title = "১. ডায়েরির বেসিক স্পেসিফিকেশন",
-                subtitle = "ডায়েরির মাপ, পৃষ্ঠা ও কপি সংখ্যা"
-            ) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    NumberInputField(
-                        value = diaryWidthStr,
-                        onValueChange = { diaryWidthStr = it },
-                        label = "ডায়েরির চওড়া (Width)",
-                        suffix = "in",
-                        modifier = Modifier.weight(1f)
-                    )
-                    NumberInputField(
-                        value = diaryHeightStr,
-                        onValueChange = { diaryHeightStr = it },
-                        label = "ডায়েরির উচ্চতা (Height)",
-                        suffix = "in",
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    NumberInputField(
-                        value = totalPagesStr,
-                        onValueChange = { totalPagesStr = it },
-                        label = "মোট পৃষ্ঠা (Pages)",
-                        isInteger = true,
-                        modifier = Modifier.weight(1f)
-                    )
-                    NumberInputField(
-                        value = diaryQuantityStr,
-                        onValueChange = { diaryQuantityStr = it },
-                        label = "ডায়েরির পরিমাণ (Qty)",
-                        suffix = "pcs",
-                        isInteger = true,
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-            }
-
-            // 2. Specialized Diary Cover Category
-            SectionHeaderCard(
-                title = "২. ডায়েরি কভার টাইপ (Specialized Cover Category)",
-                subtitle = "সফটকভার, পেস্ট-আপ হার্ডকভার, রেক্সিন বা পিইউ লেদার"
-            ) {
-                DropdownMenuField(
-                    selectedOption = selectedCategoryCode,
-                    options = DiaryCoverCategory.entries.map { it.categoryName },
-                    onOptionSelected = { selectedCategoryCode = it },
-                    label = "কভার ক্যাটাগরি"
-                )
-                Spacer(modifier = Modifier.height(10.dp))
-
-                when (categoryEnum) {
-                    DiaryCoverCategory.SOFT_COVER -> {
-                        // Soft cover handled in standard cover
-                    }
-                    DiaryCoverCategory.HARD_COVER -> {
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            NumberInputField(
-                                value = boardRatePerSqFtStr,
-                                onValueChange = { boardRatePerSqFtStr = it },
-                                label = "বোর্ড দর/বর্গফুট",
-                                suffix = "৳/sq.ft",
-                                modifier = Modifier.weight(1f)
-                            )
-                            NumberInputField(
-                                value = boardMakingLaborRatePerPcStr,
-                                onValueChange = { boardMakingLaborRatePerPcStr = it },
-                                label = "বোর্ড পেস্টিং/মেকিং লেবার",
-                                suffix = "৳/pc",
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            NumberInputField(
-                                value = wrapPaperWidthStr,
-                                onValueChange = { wrapPaperWidthStr = it },
-                                label = "র‌্যাপিং পেপার W",
-                                suffix = "in",
-                                modifier = Modifier.weight(1f)
-                            )
-                            NumberInputField(
-                                value = wrapPaperHeightStr,
-                                onValueChange = { wrapPaperHeightStr = it },
-                                label = "র‌্যাপিং পেপার H",
-                                suffix = "in",
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            NumberInputField(
-                                value = wrapPaperRateStr,
-                                onValueChange = { wrapPaperRateStr = it },
-                                label = "র‌্যাপিং পেপার রিম দর",
-                                suffix = "৳/ream",
-                                modifier = Modifier.weight(1f)
-                            )
-                            NumberInputField(
-                                value = wrapPlateRateStr,
-                                onValueChange = { wrapPlateRateStr = it },
-                                label = "প্লেট দর",
-                                suffix = "৳",
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
-                    }
-                    DiaryCoverCategory.REXINE_HARDBOUND -> {
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            NumberInputField(
-                                value = boardRatePerSqFtStr,
-                                onValueChange = { boardRatePerSqFtStr = it },
-                                label = "বোর্ড দর/বর্গফুট",
-                                suffix = "৳/sq.ft",
-                                modifier = Modifier.weight(1f)
-                            )
-                            NumberInputField(
-                                value = rexineRatePerSqFtStr,
-                                onValueChange = { rexineRatePerSqFtStr = it },
-                                label = "রেক্সিন দর/বর্গফুট",
-                                suffix = "৳/sq.ft",
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            NumberInputField(
-                                value = rexineFoilBlockCostStr,
-                                onValueChange = { rexineFoilBlockCostStr = it },
-                                label = "রেক্সিন ফয়েল ব্লক মেকিং",
-                                suffix = "৳",
-                                modifier = Modifier.weight(1f)
-                            )
-                            NumberInputField(
-                                value = rexineFoilRatePerPcStr,
-                                onValueChange = { rexineFoilRatePerPcStr = it },
-                                label = "ফয়েল স্ট্যাম্পিং লেবার/পিস",
-                                suffix = "৳/pc",
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        NumberInputField(
-                            value = rexineBindingLaborRatePerPcStr,
-                            onValueChange = { rexineBindingLaborRatePerPcStr = it },
-                            label = "রেক্সিন বাইন্ডিং লেবার/পিস",
-                            suffix = "৳/pc"
-                        )
-                    }
-                    DiaryCoverCategory.PREMIUM_PU_LEATHER -> {
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            NumberInputField(
-                                value = foamRatePerPcStr,
-                                onValueChange = { foamRatePerPcStr = it },
-                                label = "ফোম/স্পঞ্জ প্যাডিং দর",
-                                suffix = "৳/pc",
-                                modifier = Modifier.weight(1f)
-                            )
-                            NumberInputField(
-                                value = puLeatherRatePerSqFtStr,
-                                onValueChange = { puLeatherRatePerSqFtStr = it },
-                                label = "পিইউ লেদার দর/বর্গফুট",
-                                suffix = "৳/sq.ft",
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            NumberInputField(
-                                value = stitchingRatePerPcStr,
-                                onValueChange = { stitchingRatePerPcStr = it },
-                                label = "সীমানা সেলাই/স্টিচিং দর",
-                                suffix = "৳/pc",
-                                modifier = Modifier.weight(1f)
-                            )
-                            NumberInputField(
-                                value = debossBlockCostStr,
-                                onValueChange = { debossBlockCostStr = it },
-                                label = "এমবসিং ব্লক তৈরি খরচ",
-                                suffix = "৳",
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
-                    }
-                }
-            }
-
-            // 3. Diary Accessories
-            SectionHeaderCard(
-                title = "৩. ডায়েরি আনুষঙ্গিক উপাদান (Accessories)",
-                subtitle = "রিবন, ইলাস্টিক ব্যান্ড, পেন লুপ, মেটাল কর্নার ও বক্স"
-            ) {
-                SwitchRowField(
-                    title = "রিবন মার্কার (Bookmark Ribbon)",
-                    checked = includeRibbon,
-                    onCheckedChange = { includeRibbon = it }
-                )
-                if (includeRibbon) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    NumberInputField(
-                        value = ribbonRatePerPcStr,
-                        onValueChange = { ribbonRatePerPcStr = it },
-                        label = "রিবন দর/পিস",
-                        suffix = "৳/pc"
-                    )
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                SwitchRowField(
-                    title = "ইলাস্টিক ক্লোজার ব্যান্ড (Elastic Band)",
-                    checked = includeElastic,
-                    onCheckedChange = { includeElastic = it }
-                )
-                if (includeElastic) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        NumberInputField(
-                            value = elasticMaterialRateStr,
-                            onValueChange = { elasticMaterialRateStr = it },
-                            label = "ইলাস্টিক মেটেরিয়াল",
-                            suffix = "৳",
-                            modifier = Modifier.weight(1f)
-                        )
-                        NumberInputField(
-                            value = elasticRivetingRateStr,
-                            onValueChange = { elasticRivetingRateStr = it },
-                            label = "রিভেটিং চার্জ",
-                            suffix = "৳",
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                SwitchRowField(
-                    title = "পেন লুপ (Pen Holder Loop)",
-                    checked = includePenLoop,
-                    onCheckedChange = { includePenLoop = it }
-                )
-                if (includePenLoop) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    NumberInputField(
-                        value = penLoopRatePerPcStr,
-                        onValueChange = { penLoopRatePerPcStr = it },
-                        label = "পেন লুপ দর/পিস",
-                        suffix = "৳/pc"
-                    )
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                SwitchRowField(
-                    title = "মেটাল কর্নার ক্লিপ (Metal Corner Protectors)",
-                    checked = includeMetalCorners,
-                    onCheckedChange = { includeMetalCorners = it }
-                )
-                if (includeMetalCorners) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    NumberInputField(
-                        value = metalCornerRatePerPcStr,
-                        onValueChange = { metalCornerRatePerPcStr = it },
-                        label = "প্রতি কর্নার ক্লিপ দর (৪টি/ডায়েরি)",
-                        suffix = "৳/clip"
-                    )
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                SwitchRowField(
-                    title = "ব্যক্তিগত প্রেজেন্টেশন বক্স (Individual Box)",
-                    checked = includeBox,
-                    onCheckedChange = { includeBox = it }
-                )
-                if (includeBox) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    NumberInputField(
-                        value = presentationBoxRatePerPcStr,
-                        onValueChange = { presentationBoxRatePerPcStr = it },
-                        label = "বক্স মেকিং দর/পিস",
-                        suffix = "৳/pc"
-                    )
-                }
-            }
-
-            // 4. Inner Paper Specs
-            SectionHeaderCard(
-                title = "৪. ইনার কাগজ ও ফর্মা সেটিংস",
-                subtitle = "ডায়েরির ভিতরের পাতার কাগজ ও প্রিন্টিং"
-            ) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    NumberInputField(
-                        value = innerPaperWidthStr,
-                        onValueChange = { innerPaperWidthStr = it },
-                        label = "ইনার পেপার W",
-                        suffix = "in",
-                        modifier = Modifier.weight(1f)
-                    )
-                    NumberInputField(
-                        value = innerPaperHeightStr,
-                        onValueChange = { innerPaperHeightStr = it },
-                        label = "ইনার পেপার H",
-                        suffix = "in",
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                NumberInputField(
-                    value = innerPaperRateStr,
-                    onValueChange = { innerPaperRateStr = it },
-                    label = "ইনার পেপার রিম দর",
-                    suffix = "৳/ream"
-                )
-            }
-
-            // 5. Binding & Profit
-            SectionHeaderCard(
-                title = "৫. বাইন্ডিং, প্যাকেজিং ও প্রফিট মার্জিন",
-                subtitle = "বাইন্ডিং, ডিজাইন চার্জ, শিপিং ও লাভ"
-            ) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    NumberInputField(
-                        value = bindingChargePerBookStr,
-                        onValueChange = { bindingChargePerBookStr = it },
-                        label = "বাইন্ডিং চার্জ/পিস",
-                        suffix = "৳/pc",
-                        modifier = Modifier.weight(1f)
-                    )
-                    NumberInputField(
-                        value = bindingMinChargeStr,
-                        onValueChange = { bindingMinChargeStr = it },
-                        label = "মিনিমাম বাইন্ডিং চার্জ",
-                        suffix = "৳",
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    NumberInputField(
-                        value = designChargeStr,
-                        onValueChange = { designChargeStr = it },
-                        label = "ডিজাইন চার্জ",
-                        suffix = "৳",
-                        modifier = Modifier.weight(1f)
-                    )
-                    NumberInputField(
-                        value = shippingEstimateStr,
-                        onValueChange = { shippingEstimateStr = it },
-                        label = "শিপিং/ডেলিভারি খরচ",
-                        suffix = "৳",
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                NumberInputField(
-                    value = profitPercentStr,
-                    onValueChange = { profitPercentStr = it },
-                    label = "লাভের শতাংশ (Profit Percent)",
-                    suffix = "%"
-                )
-            }
-            Spacer(modifier = Modifier.height(24.dp))
-        }
-
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .verticalScroll(scrollState)
+            .padding(horizontal = 10.dp, vertical = 6.dp)
+    ) {
         // Sticky Cost Summary Header
         CostSummaryCard(
             grandTotal = result.grandTotal,
@@ -664,10 +302,368 @@ fun DiarySection(modifier: Modifier = Modifier) {
                 "ডিজাইন চার্জ" to (designChargeStr.toDoubleOrNull() ?: 0.0),
                 "শিপিং/ডেলিভারি খরচ" to (shippingEstimateStr.toDoubleOrNull() ?: 0.0)
             ),
-            initialExpanded = false,
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(horizontal = 8.dp, vertical = 2.dp)
+            initialExpanded = false
         )
+
+        Spacer(modifier = Modifier.height(6.dp))
+
+        // 1. Basic Diary Specs
+        SectionHeaderCard(
+            title = "১. ডায়েরির বেসিক স্পেসিফিকেশন",
+            subtitle = "ডায়েরির মাপ, পৃষ্ঠা ও কপি সংখ্যা"
+        ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                NumberInputField(
+                    value = diaryWidthStr,
+                    onValueChange = { diaryWidthStr = it },
+                    label = "ডায়েরির চওড়া (Width)",
+                    suffix = "in",
+                    modifier = Modifier.weight(1f)
+                )
+                NumberInputField(
+                    value = diaryHeightStr,
+                    onValueChange = { diaryHeightStr = it },
+                    label = "ডায়েরির উচ্চতা (Height)",
+                    suffix = "in",
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                NumberInputField(
+                    value = totalPagesStr,
+                    onValueChange = { totalPagesStr = it },
+                    label = "মোট পৃষ্ঠা (Pages)",
+                    isInteger = true,
+                    modifier = Modifier.weight(1f)
+                )
+                NumberInputField(
+                    value = diaryQuantityStr,
+                    onValueChange = { diaryQuantityStr = it },
+                    label = "ডায়েরির পরিমাণ (Qty)",
+                    suffix = "pcs",
+                    isInteger = true,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+
+        // 2. Specialized Diary Cover Category
+        SectionHeaderCard(
+            title = "২. ডায়েরি কভার টাইপ (Specialized Cover Category)",
+            subtitle = "সফটকভার, পেস্ট-আপ হার্ডকভার, রেক্সিন বা পিইউ লেদার"
+        ) {
+            DropdownMenuField(
+                selectedOption = selectedCategoryCode,
+                options = DiaryCoverCategory.entries.map { it.categoryName },
+                onOptionSelected = { selectedCategoryCode = it },
+                label = "কভার ক্যাটাগরি"
+            )
+            Spacer(modifier = Modifier.height(10.dp))
+
+            when (categoryEnum) {
+                DiaryCoverCategory.SOFT_COVER -> {
+                    // Soft cover handled in standard cover
+                }
+                DiaryCoverCategory.HARD_COVER -> {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        NumberInputField(
+                            value = boardRatePerSqFtStr,
+                            onValueChange = { boardRatePerSqFtStr = it },
+                            label = "বোর্ড দর/বর্গফুট",
+                            suffix = "৳/sq.ft",
+                            modifier = Modifier.weight(1f)
+                        )
+                        NumberInputField(
+                            value = boardMakingLaborRatePerPcStr,
+                            onValueChange = { boardMakingLaborRatePerPcStr = it },
+                            label = "বোর্ড পেস্টিং/মেকিং লেবার",
+                            suffix = "৳/pc",
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        NumberInputField(
+                            value = wrapPaperWidthStr,
+                            onValueChange = { wrapPaperWidthStr = it },
+                            label = "র‌্যাপিং পেপার W",
+                            suffix = "in",
+                            modifier = Modifier.weight(1f)
+                        )
+                        NumberInputField(
+                            value = wrapPaperHeightStr,
+                            onValueChange = { wrapPaperHeightStr = it },
+                            label = "র‌্যাপিং পেপার H",
+                            suffix = "in",
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        NumberInputField(
+                            value = wrapPaperRateStr,
+                            onValueChange = { wrapPaperRateStr = it },
+                            label = "র‌্যাপিং পেপার রিম দর",
+                            suffix = "৳/ream",
+                            modifier = Modifier.weight(1f)
+                        )
+                        NumberInputField(
+                            value = wrapPlateRateStr,
+                            onValueChange = { wrapPlateRateStr = it },
+                            label = "প্লেট দর",
+                            suffix = "৳",
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+                DiaryCoverCategory.REXINE_HARDBOUND -> {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        NumberInputField(
+                            value = boardRatePerSqFtStr,
+                            onValueChange = { boardRatePerSqFtStr = it },
+                            label = "বোর্ড দর/বর্গফুট",
+                            suffix = "৳/sq.ft",
+                            modifier = Modifier.weight(1f)
+                        )
+                        NumberInputField(
+                            value = rexineRatePerSqFtStr,
+                            onValueChange = { rexineRatePerSqFtStr = it },
+                            label = "রেক্সিন দর/বর্গফুট",
+                            suffix = "৳/sq.ft",
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        NumberInputField(
+                            value = rexineFoilBlockCostStr,
+                            onValueChange = { rexineFoilBlockCostStr = it },
+                            label = "রেক্সিন ফয়েল ব্লক মেকিং",
+                            suffix = "৳",
+                            modifier = Modifier.weight(1f)
+                        )
+                        NumberInputField(
+                            value = rexineFoilRatePerPcStr,
+                            onValueChange = { rexineFoilRatePerPcStr = it },
+                            label = "ফয়েল স্ট্যাম্পিং লেবার/পিস",
+                            suffix = "৳/pc",
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    NumberInputField(
+                        value = rexineBindingLaborRatePerPcStr,
+                        onValueChange = { rexineBindingLaborRatePerPcStr = it },
+                        label = "রেক্সিন বাইন্ডিং লেবার/পিস",
+                        suffix = "৳/pc"
+                    )
+                }
+                DiaryCoverCategory.PREMIUM_PU_LEATHER -> {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        NumberInputField(
+                            value = foamRatePerPcStr,
+                            onValueChange = { foamRatePerPcStr = it },
+                            label = "ফোম/স্পঞ্জ প্যাডিং দর",
+                            suffix = "৳/pc",
+                            modifier = Modifier.weight(1f)
+                        )
+                        NumberInputField(
+                            value = puLeatherRatePerSqFtStr,
+                            onValueChange = { puLeatherRatePerSqFtStr = it },
+                            label = "পিইউ লেদার দর/বর্গফুট",
+                            suffix = "৳/sq.ft",
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        NumberInputField(
+                            value = stitchingRatePerPcStr,
+                            onValueChange = { stitchingRatePerPcStr = it },
+                            label = "সীমানা সেলাই/স্টিচিং দর",
+                            suffix = "৳/pc",
+                            modifier = Modifier.weight(1f)
+                        )
+                        NumberInputField(
+                            value = debossBlockCostStr,
+                            onValueChange = { debossBlockCostStr = it },
+                            label = "এমবসিং ব্লক তৈরি খরচ",
+                            suffix = "৳",
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+            }
+        }
+
+        // 3. Diary Accessories
+        SectionHeaderCard(
+            title = "৩. ডায়েরি আনুষঙ্গিক উপাদান (Accessories)",
+            subtitle = "রিবন, ইলাস্টিক ব্যান্ড, পেন লুপ, মেটাল কর্নার ও বক্স"
+        ) {
+            SwitchRowField(
+                title = "রিবন মার্কার (Bookmark Ribbon)",
+                checked = includeRibbon,
+                onCheckedChange = { includeRibbon = it }
+            )
+            if (includeRibbon) {
+                Spacer(modifier = Modifier.height(4.dp))
+                NumberInputField(
+                    value = ribbonRatePerPcStr,
+                    onValueChange = { ribbonRatePerPcStr = it },
+                    label = "রিবন দর/পিস",
+                    suffix = "৳/pc"
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            SwitchRowField(
+                title = "ইলাস্টিক ক্লোজার ব্যান্ড (Elastic Band)",
+                checked = includeElastic,
+                onCheckedChange = { includeElastic = it }
+            )
+            if (includeElastic) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    NumberInputField(
+                        value = elasticMaterialRateStr,
+                        onValueChange = { elasticMaterialRateStr = it },
+                        label = "ইলাস্টিক মেটেরিয়াল",
+                        suffix = "৳",
+                        modifier = Modifier.weight(1f)
+                    )
+                    NumberInputField(
+                        value = elasticRivetingRateStr,
+                        onValueChange = { elasticRivetingRateStr = it },
+                        label = "রিভেটিং চার্জ",
+                        suffix = "৳",
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            SwitchRowField(
+                title = "পেন লুপ (Pen Holder Loop)",
+                checked = includePenLoop,
+                onCheckedChange = { includePenLoop = it }
+            )
+            if (includePenLoop) {
+                Spacer(modifier = Modifier.height(4.dp))
+                NumberInputField(
+                    value = penLoopRatePerPcStr,
+                    onValueChange = { penLoopRatePerPcStr = it },
+                    label = "পেন লুপ দর/পিস",
+                    suffix = "৳/pc"
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            SwitchRowField(
+                title = "মেটাল কর্নার ক্লিপ (Metal Corner Protectors)",
+                checked = includeMetalCorners,
+                onCheckedChange = { includeMetalCorners = it }
+            )
+            if (includeMetalCorners) {
+                Spacer(modifier = Modifier.height(4.dp))
+                NumberInputField(
+                    value = metalCornerRatePerPcStr,
+                    onValueChange = { metalCornerRatePerPcStr = it },
+                    label = "প্রতি কর্নার ক্লিপ দর (৪টি/ডায়েরি)",
+                    suffix = "৳/clip"
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            SwitchRowField(
+                title = "ব্যক্তিগত প্রেজেন্টেশন বক্স (Individual Box)",
+                checked = includeBox,
+                onCheckedChange = { includeBox = it }
+            )
+            if (includeBox) {
+                Spacer(modifier = Modifier.height(4.dp))
+                NumberInputField(
+                    value = presentationBoxRatePerPcStr,
+                    onValueChange = { presentationBoxRatePerPcStr = it },
+                    label = "বক্স মেকিং দর/পিস",
+                    suffix = "৳/pc"
+                )
+            }
+        }
+
+        // 4. Inner Paper Specs
+        SectionHeaderCard(
+            title = "৪. ইনার কাগজ ও ফর্মা সেটিংস",
+            subtitle = "ডায়েরির ভিতরের পাতার কাগজ ও প্রিন্টিং"
+        ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                NumberInputField(
+                    value = innerPaperWidthStr,
+                    onValueChange = { innerPaperWidthStr = it },
+                    label = "ইনার পেপার W",
+                    suffix = "in",
+                    modifier = Modifier.weight(1f)
+                )
+                NumberInputField(
+                    value = innerPaperHeightStr,
+                    onValueChange = { innerPaperHeightStr = it },
+                    label = "ইনার পেপার H",
+                    suffix = "in",
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            NumberInputField(
+                value = innerPaperRateStr,
+                onValueChange = { innerPaperRateStr = it },
+                label = "ইনার পেপার রিম দর",
+                suffix = "৳/ream"
+            )
+        }
+
+        // 5. Binding & Profit
+        SectionHeaderCard(
+            title = "৫. বাইন্ডিং, প্যাকেজিং ও প্রফিট মার্জিন",
+            subtitle = "বাইন্ডিং, ডিজাইন চার্জ, শিপিং ও লাভ"
+        ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                NumberInputField(
+                    value = bindingChargePerBookStr,
+                    onValueChange = { bindingChargePerBookStr = it },
+                    label = "বাইন্ডিং চার্জ/পিস",
+                    suffix = "৳/pc",
+                    modifier = Modifier.weight(1f)
+                )
+                NumberInputField(
+                    value = bindingMinChargeStr,
+                    onValueChange = { bindingMinChargeStr = it },
+                    label = "মিনিমাম বাইন্ডিং চার্জ",
+                    suffix = "৳",
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                NumberInputField(
+                    value = designChargeStr,
+                    onValueChange = { designChargeStr = it },
+                    label = "ডিজাইন চার্জ",
+                    suffix = "৳",
+                    modifier = Modifier.weight(1f)
+                )
+                NumberInputField(
+                    value = shippingEstimateStr,
+                    onValueChange = { shippingEstimateStr = it },
+                    label = "শিপিং/ডেলিভারি খরচ",
+                    suffix = "৳",
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            NumberInputField(
+                value = profitPercentStr,
+                onValueChange = { profitPercentStr = it },
+                label = "লাভের শতাংশ (Profit Percent)",
+                suffix = "%"
+            )
+        }
+        Spacer(modifier = Modifier.height(24.dp))
     }
 }
