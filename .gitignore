@@ -9,6 +9,7 @@
 .idea/
 .gradle/
 .kotlin/
+kotlin-js-store/
 .artifacts/
 local.properties
 /local.properties

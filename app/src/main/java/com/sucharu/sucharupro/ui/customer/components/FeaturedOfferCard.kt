@@ -39,6 +39,7 @@ fun FeaturedOfferCard(
     title: String,
     description: String,
     discountTag: String,
+    imageUrl: String? = null,
     actionLabel: String = "অফার দেখুন",
     onActionClick: () -> Unit,
     modifier: Modifier = Modifier

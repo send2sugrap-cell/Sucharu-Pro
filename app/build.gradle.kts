@@ -72,12 +72,13 @@ android {
 
 dependencies {
     implementation(project(":core"))
+    implementation(project(":shared_ui"))
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)
     implementation(libs.firebase.vertexai)
     implementation(libs.generativeai)
     implementation(libs.firebase.appcheck)
-    debugImplementation(libs.firebase.appcheck.debug)
+    implementation(libs.firebase.appcheck.debug)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.material3)

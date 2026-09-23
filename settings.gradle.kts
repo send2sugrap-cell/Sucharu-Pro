@@ -15,15 +15,17 @@ plugins {
     id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
 }
 dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositoriesMode.set(RepositoriesMode.PREFER_PROJECT)
     repositories {
         google()
         mavenCentral()
     }
 }
 
-rootProject.name = "Sucharu Pro"
+rootProject.name = "SucharuPro"
 include(":core")
 include(":backend")
+include(":shared_ui")
+include(":web_app")
 include(":app")
  

@@ -1,12 +1,18 @@
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.compose.multiplatform)
+    alias(libs.plugins.kotlin.compose)
 }
 
 java {
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(17))
     }
+}
+
+compose.resources {
+    packageOfResClass = "com.sucharu.sucharupro.shared_ui.resources"
 }
 
 kotlin {
@@ -24,8 +30,15 @@ kotlin {
     sourceSets {
         commonMain {
             dependencies {
+                implementation(project(":core"))
                 implementation(libs.kotlinx.coroutines.core)
                 implementation(libs.kotlinx.serialization.json)
+                implementation(compose.runtime)
+                implementation(compose.foundation)
+                implementation(compose.material3)
+                implementation(compose.ui)
+                implementation(compose.components.resources)
+                implementation(compose.components.uiToolingPreview)
             }
         }
         commonTest {
@@ -34,30 +47,14 @@ kotlin {
             }
         }
         val jvmMain by getting {
-            kotlin.srcDir("src/main/java")
             dependencies {
-                implementation(libs.postgresql)
-                implementation(libs.gson)
-                // firebase-admin: compileOnly so it does NOT propagate to the Android :app module via transitive
-                // dependency resolution. This prevents duplicate class conflicts with firebase-auth-ktx (Android SDK).
-                // Server-side deployments must include firebase-admin on their runtime classpath separately.
-                compileOnly(libs.firebase.admin)
+                implementation(compose.desktop.currentOs)
             }
         }
         val jvmTest by getting {
-            kotlin.srcDir("src/test/java")
             dependencies {
                 implementation(libs.junit)
-                implementation(libs.firebase.admin)
             }
         }
-    }
-}
-
-tasks.named<Test>("jvmTest") {
-    useJUnit()
-    jvmArgs("-Xmx2g", "-XX:+UseG1GC")
-    testLogging {
-        events("passed", "skipped", "failed")
     }
 }

@@ -123,10 +123,11 @@ object AdminNavigationRegistry {
 
     val systemGroup = AdminNavGroup(
         groupId = "SYSTEM",
-        title = "SYSTEM GOVERNANCE",
+        title = "SYSTEM GOVERNANCE & CMS",
         items = listOf(
             AdminNavItem(AppDestination.Admin.Configuration, "Module 00 System Configuration", Icons.Default.Tune),
             AdminNavItem(AppDestination.Admin.Notifications, "Module 10 System Alerts & Notifications", Icons.Default.Notifications),
+            AdminNavItem(AppDestination.Admin.FullAdministration, "Module 25 CMS Wall & Banner Management", Icons.Default.Campaign, "CMS"),
             AdminNavItem(AppDestination.Admin.Settings, "Module 01 Settings & Profile", Icons.Default.Settings)
         )
     )

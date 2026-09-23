@@ -65,61 +65,52 @@ fun PrintingCalculatorScreen(
             tonalElevation = 3.dp,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Row(
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 12.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                contentAlignment = Alignment.Center
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = {
+                IconButton(
+                    onClick = {
                         if (selectedSectorId != 0) {
                             selectedSectorId = 0
                         } else {
                             onCloseFullScreen()
                         }
-                    }) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Column {
-                        Text(
-                            text = "প্রিন্টিং ক্যালকুলেটর",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontSize = 18.sp,
-                            lineHeight = 22.sp
-                        )
-                        Text(
-                            text = if (selectedSectorId == 0) "৮টি বাণিজ্যিক সেক্টর • স্মার্ট কোটেশন হাব" else sectorTabs.getOrNull(selectedSectorId)?.first ?: "",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontSize = 11.sp,
-                            lineHeight = 13.sp
-                        )
-                    }
+                    },
+                    modifier = Modifier.align(Alignment.CenterStart)
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
                 }
 
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (selectedSectorId != 0) {
-                        TextButton(onClick = { selectedSectorId = 0 }) {
-                            Text("সব সেক্টর ⊞", fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                        }
-                        Spacer(modifier = Modifier.width(4.dp))
-                    }
-
-                    FilledTonalButton(
-                        onClick = onCloseFullScreen,
-                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
-                    ) {
-                        Text("✕ ড্যাশবোর্ড", fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                    }
+                Column(
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .padding(horizontal = 48.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "প্রিন্টিং ক্যালকুলেটর",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontSize = 18.sp,
+                        lineHeight = 22.sp,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    )
+                    Text(
+                        text = if (selectedSectorId == 0) "৮টি বাণিজ্যিক সেক্টর • স্মার্ট কোটেশন হাব" else sectorTabs.getOrNull(selectedSectorId)?.first ?: "",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 11.sp,
+                        lineHeight = 13.sp,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    )
                 }
             }
         }
