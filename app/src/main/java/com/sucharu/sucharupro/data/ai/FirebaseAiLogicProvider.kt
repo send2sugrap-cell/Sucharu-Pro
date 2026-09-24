@@ -62,4 +62,20 @@ class FirebaseAiLogicProvider(
 
         return generateResponse(naturalSystemPrompt)
     }
+
+    suspend fun enrichOrderInstruction(userInstruction: String): Result<String> {
+        val enrichmentPrompt = """
+            You are Sucharu AI, assisting a customer in preparing detailed printing/design instructions.
+
+            The customer provided the following notes: "$userInstruction"
+
+            Rewrite and clarify these instructions into clear, professional Bengali for the printing production team.
+            CRITICAL RULES:
+            - Do NOT invent any business names, phone numbers, addresses, quantities, prices, paper GSM, or finishing details that were NOT provided by the customer.
+            - Only clarify and structure the information explicitly supplied by the customer.
+            - Keep it natural, clear, and professional.
+        """.trimIndent()
+
+        return generateResponse(enrichmentPrompt)
+    }
 }

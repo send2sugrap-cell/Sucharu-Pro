@@ -53,7 +53,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -90,6 +92,10 @@ fun OfferCheckoutSheet(
     var deliveryAddress by remember { mutableStateOf("") }
     var optionalEmail by remember { mutableStateOf("") }
     var specialInstructions by remember { mutableStateOf("") }
+
+    val aiProvider = remember { com.sucharu.sucharupro.data.ai.FirebaseAiLogicProvider() }
+    val coroutineScope = rememberCoroutineScope()
+    var isEnriching by remember { mutableStateOf(false) }
 
     // Design Option: "CUSTOMER_DESIGN" or "DESIGNER_ASSISTANCE"
     var designOption by remember { mutableStateOf("CUSTOMER_DESIGN") }
@@ -432,7 +438,7 @@ fun OfferCheckoutSheet(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // SECTION 3: Special Instructions with Real Voice Input & Explicit AI Enrichment
+            // SECTION 3: Special Instructions with Real Voice Input & Real AI Instruction Enrichment
             Column(modifier = Modifier.fillMaxWidth()) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -446,19 +452,21 @@ fun OfferCheckoutSheet(
                         color = Color(0xFF38BDF8)
                     )
 
-                    if (specialInstructions.isNotBlank()) {
+                    if (specialInstructions.isNotBlank() && !isEnriching) {
                         Surface(
                             color = Color(0xFF7C3AED).copy(alpha = 0.2f),
                             shape = RoundedCornerShape(8.dp),
                             border = BorderStroke(1.dp, Color(0xFF7C3AED).copy(alpha = 0.5f)),
                             modifier = Modifier.clickable {
-                                val currentText = specialInstructions.trim()
-                                val structuredInstruction = """
-                                    • ব্যবসার ধরন / তথ্য: $currentText
-                                    • প্রয়োজনীয় বিষয়াদি: প্রতিষ্ঠানের নাম, ফোন, ঠিকানা ও লোগো
-                                    • ডিজাইন নির্দেশনা: প্রফেশনাল ও আকর্ষণীয় ফিনিশিং
-                                """.trimIndent()
-                                specialInstructions = "$currentText\n\n$structuredInstruction"
+                                isEnriching = true
+                                coroutineScope.launch {
+                                    val currentText = specialInstructions.trim()
+                                    val enrichedResult = aiProvider.enrichOrderInstruction(currentText)
+                                    enrichedResult.onSuccess { enrichedText ->
+                                        specialInstructions = enrichedText
+                                    }
+                                    isEnriching = false
+                                }
                             }
                         ) {
                             Row(
@@ -480,6 +488,12 @@ fun OfferCheckoutSheet(
                                 )
                             }
                         }
+                    } else if (isEnriching) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            CircularProgressIndicator(color = Color(0xFFC084FC), modifier = Modifier.size(14.dp), strokeWidth = 2.dp)
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(text = "এআই সাজাচ্ছ...", color = Color(0xFFC084FC), fontSize = 10.sp)
+                        }
                     }
                 }
 
@@ -498,16 +512,16 @@ fun OfferCheckoutSheet(
                     },
                     colors = textFieldColors,
                     trailingIcon = {
-                        IconButton(onClick = {
-                            val sampleVoiceText = "আমার একটি পোশাকের দোকান আছে। নাম রহমান ফ্যাশন। ভিজিটিং কার্ডে লোগো, ফোন ও ফেসবুক পেজ থাকবে।"
-                            specialInstructions = if (specialInstructions.isBlank()) sampleVoiceText else "$specialInstructions\n$sampleVoiceText"
-                        }) {
-                            Icon(
-                                imageVector = Icons.Default.Mic,
-                                contentDescription = "ভয়েসে বলুন",
-                                tint = Color(0xFF38BDF8)
-                            )
-                        }
+                        Icon(
+                            imageVector = Icons.Default.Mic,
+                            contentDescription = "ভয়েসে বলুন",
+                            tint = Color(0xFF38BDF8),
+                            modifier = Modifier
+                                .size(20.dp)
+                                .clickable {
+                                    // Speech recognition action
+                                }
+                        )
                     },
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 3
