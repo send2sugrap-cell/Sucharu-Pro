@@ -97,9 +97,15 @@ fun AiAssistantChatScreen(
     fun sendUserMessage(prompt: String) {
         if (prompt.isBlank() || isThinking) return
 
+        val trimmedPrompt = prompt.trim()
+
+        // ১. বর্তমান মেসেজ যোগ করার আগেই পূর্ববর্তী হিস্ট্রি সংরক্ষণ করুন
+        val previousHistory = messageList.map { Pair(it.text, it.isUser) }
+
+        // ২. এবার ইউজার মেসেজ UI লিস্টে যোগ করুন
         val userMsg = ChatMessageItem(
             messageId = "USR-" + System.currentTimeMillis(),
-            text = prompt.trim(),
+            text = trimmedPrompt,
             isUser = true,
             timestamp = "এখন"
         )
@@ -110,15 +116,17 @@ fun AiAssistantChatScreen(
         coroutineScope.launch {
             listState.animateScrollToItem(messageList.size - 1)
 
-            val conversationHistory = messageList.map { Pair(it.text, it.isUser) }
+            // ৩. এআই-তে পূর্ববর্তী হিস্ট্রি এবং নতুন প্রম্পট পাঠান
             val aiResult = if (aiProvider is FirebaseAiLogicProvider) {
-                aiProvider.generateChatResponse(conversationHistory, prompt)
+                aiProvider.generateChatResponse(previousHistory, trimmedPrompt)
             } else {
-                aiProvider.generatePrintingAdvice(prompt, null)
+                aiProvider.generatePrintingAdvice(trimmedPrompt, null)
             }
 
-            val replyText = aiResult.getOrElse {
-                getFallbackPrintingAdvice(prompt)
+            // ৪. রেসপন্স গ্রহণ (এরর হলে রোবোটিক অফার না দিয়ে আসল সমস্যা বুঝতে এরর মেসেজ দিন)
+            val replyText = aiResult.getOrElse { error ->
+                android.util.Log.e("ChatViewModel", "AI Error: ${error.message}")
+                "দুঃখিত, সার্ভারের সাথে সংযোগে সমস্যা হচ্ছে। কিছুক্ষণ পর আবার চেষ্টা করুন।"
             }
 
             val aiMsg = ChatMessageItem(
