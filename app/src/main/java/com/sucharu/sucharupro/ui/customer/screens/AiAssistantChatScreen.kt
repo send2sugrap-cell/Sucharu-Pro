@@ -257,52 +257,17 @@ fun AiAssistantChatScreen(
             }
         }
 
-        // Bottom Message Input Row
-        Surface(
-            color = Color(0xFF1E293B),
-            shadowElevation = 8.dp,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                OutlinedTextField(
-                    value = userQueryInput,
-                    onValueChange = { userQueryInput = it },
-                    placeholder = { Text("প্রিন্টিং সম্পর্কে আপনার প্রশ্ন লিখুন...", color = Color(0xFF64748B), fontSize = 12.sp) },
-                    modifier = Modifier.weight(1f),
-                    singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color(0xFF7C3AED),
-                        unfocusedBorderColor = Color(0xFF334155),
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White
-                    )
-                )
-
-                Spacer(modifier = Modifier.width(8.dp))
-
-                Surface(
-                    color = if (userQueryInput.isNotBlank() && !isThinking) Color(0xFF7C3AED) else Color(0xFF334155),
-                    shape = CircleShape,
-                    modifier = Modifier
-                        .size(44.dp)
-                        .clickable { sendUserMessage(userQueryInput) }
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.Send,
-                            contentDescription = "Send",
-                            tint = Color.White,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                }
+        // Reusable Keyboard-Safe Universal Sucharu AI Input Bar with Microphone
+        com.sucharu.sucharupro.ui.customer.components.SucharuAiInputBar(
+            value = userQueryInput,
+            onValueChange = { userQueryInput = it },
+            onSendClick = { prompt -> sendUserMessage(prompt) },
+            isThinking = isThinking,
+            placeholderText = "প্রিন্টিং বা দাম সম্পর্কে লিখুন বা মাইক্রোফোনে বলুন...",
+            onVoiceResult = { voiceText ->
+                userQueryInput = voiceText
             }
-        }
+        )
     }
 }
 

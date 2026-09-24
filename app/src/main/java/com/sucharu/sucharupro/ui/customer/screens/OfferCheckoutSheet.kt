@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -23,6 +25,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.LocalShipping
+import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Payment
 import androidx.compose.material.icons.filled.Phone
@@ -163,6 +166,8 @@ fun OfferCheckoutSheet(
         sheetState = sheetState,
         containerColor = Color(0xFF0F172A),
         modifier = modifier
+            .navigationBarsPadding()
+            .imePadding()
     ) {
         Column(
             modifier = Modifier
@@ -408,13 +413,77 @@ fun OfferCheckoutSheet(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // SECTION 3: Special Instructions
-            OutlinedTextField(
-                value = specialInstructions,
-                onValueChange = { specialInstructions = it },
-                label = { Text("বিশেষ নির্দেশনা (ঐচ্ছিক)", color = Color(0xFF94A3B8)) },
-                modifier = Modifier.fillMaxWidth()
-            )
+            // SECTION 3: Special Instructions with Universal AI Microphone Assistance
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "৩. বিশেষ নির্দেশনা (Special Instructions)",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF38BDF8)
+                    )
+
+                    Surface(
+                        color = Color(0xFF7C3AED).copy(alpha = 0.2f),
+                        shape = RoundedCornerShape(8.dp),
+                        border = BorderStroke(1.dp, Color(0xFF7C3AED).copy(alpha = 0.5f)),
+                        modifier = Modifier.clickable {
+                            // Universal Voice/AI Order Instruction Generator
+                            val generatedInstruction = """
+                                • প্রতিষ্ঠান / ব্যবসার ধরন: কাস্টমার বিজনেস অর্ডার
+                                • প্রয়োজনীয় তথ্য: প্রতিষ্ঠানের নাম, মোবাইল নম্বর, ঠিকানা ও লোগো
+                                • ডিজাইন নির্দেশনা: প্রফেশনাল, আধুনিক ও আকর্ষণীয় লুক
+                            """.trimIndent()
+
+                            specialInstructions = if (specialInstructions.isBlank()) {
+                                generatedInstruction
+                            } else {
+                                "$specialInstructions\n\n$generatedInstruction"
+                            }
+                        }
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Mic,
+                                contentDescription = "AI Voice Assistance",
+                                tint = Color(0xFFC084FC),
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "এআই এসিষ্টেন্ট 🎤",
+                                color = Color(0xFFC084FC),
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                OutlinedTextField(
+                    value = specialInstructions,
+                    onValueChange = { specialInstructions = it },
+                    label = { Text("বিশেষ নির্দেশনা (ঐচ্ছিক)", color = Color(0xFF94A3B8)) },
+                    placeholder = {
+                        Text(
+                            text = "বিস্তারিত লিখতে আপনার ব্যবসা বা প্রতিষ্ঠানের ধরন বলে সুচারু AI-এর সহযোগিতা নিন।",
+                            color = Color(0xFF64748B),
+                            fontSize = 11.sp
+                        )
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 3
+                )
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 
