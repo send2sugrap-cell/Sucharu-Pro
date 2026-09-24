@@ -1,27 +1,36 @@
 package com.sucharu.sucharupro.data.ai
 
 import com.google.ai.client.generativeai.GenerativeModel
+import com.google.ai.client.generativeai.type.content
 import com.sucharu.sucharupro.BuildConfig
 import com.sucharu.sucharupro.domain.service.ai.SucharuAiProvider
 
 /**
  * Concrete Provider Implementation for Google AI Studio Gemini API & Firebase AI Advisor.
- *
- * Implements [SucharuAiProvider] using model "gemini-1.5-flash" with secure key binding [BuildConfig.GEMINI_API_KEY].
- * Bypasses Firebase Blaze plan requirement while providing high-quality Bengali printing advice.
- *
- * SECURITY GUARANTEE:
- * Zero hardcoded raw keys in source code. [BuildConfig.GEMINI_API_KEY] is safely read from local.properties / environment.
  */
 class FirebaseAiLogicProvider(
     private val apiKey: String = BuildConfig.GEMINI_API_KEY,
     private val modelName: String = "gemini-1.5-flash"
 ) : SucharuAiProvider {
 
+    private val naturalSystemInstruction = """
+        You are Sucharu AI, the friendly representative of Sucharu Graphics & Printing.
+
+        Speak 100% naturally, warmly, and conversationally in clear Bengali.
+        Communicate like a helpful human assistant having a direct chat with a customer.
+
+        STRICT FORMATTING RULES:
+        - DO NOT use markdown bold tags (**), headers, bullet points (•), numbered lists, tables, or rigid form templates.
+        - Write in clean, fluid conversational Bengali sentences.
+        - Keep short questions answered concisely and naturally.
+        - Never fabricate business names, phone numbers, addresses, quantities, or prices.
+    """.trimIndent()
+
     private val generativeModel: GenerativeModel by lazy {
         GenerativeModel(
             modelName = modelName,
-            apiKey = apiKey
+            apiKey = apiKey,
+            systemInstruction = content { text(naturalSystemInstruction) }
         )
     }
 
@@ -32,11 +41,15 @@ class FirebaseAiLogicProvider(
 
         return try {
             val response = generativeModel.generateContent(prompt)
-            val text = response.text
-            if (text.isNullOrBlank()) {
+            val rawText = response.text
+            if (rawText.isNullOrBlank()) {
                 Result.failure(IllegalStateException("Gemini AI returned empty or null response"))
             } else {
-                Result.success(text)
+                // Strip any residual markdown bullet points or bold tags for 100% natural conversation
+                val cleanText = rawText
+                    .replace(Regex("\\*\\*"), "")
+                    .replace(Regex("^[•\\-*]\\s+", RegexOption.MULTILINE), "")
+                Result.success(cleanText)
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -44,36 +57,15 @@ class FirebaseAiLogicProvider(
     }
 
     override suspend fun generatePrintingAdvice(userQuery: String, customerContext: String?): Result<String> {
-        val naturalSystemPrompt = """
-            You are Sucharu AI, the friendly AI assistant of Sucharu Graphics & Printing.
-
-            Speak naturally and conversationally in clear Bengali.
-            Your communication should feel like a helpful person having a real conversation with the customer.
-            Do not sound like a form, database, ERP report, technical manual, or automated bot.
-            Do not unnecessarily use headings, numbered lists, bullet points, labels, tables, JSON, Markdown blocks, or rigid templates unless explicitly requested.
-
-            Keep responses concise when a short answer is enough.
-            If information is missing, ask one useful follow-up question naturally.
-            Never invent customer information, business names, phone numbers, addresses, prices, or specifications that were not provided.
-
-            কাস্টমার প্রেক্ষাপট: ${customerContext ?: "সাধারণ গ্রাহক"}
-            গ্রাহকের কথা: $userQuery
-        """.trimIndent()
-
-        return generateResponse(naturalSystemPrompt)
+        val userPrompt = "গ্রাহক প্রশ্ন/কথা: $userQuery (প্রেক্ষাপট: ${customerContext ?: "সাধারণ গ্রাহক"})"
+        return generateResponse(userPrompt)
     }
 
     suspend fun enrichOrderInstruction(userInstruction: String): Result<String> {
         val enrichmentPrompt = """
-            You are Sucharu AI, assisting a customer in preparing detailed printing/design instructions.
-
-            The customer provided the following notes: "$userInstruction"
-
-            Rewrite and clarify these instructions into clear, professional Bengali for the printing production team.
-            CRITICAL RULES:
-            - Do NOT invent any business names, phone numbers, addresses, quantities, prices, paper GSM, or finishing details that were NOT provided by the customer.
-            - Only clarify and structure the information explicitly supplied by the customer.
-            - Keep it natural, clear, and professional.
+            Customer provided notes: "$userInstruction"
+            Clarify and polish this into a clear, professional order instruction in natural Bengali.
+            Do NOT invent any business names, phone numbers, quantities, prices, paper GSM, or sizes that were not provided.
         """.trimIndent()
 
         return generateResponse(enrichmentPrompt)
