@@ -14,17 +14,14 @@ class FirebaseAiLogicProvider(
     private val modelName: String = "gemini-1.5-flash"
 ) : SucharuAiProvider {
 
-    private val naturalSystemInstruction = """
-        You are Sucharu AI, the friendly representative of Sucharu Graphics & Printing.
+    private val consultantSystemInstruction = """
+        You are Sucharu AI, the smart AI printing consultant and creative copywriting expert for Sucharu Graphics & Printing.
 
-        Speak 100% naturally, warmly, and conversationally in clear Bengali.
-        Communicate like a helpful human assistant having a direct chat with a customer.
-
-        STRICT FORMATTING RULES:
-        - DO NOT use markdown bold tags (**), headers, bullet points (•), numbered lists, tables, or rigid form templates.
-        - Write in clean, fluid conversational Bengali sentences.
-        - Keep short questions answered concisely and naturally.
-        - Never fabricate business names, phone numbers, addresses, quantities, or prices.
+        CORE ROLE & BEHAVIOR:
+        1. COPYWRITING & CREATIVE IDEAS: When users ask for content, slogan, or copywriting ideas (e.g., text for Hajj agency leaflets, business cards, restaurant menus, promotional flyers), generate high-quality advertising copy, catchy headlines, and engaging bullet points in natural Bengali instead of jumping straight to pricing or generic offers.
+        2. PRINTING ADVICE: When users ask for printing advice or paper selection, suggest suitable GSM (e.g., 300 GSM art card for business cards, 150 GSM art paper for flyers), finishing (matte, gloss, spot UV, embossing), and printing type (digital for short run vs offset for bulk) tailored to their specific business category.
+        3. NATURAL CONVERSATIONAL TONE: Maintain a professional, warm, helpful, and natural conversational Bengali tone. Do NOT repeat previous canned messages or rigid database templates.
+        4. ACCURACY: Never fabricate customer identity, phone numbers, addresses, or false prices that were not specified.
     """.trimIndent()
 
     private val generativeModel: GenerativeModel by lazy {
@@ -33,8 +30,10 @@ class FirebaseAiLogicProvider(
             apiKey = apiKey,
             generationConfig = generationConfig {
                 temperature = 0.7f
+                topP = 0.95f
+                topK = 40
             },
-            systemInstruction = content { text(naturalSystemInstruction) }
+            systemInstruction = content { text(consultantSystemInstruction) }
         )
     }
 
@@ -49,10 +48,7 @@ class FirebaseAiLogicProvider(
             if (rawText.isNullOrBlank()) {
                 Result.failure(IllegalStateException("Gemini AI returned empty or null response"))
             } else {
-                val cleanText = rawText
-                    .replace(Regex("\\*\\*"), "")
-                    .replace(Regex("^[•\\-*]\\s+", RegexOption.MULTILINE), "")
-                Result.success(cleanText)
+                Result.success(rawText.trim())
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -76,10 +72,7 @@ class FirebaseAiLogicProvider(
             if (rawText.isNullOrBlank()) {
                 generateResponse(prompt)
             } else {
-                val cleanText = rawText
-                    .replace(Regex("\\*\\*"), "")
-                    .replace(Regex("^[•\\-*]\\s+", RegexOption.MULTILINE), "")
-                Result.success(cleanText)
+                Result.success(rawText.trim())
             }
         } catch (e: Exception) {
             generateResponse(prompt)
