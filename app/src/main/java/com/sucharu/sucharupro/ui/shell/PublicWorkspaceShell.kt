@@ -114,7 +114,9 @@ fun PublicWorkspaceShell(
                 is AppDestination.Public.About -> PublicAboutView(onNavigate = onNavigate)
                 is AppDestination.Public.Faq -> PublicFaqView(onNavigate = onNavigate)
                 is AppDestination.Public.Contact, is AppDestination.Public.Location -> PublicContactView(onNavigate = onNavigate)
-                is AppDestination.Public.PublicAiAssistant -> PublicAiAssistantView(onNavigate = onNavigate)
+                is AppDestination.Public.PublicAiAssistant -> com.sucharu.sucharupro.ui.customer.screens.AiAssistantChatScreen(
+                    onNavigateBack = { onNavigate(AppDestination.Public.Home) }
+                )
                 else -> SucharuWallScreen(
                     viewModel = viewModel { SucharuWallViewModel() },
                     principal = null,
