@@ -104,7 +104,12 @@ fun PublicWorkspaceShell(
                         onNavigate = onNavigate
                     )
                 }
-                is AppDestination.Public.Offers -> PublicOffersView(onNavigate = onNavigate)
+                is AppDestination.Public.Offers -> com.sucharu.sucharupro.ui.customer.screens.SpecialOfferGalleryScreen(
+                    onNavigateBack = { onNavigate(AppDestination.Public.Home) },
+                    onOrderClick = { item -> onNavigate(AppDestination.Customer.Quotations) },
+                    onCustomizeClick = { item -> onNavigate(AppDestination.Public.ProductGallery(item.templateId, item.title)) },
+                    onCustomOrderClick = { onNavigate(AppDestination.Customer.Quotations) }
+                )
                 is AppDestination.Public.Portfolio -> PublicGalleryView(onNavigate = onNavigate)
                 is AppDestination.Public.About -> PublicAboutView(onNavigate = onNavigate)
                 is AppDestination.Public.Faq -> PublicFaqView(onNavigate = onNavigate)
