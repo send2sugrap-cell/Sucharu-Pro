@@ -110,7 +110,13 @@ fun AiAssistantChatScreen(
         coroutineScope.launch {
             listState.animateScrollToItem(messageList.size - 1)
 
-            val aiResult = aiProvider.generatePrintingAdvice(prompt, "গ্রাহক প্রশ্ন")
+            val conversationHistory = messageList.map { Pair(it.text, it.isUser) }
+            val aiResult = if (aiProvider is FirebaseAiLogicProvider) {
+                aiProvider.generateChatResponse(conversationHistory, prompt)
+            } else {
+                aiProvider.generatePrintingAdvice(prompt, null)
+            }
+
             val replyText = aiResult.getOrElse {
                 getFallbackPrintingAdvice(prompt)
             }

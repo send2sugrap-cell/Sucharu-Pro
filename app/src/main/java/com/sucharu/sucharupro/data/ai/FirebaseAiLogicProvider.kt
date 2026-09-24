@@ -2,6 +2,7 @@ package com.sucharu.sucharupro.data.ai
 
 import com.google.ai.client.generativeai.GenerativeModel
 import com.google.ai.client.generativeai.type.content
+import com.google.ai.client.generativeai.type.generationConfig
 import com.sucharu.sucharupro.BuildConfig
 import com.sucharu.sucharupro.domain.service.ai.SucharuAiProvider
 
@@ -30,6 +31,9 @@ class FirebaseAiLogicProvider(
         GenerativeModel(
             modelName = modelName,
             apiKey = apiKey,
+            generationConfig = generationConfig {
+                temperature = 0.7f
+            },
             systemInstruction = content { text(naturalSystemInstruction) }
         )
     }
@@ -45,7 +49,6 @@ class FirebaseAiLogicProvider(
             if (rawText.isNullOrBlank()) {
                 Result.failure(IllegalStateException("Gemini AI returned empty or null response"))
             } else {
-                // Strip any residual markdown bullet points or bold tags for 100% natural conversation
                 val cleanText = rawText
                     .replace(Regex("\\*\\*"), "")
                     .replace(Regex("^[•\\-*]\\s+", RegexOption.MULTILINE), "")
@@ -56,9 +59,33 @@ class FirebaseAiLogicProvider(
         }
     }
 
+    suspend fun generateChatResponse(history: List<Pair<String, Boolean>>, prompt: String): Result<String> {
+        if (prompt.isBlank()) {
+            return Result.failure(IllegalArgumentException("Prompt cannot be empty"))
+        }
+
+        return try {
+            val chatHistory = history.map { (msg, isUser) ->
+                content(if (isUser) "user" else "model") { text(msg) }
+            }
+            val chatSession = generativeModel.startChat(history = chatHistory)
+            val response = chatSession.sendMessage(prompt)
+            val rawText = response.text
+            if (rawText.isNullOrBlank()) {
+                Result.failure(IllegalStateException("Gemini AI returned empty response"))
+            } else {
+                val cleanText = rawText
+                    .replace(Regex("\\*\\*"), "")
+                    .replace(Regex("^[•\\-*]\\s+", RegexOption.MULTILINE), "")
+                Result.success(cleanText)
+            }
+        } catch (e: Exception) {
+            generateResponse(prompt)
+        }
+    }
+
     override suspend fun generatePrintingAdvice(userQuery: String, customerContext: String?): Result<String> {
-        val userPrompt = "গ্রাহক প্রশ্ন/কথা: $userQuery (প্রেক্ষাপট: ${customerContext ?: "সাধারণ গ্রাহক"})"
-        return generateResponse(userPrompt)
+        return generateResponse(userQuery)
     }
 
     suspend fun enrichOrderInstruction(userInstruction: String): Result<String> {
