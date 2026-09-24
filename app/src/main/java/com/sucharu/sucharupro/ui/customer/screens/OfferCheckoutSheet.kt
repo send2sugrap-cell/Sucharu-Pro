@@ -41,6 +41,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.SheetState
@@ -255,6 +256,18 @@ fun OfferCheckoutSheet(
 
             Spacer(modifier = Modifier.height(8.dp))
 
+            val textFieldColors = OutlinedTextFieldDefaults.colors(
+                focusedTextColor = Color.White,
+                unfocusedTextColor = Color.White,
+                focusedContainerColor = Color(0xFF1E293B),
+                unfocusedContainerColor = Color(0xFF1E293B),
+                focusedBorderColor = Color(0xFF38BDF8),
+                unfocusedBorderColor = Color(0xFF334155),
+                focusedLabelColor = Color(0xFF38BDF8),
+                unfocusedLabelColor = Color(0xFF94A3B8),
+                cursorColor = Color(0xFF38BDF8)
+            )
+
             OutlinedTextField(
                 value = fullName,
                 onValueChange = {
@@ -263,6 +276,7 @@ fun OfferCheckoutSheet(
                 },
                 label = { Text("পূর্ণ নাম", color = Color(0xFF94A3B8)) },
                 isError = fullNameError != null,
+                colors = textFieldColors,
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
@@ -280,6 +294,7 @@ fun OfferCheckoutSheet(
                 },
                 label = { Text("মোবাইল নম্বর", color = Color(0xFF94A3B8)) },
                 isError = mobileError != null,
+                colors = textFieldColors,
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
@@ -327,6 +342,7 @@ fun OfferCheckoutSheet(
                 },
                 label = { Text("সম্পূর্ণ ডেলিভারি ঠিকানা", color = Color(0xFF94A3B8)) },
                 isError = addressError != null,
+                colors = textFieldColors,
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 2
             )
@@ -340,6 +356,7 @@ fun OfferCheckoutSheet(
                 value = optionalEmail,
                 onValueChange = { optionalEmail = it },
                 label = { Text("ইমেইল (ঐচ্ছিক)", color = Color(0xFF94A3B8)) },
+                colors = textFieldColors,
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
@@ -479,6 +496,7 @@ fun OfferCheckoutSheet(
                             fontSize = 11.sp
                         )
                     },
+                    colors = textFieldColors,
                     trailingIcon = {
                         IconButton(onClick = {
                             val sampleVoiceText = "আমার একটি পোশাকের দোকান আছে। নাম রহমান ফ্যাশন। ভিজিটিং কার্ডে লোগো, ফোন ও ফেসবুক পেজ থাকবে।"
