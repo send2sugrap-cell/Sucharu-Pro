@@ -189,6 +189,25 @@ fun OfferCheckoutSheet(
         }
     }
 
+    val orderPermissionLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        contract = androidx.activity.result.contract.ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            startOrderVoiceRecognition()
+        } else {
+            android.widget.Toast.makeText(context, "ভয়েস ইনপুট ব্যবহারের জন্য মাইক্রোফোন পারমিশন প্রয়োজন", android.widget.Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    fun handleOrderMicTap() {
+        val permission = android.Manifest.permission.RECORD_AUDIO
+        if (androidx.core.content.ContextCompat.checkSelfPermission(context, permission) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            startOrderVoiceRecognition()
+        } else {
+            orderPermissionLauncher.launch(permission)
+        }
+    }
+
     // Design Option: "CUSTOMER_DESIGN" or "DESIGNER_ASSISTANCE"
     var designOption by remember { mutableStateOf("CUSTOMER_DESIGN") }
     var uploadedFileName by remember { mutableStateOf<String?>(null) }
@@ -609,7 +628,7 @@ fun OfferCheckoutSheet(
                                 .size(36.dp)
                                 .clip(CircleShape)
                                 .background(if (isOrderMicListening) Color(0xFFEF4444) else Color.Transparent)
-                                .clickable { startOrderVoiceRecognition() },
+                                .clickable { handleOrderMicTap() },
                             contentAlignment = Alignment.Center
                         ) {
                             if (isOrderMicListening) {

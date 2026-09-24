@@ -1,10 +1,15 @@
 package com.sucharu.sucharupro.ui.customer.components
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -16,8 +21,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -33,17 +40,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 
 enum class MicState {
     IDLE, LISTENING, PROCESSING, SUCCESS
 }
 
 /**
- * Universal Reusable Keyboard-Safe Sucharu AI Input Bar with Real Android Speech Recognition (bn-BD).
+ * Universal Reusable Keyboard-Safe Sucharu AI Input Bar with Microphone & Send right side placement.
  */
 @Composable
 fun SucharuAiInputBar(
@@ -51,7 +60,7 @@ fun SucharuAiInputBar(
     onValueChange: (String) -> Unit,
     onSendClick: (String) -> Unit,
     modifier: Modifier = Modifier,
-    placeholderText: String = "প্রিন্টিং সম্পর্কে প্রশ্ন লিখুন বা ভয়েসে বলুন...",
+    placeholderText: String = "সুচারু AI-কে প্রশ্ন করুন...",
     isThinking: Boolean = false,
     onVoiceResult: (String) -> Unit = {}
 ) {
@@ -90,6 +99,7 @@ fun SucharuAiInputBar(
         }
 
         if (speechRecognizer == null) {
+            android.widget.Toast.makeText(context, "ভয়েস ইনপুট এই ডিভাইসে উপলব্ধ নয়", android.widget.Toast.LENGTH_SHORT).show()
             micState = MicState.IDLE
             return
         }
@@ -144,6 +154,25 @@ fun SucharuAiInputBar(
         }
     }
 
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            startListening()
+        } else {
+            android.widget.Toast.makeText(context, "ভয়েস ইনপুট ব্যবহারের জন্য মাইক্রোফোন পারমিশন প্রয়োজন", android.widget.Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    fun handleMicTap() {
+        val permission = Manifest.permission.RECORD_AUDIO
+        if (ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED) {
+            startListening()
+        } else {
+            permissionLauncher.launch(permission)
+        }
+    }
+
     Surface(
         color = Color(0xFF1E293B),
         shadowElevation = 8.dp,
@@ -155,70 +184,75 @@ fun SucharuAiInputBar(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 10.dp, vertical = 8.dp),
+                .padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Universal Real Microphone Button
-            Surface(
-                color = when (micState) {
-                    MicState.LISTENING -> Color(0xFFEF4444)
-                    MicState.PROCESSING -> Color(0xFFF59E0B)
-                    else -> Color(0xFF334155)
-                },
-                shape = CircleShape,
-                modifier = Modifier
-                    .size(42.dp)
-                    .clickable { startListening() }
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    if (micState == MicState.PROCESSING) {
-                        CircularProgressIndicator(
-                            color = Color.White,
-                            strokeWidth = 2.dp,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    } else {
-                        Icon(
-                            imageVector = Icons.Default.Mic,
-                            contentDescription = "ভয়েসে বলুন",
-                            tint = Color.White,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            // Input Text Field
+            // Pill Shaped Input Text Field (+ Icon on left, Microphone Icon on right)
             OutlinedTextField(
                 value = value,
                 onValueChange = onValueChange,
                 placeholder = {
                     Text(
                         text = if (micState == MicState.LISTENING) "কথা বলুন... (বাংলা)" else placeholderText,
-                        color = if (micState == MicState.LISTENING) Color(0xFFEF4444) else Color(0xFF64748B),
+                        color = if (micState == MicState.LISTENING) Color(0xFFEF4444) else Color(0xFF94A3B8),
                         fontSize = 12.sp
                     )
                 },
-                modifier = Modifier.weight(1f),
-                singleLine = true,
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = "Add",
+                        tint = Color(0xFF94A3B8),
+                        modifier = Modifier.size(20.dp)
+                    )
+                },
+                trailingIcon = {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(if (micState == MicState.LISTENING) Color(0xFFEF4444) else Color.Transparent)
+                            .clickable { handleMicTap() },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (micState == MicState.PROCESSING) {
+                            CircularProgressIndicator(
+                                color = Color(0xFF38BDF8),
+                                strokeWidth = 2.dp,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.Mic,
+                                contentDescription = "ভয়েসে বলুন",
+                                tint = if (micState == MicState.LISTENING) Color.White else Color(0xFF38BDF8),
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+                },
+                shape = RoundedCornerShape(24.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color(0xFF7C3AED),
+                    focusedContainerColor = Color(0xFF0F172A),
+                    unfocusedContainerColor = Color(0xFF0F172A),
+                    focusedBorderColor = Color(0xFF38BDF8),
                     unfocusedBorderColor = Color(0xFF334155),
                     focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White
-                )
+                    unfocusedTextColor = Color.White,
+                    cursorColor = Color(0xFF38BDF8)
+                ),
+                modifier = Modifier.weight(1f),
+                singleLine = true
             )
 
             Spacer(modifier = Modifier.width(8.dp))
 
-            // Send Button
+            // Far Right Circular Up Arrow Send Button
             Surface(
-                color = if (value.isNotBlank() && !isThinking) Color(0xFF7C3AED) else Color(0xFF334155),
+                color = if (value.isNotBlank() && !isThinking) Color(0xFF38BDF8) else Color(0xFF334155),
                 shape = CircleShape,
                 modifier = Modifier
-                    .size(42.dp)
+                    .size(44.dp)
                     .clickable {
                         if (value.isNotBlank() && !isThinking) {
                             onSendClick(value)
@@ -227,10 +261,10 @@ fun SucharuAiInputBar(
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
-                        imageVector = Icons.AutoMirrored.Filled.Send,
+                        imageVector = Icons.Default.ArrowUpward,
                         contentDescription = "Send",
                         tint = Color.White,
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier.size(22.dp)
                     )
                 }
             }
