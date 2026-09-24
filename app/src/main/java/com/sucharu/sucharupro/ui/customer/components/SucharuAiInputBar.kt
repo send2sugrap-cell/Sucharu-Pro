@@ -115,6 +115,12 @@ fun SucharuAiInputBar(
             }
             override fun onError(error: Int) {
                 micState = MicState.IDLE
+                val msg = when (error) {
+                    SpeechRecognizer.ERROR_NO_MATCH -> "কথা বোঝা যায়নি, আবার চেষ্টা করুন"
+                    SpeechRecognizer.ERROR_NETWORK -> "নেটওয়ার্ক সমস্যা, আবার চেষ্টা করুন"
+                    else -> "ভয়েস ইনপুট সমস্যা হয়েছে"
+                }
+                android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
             }
             override fun onResults(results: Bundle?) {
                 val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)

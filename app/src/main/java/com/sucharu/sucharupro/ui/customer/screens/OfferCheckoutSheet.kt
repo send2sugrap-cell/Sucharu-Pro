@@ -1,5 +1,10 @@
 package com.sucharu.sucharupro.ui.customer.screens
 
+import android.content.Intent
+import android.os.Bundle
+import android.speech.RecognitionListener
+import android.speech.RecognizerIntent
+import android.speech.SpeechRecognizer
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -96,6 +101,93 @@ fun OfferCheckoutSheet(
     val aiProvider = remember { com.sucharu.sucharupro.data.ai.FirebaseAiLogicProvider() }
     val coroutineScope = rememberCoroutineScope()
     var isEnriching by remember { mutableStateOf(false) }
+
+    val context = androidx.compose.ui.platform.LocalContext.current
+    var isOrderMicListening by remember { mutableStateOf(false) }
+
+    val orderSpeechRecognizer = remember {
+        try {
+            if (SpeechRecognizer.isRecognitionAvailable(context)) {
+                SpeechRecognizer.createSpeechRecognizer(context)
+            } else null
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    androidx.compose.runtime.DisposableEffect(Unit) {
+        onDispose {
+            try {
+                orderSpeechRecognizer?.destroy()
+            } catch (e: Exception) {
+                // Cleanup
+            }
+        }
+    }
+
+    fun startOrderVoiceRecognition() {
+        if (isOrderMicListening) {
+            try {
+                orderSpeechRecognizer?.stopListening()
+            } catch (e: Exception) {
+                // Ignore
+            }
+            isOrderMicListening = false
+            return
+        }
+
+        if (orderSpeechRecognizer == null) {
+            android.widget.Toast.makeText(context, "ভয়েস ইনপুট এই ডিভাইসে উপলব্ধ নয়", android.widget.Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE, "bn-BD")
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, "bn-BD")
+            putExtra(RecognizerIntent.EXTRA_PROMPT, "বলুন আপনার ব্যবসা বা প্রতিষ্ঠানের ধরন...")
+        }
+
+        orderSpeechRecognizer.setRecognitionListener(object : RecognitionListener {
+            override fun onReadyForSpeech(params: Bundle?) {
+                isOrderMicListening = true
+            }
+            override fun onBeginningOfSpeech() {
+                isOrderMicListening = true
+            }
+            override fun onRmsChanged(rmsdB: Float) {}
+            override fun onBufferReceived(buffer: ByteArray?) {}
+            override fun onEndOfSpeech() {
+                isOrderMicListening = false
+            }
+            override fun onError(error: Int) {
+                isOrderMicListening = false
+                val msg = when (error) {
+                    SpeechRecognizer.ERROR_NO_MATCH -> "কথা বোঝা যায়নি, আবার চেষ্টা করুন"
+                    SpeechRecognizer.ERROR_NETWORK -> "নেটওয়ার্ক সমস্যা, আবার চেষ্টা করুন"
+                    else -> "ভয়েস ইনপুট সমস্যা হয়েছে"
+                }
+                android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
+            }
+            override fun onResults(results: Bundle?) {
+                val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                if (!matches.isNullOrEmpty()) {
+                    val recognizedSpeech = matches[0]
+                    specialInstructions = if (specialInstructions.isBlank()) recognizedSpeech else "$specialInstructions $recognizedSpeech"
+                }
+                isOrderMicListening = false
+            }
+            override fun onPartialResults(partialResults: Bundle?) {}
+            override fun onEvent(eventType: Int, params: Bundle?) {}
+        })
+
+        try {
+            isOrderMicListening = true
+            orderSpeechRecognizer.startListening(intent)
+        } catch (e: Exception) {
+            isOrderMicListening = false
+        }
+    }
 
     // Design Option: "CUSTOMER_DESIGN" or "DESIGNER_ASSISTANCE"
     var designOption by remember { mutableStateOf("CUSTOMER_DESIGN") }
@@ -512,16 +604,25 @@ fun OfferCheckoutSheet(
                     },
                     colors = textFieldColors,
                     trailingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.Mic,
-                            contentDescription = "ভয়েসে বলুন",
-                            tint = Color(0xFF38BDF8),
+                        Box(
                             modifier = Modifier
-                                .size(20.dp)
-                                .clickable {
-                                    // Speech recognition action
-                                }
-                        )
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(if (isOrderMicListening) Color(0xFFEF4444) else Color.Transparent)
+                                .clickable { startOrderVoiceRecognition() },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (isOrderMicListening) {
+                                CircularProgressIndicator(color = Color.White, modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Default.Mic,
+                                    contentDescription = "ভয়েসে বলুন",
+                                    tint = if (isOrderMicListening) Color.White else Color(0xFF38BDF8),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
                     },
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 3
