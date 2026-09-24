@@ -2,14 +2,16 @@ package com.sucharu.sucharupro.data.repository.cms
 
 import com.sucharu.sucharupro.data.api.model.cms.CmsBannerDto
 import com.sucharu.sucharupro.data.api.model.cms.CmsCategoryDto
+import com.sucharu.sucharupro.data.api.model.cms.CmsDesignTemplateDto
 import com.sucharu.sucharupro.data.api.model.cms.CreateCmsBannerRequestDto
 import com.sucharu.sucharupro.data.api.model.cms.CreateCmsCategoryRequestDto
+import com.sucharu.sucharupro.data.api.model.cms.CreateCmsDesignTemplateRequestDto
 import com.sucharu.sucharupro.data.api.model.cms.PublicWallCmsFeedResponseDto
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * Repository interface and in-memory thread-safe implementation for Sucharu Pro CMS Banners & Categories.
+ * Repository interface and in-memory thread-safe implementation for Sucharu Pro CMS Banners, Categories & Design Templates.
  */
 interface CmsRepository {
     fun createBanner(request: CreateCmsBannerRequestDto): CmsBannerDto
@@ -17,12 +19,16 @@ interface CmsRepository {
     fun toggleBannerStatus(bannerId: String, isActive: Boolean): CmsBannerDto?
     fun createCategory(request: CreateCmsCategoryRequestDto): CmsCategoryDto
     fun getAllCategories(): List<CmsCategoryDto>
+    fun createDesignTemplate(request: CreateCmsDesignTemplateRequestDto): CmsDesignTemplateDto
+    fun getDesignTemplatesByCategory(categoryName: String): List<CmsDesignTemplateDto>
+    fun getAllDesignTemplates(): List<CmsDesignTemplateDto>
     fun getPublicWallFeed(): PublicWallCmsFeedResponseDto
 }
 
 class InMemoryCmsRepository : CmsRepository {
     private val banners = ConcurrentHashMap<String, CmsBannerDto>()
     private val categories = ConcurrentHashMap<String, CmsCategoryDto>()
+    private val templates = ConcurrentHashMap<String, CmsDesignTemplateDto>()
 
     init {
         // Initial Default Banners
@@ -56,6 +62,53 @@ class InMemoryCmsRepository : CmsRepository {
         categories[c1.categoryId] = c1
         categories[c2.categoryId] = c2
         categories[c3.categoryId] = c3
+
+        // Initial Default Design Templates
+        val t1 = CmsDesignTemplateDto(
+            templateId = "TMPL-101",
+            templateCode = "#TMPL-101",
+            categoryName = "অফসেট প্রিন্টিং",
+            title = "প্রিমিয়াম ইভেন্ট পোস্টার ডিজাইন",
+            colorMode = "৪ কালার (CMYK)",
+            paperStock = "১৫০ GSM আর্ট পেপার",
+            printSize = "১৮\" × ২৩\" (Demy)",
+            finishing = "গ্লস ল্যামিনেশন",
+            suitabilityDescription = "প্রচারণা ও ইভেন্টের জন্য সেরা কোয়ালিটি",
+            priceText = "৳ ১,২০০ / ১,০০০ পিস",
+            perUnitRate = "(৳ ১.২০ / পিস)",
+            badgeLabel = "বেস্টসেলার"
+        )
+        val t2 = CmsDesignTemplateDto(
+            templateId = "TMPL-203",
+            templateCode = "#TMPL-203",
+            categoryName = "ভিজিটিং কার্ড",
+            title = "প্রফেশনাল বিজনেস কার্ড",
+            colorMode = "৪ কালার (CMYK)",
+            paperStock = "৩০০ GSM আর্ট কার্ড",
+            printSize = "২\" × ৩.৫\" (স্ট্যান্ডার্ড)",
+            finishing = "ম্যাট ফিনিশ + স্পট UV",
+            suitabilityDescription = "কর্পোরেট পরিচয়ের জন্য নিখুঁত ডিজাইন",
+            priceText = "৳ ৮০০ / ১,০০০ পিস",
+            perUnitRate = "(৳ ০.৮০ / পিস)",
+            badgeLabel = "পপুলার"
+        )
+        val t3 = CmsDesignTemplateDto(
+            templateId = "TMPL-307",
+            templateCode = "#TMPL-307",
+            categoryName = "ব্রোশিওর",
+            title = "রঙিন প্রচারপত্র (লিফলেট)",
+            colorMode = "৪ কালার (CMYK)",
+            paperStock = "১০০ GSM আর্ট পেপার",
+            printSize = "A4 সাইজ",
+            finishing = "কোন ফিনিশ নেই",
+            suitabilityDescription = "দ্রুত এবং সস্তা প্রচারের জন্য আদর্শ",
+            priceText = "৳ ১,৫০০ / ১,০০০ পিস",
+            perUnitRate = "(৳ ১.৫০ / পিস)",
+            badgeLabel = "স্পেশাল"
+        )
+        templates[t1.templateId] = t1
+        templates[t2.templateId] = t2
+        templates[t3.templateId] = t3
     }
 
     override fun createBanner(request: CreateCmsBannerRequestDto): CmsBannerDto {
@@ -102,9 +155,41 @@ class InMemoryCmsRepository : CmsRepository {
         return categories.values.sortedBy { it.displayOrder }
     }
 
+    override fun createDesignTemplate(request: CreateCmsDesignTemplateRequestDto): CmsDesignTemplateDto {
+        val id = UUID.randomUUID().toString().take(8).uppercase()
+        val template = CmsDesignTemplateDto(
+            templateId = "TMPL-$id",
+            templateCode = "#TMPL-$id",
+            categoryName = request.categoryName,
+            title = request.title,
+            colorMode = request.colorMode,
+            paperStock = request.paperStock,
+            printSize = request.printSize,
+            finishing = request.finishing,
+            suitabilityDescription = request.suitabilityDescription,
+            priceText = request.priceText,
+            perUnitRate = request.perUnitRate,
+            imageUrl = request.imageUrl,
+            badgeLabel = request.badgeLabel,
+            isActive = true
+        )
+        templates[template.templateId] = template
+        return template
+    }
+
+    override fun getDesignTemplatesByCategory(categoryName: String): List<CmsDesignTemplateDto> {
+        val matching = templates.values.filter { it.isActive && (categoryName.contains(it.categoryName) || it.categoryName.contains(categoryName) || categoryName == "ALL" || categoryName == "সব") }
+        return matching.ifEmpty { templates.values.filter { it.isActive }.toList() }
+    }
+
+    override fun getAllDesignTemplates(): List<CmsDesignTemplateDto> {
+        return templates.values.toList()
+    }
+
     override fun getPublicWallFeed(): PublicWallCmsFeedResponseDto {
         val activeBanners = banners.values.filter { it.isActive }.sortedBy { it.displayOrder }
         val activeCategories = categories.values.filter { it.isActive }.sortedBy { it.displayOrder }
-        return PublicWallCmsFeedResponseDto(banners = activeBanners, categories = activeCategories)
+        val activeTemplates = templates.values.filter { it.isActive }
+        return PublicWallCmsFeedResponseDto(banners = activeBanners, categories = activeCategories, templates = activeTemplates)
     }
 }
