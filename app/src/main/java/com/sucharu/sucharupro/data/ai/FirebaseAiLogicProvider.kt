@@ -61,36 +61,40 @@ class FirebaseAiLogicProvider(
         }
 
         return try {
-            // ১. হিস্ট্রি থেকে প্রথম এআই গ্রিটিং বাদ দেওয়া (Gemini SDK বাধ্যবাধকতা)
-            val userStartedHistory = history.dropWhile { !it.second }
-
-            // ২. হিস্ট্রির একদম শেষে যদি বর্তমান প্রম্পটটি অলরেডি যুক্ত থাকে, তা বাদ দেওয়া
-            // কারণ sendMessage(prompt) নিজেই এটিকে নতুন একটিভ মেসেজ হিসেবে যুক্ত করবে
-            val cleanHistory = if (userStartedHistory.isNotEmpty() && userStartedHistory.last().second) {
-                userStartedHistory.dropLast(1)
-            } else {
-                userStartedHistory
+            // 1. API Key validation check
+            if (apiKey.isBlank()) {
+                return Result.failure(IllegalStateException("API Key is missing. Check BuildConfig."))
             }
 
-            // ৩. কনটেন্ট ম্যাপিং
-            val chatHistory = cleanHistory.map { (msg, isUser) ->
-                content(if (isUser) "user" else "model") { text(msg) }
+            // 2. History filtering: filter non-blank messages and drop leading model messages
+            // (Gemini SDK requires conversation history to begin with a user message)
+            val validHistory = history
+                .filter { it.first.isNotBlank() }
+                .dropWhile { !it.second }
+
+            // 3. Build Content list for Gemini SDK
+            val contents = mutableListOf<com.google.ai.client.generativeai.type.Content>()
+
+            validHistory.forEach { (msg, isUser) ->
+                contents.add(content(if (isUser) "user" else "model") { text(msg) })
             }
 
-            // ৪. সেশন শুরু এবং নতুন প্রম্পট পাঠানো
-            val chatSession = generativeModel.startChat(history = chatHistory)
-            val response = chatSession.sendMessage(prompt)
+            // Append the current prompt as the final user content
+            contents.add(content("user") { text(prompt) })
+
+            // 4. Use stateless generateContent with spread operator for reliability
+            val response = generativeModel.generateContent(*contents.toTypedArray())
             val rawText = response.text
 
             if (rawText.isNullOrBlank()) {
-                Result.failure(IllegalStateException("Empty AI response"))
+                Result.failure(IllegalStateException("Gemini returned an empty response"))
             } else {
                 Result.success(rawText.trim())
             }
         } catch (e: Exception) {
-            android.util.Log.e("GeminiError", "Chat Error: ${e.message}", e)
-            // হিস্ট্রিতে এরর হলে অন্তত সাধারণ সিঙ্গেল প্রম্পট হিসেবে উত্তর দেওয়ার চেষ্টা করা
-            generateResponse(prompt)
+            // Detailed error logging in Android Studio Logcat
+            android.util.Log.e("SucharuGemini", "API call failed: ${e.message}", e)
+            Result.failure(e)
         }
     }
 
