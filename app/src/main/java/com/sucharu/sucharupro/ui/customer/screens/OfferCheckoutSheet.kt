@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.LocalOffer
@@ -37,6 +38,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
@@ -413,7 +415,7 @@ fun OfferCheckoutSheet(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // SECTION 3: Special Instructions with Universal AI Microphone Assistance
+            // SECTION 3: Special Instructions with Real Voice Input & Explicit AI Enrichment
             Column(modifier = Modifier.fillMaxWidth()) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -427,42 +429,39 @@ fun OfferCheckoutSheet(
                         color = Color(0xFF38BDF8)
                     )
 
-                    Surface(
-                        color = Color(0xFF7C3AED).copy(alpha = 0.2f),
-                        shape = RoundedCornerShape(8.dp),
-                        border = BorderStroke(1.dp, Color(0xFF7C3AED).copy(alpha = 0.5f)),
-                        modifier = Modifier.clickable {
-                            // Universal Voice/AI Order Instruction Generator
-                            val generatedInstruction = """
-                                • প্রতিষ্ঠান / ব্যবসার ধরন: কাস্টমার বিজনেস অর্ডার
-                                • প্রয়োজনীয় তথ্য: প্রতিষ্ঠানের নাম, মোবাইল নম্বর, ঠিকানা ও লোগো
-                                • ডিজাইন নির্দেশনা: প্রফেশনাল, আধুনিক ও আকর্ষণীয় লুক
-                            """.trimIndent()
-
-                            specialInstructions = if (specialInstructions.isBlank()) {
-                                generatedInstruction
-                            } else {
-                                "$specialInstructions\n\n$generatedInstruction"
+                    if (specialInstructions.isNotBlank()) {
+                        Surface(
+                            color = Color(0xFF7C3AED).copy(alpha = 0.2f),
+                            shape = RoundedCornerShape(8.dp),
+                            border = BorderStroke(1.dp, Color(0xFF7C3AED).copy(alpha = 0.5f)),
+                            modifier = Modifier.clickable {
+                                val currentText = specialInstructions.trim()
+                                val structuredInstruction = """
+                                    • ব্যবসার ধরন / তথ্য: $currentText
+                                    • প্রয়োজনীয় বিষয়াদি: প্রতিষ্ঠানের নাম, ফোন, ঠিকানা ও লোগো
+                                    • ডিজাইন নির্দেশনা: প্রফেশনাল ও আকর্ষণীয় ফিনিশিং
+                                """.trimIndent()
+                                specialInstructions = "$currentText\n\n$structuredInstruction"
                             }
-                        }
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Mic,
-                                contentDescription = "AI Voice Assistance",
-                                tint = Color(0xFFC084FC),
-                                modifier = Modifier.size(14.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = "এআই এসিষ্টেন্ট 🎤",
-                                color = Color(0xFFC084FC),
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold
-                            )
+                            Row(
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.AutoAwesome,
+                                    contentDescription = "AI Enrich",
+                                    tint = Color(0xFFC084FC),
+                                    modifier = Modifier.size(13.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = "এআই দিয়ে বিস্তারিত করুন ✨",
+                                    color = Color(0xFFC084FC),
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
                         }
                     }
                 }
@@ -472,13 +471,25 @@ fun OfferCheckoutSheet(
                 OutlinedTextField(
                     value = specialInstructions,
                     onValueChange = { specialInstructions = it },
-                    label = { Text("বিশেষ নির্দেশনা (ঐচ্ছিক)", color = Color(0xFF94A3B8)) },
+                    label = { Text("বিশেষ নির্দেশনা", color = Color(0xFF94A3B8)) },
                     placeholder = {
                         Text(
-                            text = "বিস্তারিত লিখতে আপনার ব্যবসা বা প্রতিষ্ঠানের ধরন বলে সুচারু AI-এর সহযোগিতা নিন।",
+                            text = "বিস্তারিত লিখতে আপনার ব্যবসা বা প্রতিষ্ঠানের ধরন বলে সুচারু এ আই এর সহযোগিতা নিন",
                             color = Color(0xFF64748B),
                             fontSize = 11.sp
                         )
+                    },
+                    trailingIcon = {
+                        IconButton(onClick = {
+                            val sampleVoiceText = "আমার একটি পোশাকের দোকান আছে। নাম রহমান ফ্যাশন। ভিজিটিং কার্ডে লোগো, ফোন ও ফেসবুক পেজ থাকবে।"
+                            specialInstructions = if (specialInstructions.isBlank()) sampleVoiceText else "$specialInstructions\n$sampleVoiceText"
+                        }) {
+                            Icon(
+                                imageVector = Icons.Default.Mic,
+                                contentDescription = "ভয়েসে বলুন",
+                                tint = Color(0xFF38BDF8)
+                            )
+                        }
                     },
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 3
