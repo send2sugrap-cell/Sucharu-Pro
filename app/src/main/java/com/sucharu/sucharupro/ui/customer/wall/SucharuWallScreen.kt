@@ -222,7 +222,7 @@ fun SucharuWallScreen(
                             item {
                                 HomeBannerPager(
                                     offers = feed.offers,
-                                    onOfferClick = { onNavigateToDestination(AppDestination.Public.ProductGallery("Card", "আজকের বিশেষ অফার")) }
+                                    onOfferClick = { onNavigateToDestination(AppDestination.Public.Offers) }
                                 )
                             }
                         }
@@ -232,7 +232,7 @@ fun SucharuWallScreen(
                             item {
                                 RunningOffersCarousel(
                                     offers = feed.offers,
-                                    onOfferClick = { onNavigateToDestination(AppDestination.Public.ProductGallery("Card", "আজকের বিশেষ অফার")) }
+                                    onOfferClick = { onNavigateToDestination(AppDestination.Public.Offers) }
                                 )
                             }
                         }

@@ -85,6 +85,16 @@ fun ProductGalleryScreen(
     onNavigate: (AppDestination) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    if (categoryTitle.contains("বিশেষ অফার") || categoryId.equals("OFFERS", ignoreCase = true) || categoryId.equals("Offers", ignoreCase = true)) {
+        SpecialOfferGalleryScreen(
+            onNavigateBack = { onNavigate(AppDestination.Public.Home) },
+            onOrderClick = { item -> onNavigate(AppDestination.Customer.Quotations) },
+            onCustomizeClick = { item -> onNavigate(AppDestination.Public.ProductGallery(item.templateId, item.title)) },
+            onCustomOrderClick = { onNavigate(AppDestination.Customer.Quotations) },
+            modifier = modifier
+        )
+        return
+    }
     var selectedTemplateForPreview by remember { mutableStateOf<GalleryTemplateItem?>(null) }
     var selectedTemplateForOrderForm by remember { mutableStateOf<GalleryTemplateItem?>(null) }
     var showCustomOrderForm by remember { mutableStateOf(false) }
