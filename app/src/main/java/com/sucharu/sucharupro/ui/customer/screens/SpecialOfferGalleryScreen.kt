@@ -99,6 +99,9 @@ fun SpecialOfferGalleryScreen(
 ) {
     var selectedCategory by remember { mutableStateOf("সব") }
     var previewItem by remember { mutableStateOf<OfferGalleryItem?>(null) }
+    var activeCheckoutItem by remember { mutableStateOf<OfferGalleryItem?>(null) }
+    var showCustomCheckoutSheet by remember { mutableStateOf(false) }
+    var checkoutSuccessResponse by remember { mutableStateOf<com.sucharu.sucharupro.data.api.model.offer.OfferCheckoutResponseDto?>(null) }
 
     val categories = listOf("সব", "পোস্টার", "ভিজিটিং কার্ড", "লিফলেট", "স্টিকার", "অন্যান্য")
 
@@ -107,22 +110,22 @@ fun SpecialOfferGalleryScreen(
             templateId = "OFFER-001",
             templateCode = "#TMPL-101",
             badgeLabel = "বেস্টসেলার",
-            title = "$categoryTitle - প্রিমিয়াম ইভেন্ট ডিজাইন",
+            title = if (categoryTitle.contains("অফার") || categoryTitle.contains("গ্যালারি")) "১০০০ মেট ফিনিশ ভিজিটিং কার্ড" else "$categoryTitle - প্রিমিয়াম ডিজাইন",
             category = "পোস্টার",
             colorMode = "৪ কালার (CMYK)",
             paperStock = "১৫০ GSM আর্ট পেপার",
             printSize = "১৮\" × ২৩\" (Demy)",
             finishing = "গ্লস ল্যামিনেশন",
             suitabilityDescription = "প্রচারণা ও ইভেন্টের জন্য সেরা কোয়ালিটি",
-            priceText = "৳ ১,২০০ / ১,০০০ পিস",
-            perUnitRate = "(৳ ১.২০ / পিস)",
-            mockupType = MockupType.POSTER
+            priceText = "৳ ৩৫০ / ১,০০০ পিস",
+            perUnitRate = "(৳ ০.৩৫ / পিস)",
+            mockupType = MockupType.BUSINESS_CARD
         ),
         OfferGalleryItem(
             templateId = "OFFER-002",
             templateCode = "#TMPL-203",
-            badgeLabel = null,
-            title = "প্রফেশনাল বিজনেস কার্ড",
+            badgeLabel = "পপুলার",
+            title = "প্রফেশনাল বিজনেস কার্ড কালেকশন",
             category = "ভিজিটিং কার্ড",
             colorMode = "৪ কালার (CMYK)",
             paperStock = "৩০০ GSM আর্ট কার্ড",
@@ -136,7 +139,7 @@ fun SpecialOfferGalleryScreen(
         OfferGalleryItem(
             templateId = "OFFER-003",
             templateCode = "#TMPL-307",
-            badgeLabel = null,
+            badgeLabel = "স্পেশাল",
             title = "রঙিন প্রচারপত্র (লিফলেট)",
             category = "লিফলেট",
             colorMode = "৪ কালার (CMYK)",
@@ -157,9 +160,40 @@ fun SpecialOfferGalleryScreen(
             item = previewItem!!,
             onDismiss = { previewItem = null },
             onOrderNow = {
-                onOrderClick(previewItem!!)
+                val selected = previewItem!!
                 previewItem = null
+                activeCheckoutItem = selected
             }
+        )
+    }
+
+    if (activeCheckoutItem != null || showCustomCheckoutSheet) {
+        val targetItem = activeCheckoutItem
+        OfferCheckoutSheet(
+            offerId = targetItem?.templateId ?: "OFFER-CUSTOM-2026",
+            offerTitle = targetItem?.title ?: "$categoryTitle - কাস্টম প্যাকেজ",
+            promotionalPriceText = targetItem?.priceText ?: "৳৩৫০",
+            offerQuantityText = "১,০০০ পিস",
+            onDismiss = {
+                activeCheckoutItem = null
+                showCustomCheckoutSheet = false
+            },
+            onCheckoutSuccess = { response ->
+                activeCheckoutItem = null
+                showCustomCheckoutSheet = false
+                checkoutSuccessResponse = response
+            }
+        )
+    }
+
+    if (checkoutSuccessResponse != null) {
+        OfferCheckoutSuccessDialog(
+            response = checkoutSuccessResponse!!,
+            onTrackOrder = {
+                checkoutSuccessResponse = null
+                onOrderClick(sampleOfferItems.first())
+            },
+            onBackHome = { checkoutSuccessResponse = null }
         )
     }
 
@@ -235,7 +269,7 @@ fun SpecialOfferGalleryScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Button(
-                    onClick = onCustomOrderClick,
+                    onClick = { showCustomCheckoutSheet = true },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEA580C)),
                     shape = RoundedCornerShape(0.dp),
                     modifier = Modifier
@@ -270,7 +304,7 @@ fun SpecialOfferGalleryScreen(
                 OfferFeatureShowcaseCard(
                     item = item,
                     onZoomClick = { previewItem = item },
-                    onOrderClick = { onOrderClick(item) },
+                    onOrderClick = { activeCheckoutItem = item },
                     onCustomizeClick = { onCustomizeClick(item) }
                 )
             }
