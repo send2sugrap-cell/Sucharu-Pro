@@ -143,7 +143,7 @@ fun CmsBannerManagementScreen(
         // Tab Selector Row
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Surface(
                 color = if (selectedTab == 0) Color(0xFF0284C7) else Color(0xFF1E293B),
@@ -151,7 +151,7 @@ fun CmsBannerManagementScreen(
                 modifier = Modifier.weight(1f).clickable { selectedTab = 0 }
             ) {
                 Box(modifier = Modifier.padding(vertical = 12.dp), contentAlignment = Alignment.Center) {
-                    Text("১. ব্যানার ও স্পেশাল অফার সিএমএস", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                    Text("১. ব্যানার সিএমএস", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 11.sp)
                 }
             }
 
@@ -161,7 +161,17 @@ fun CmsBannerManagementScreen(
                 modifier = Modifier.weight(1f).clickable { selectedTab = 1 }
             ) {
                 Box(modifier = Modifier.padding(vertical = 12.dp), contentAlignment = Alignment.Center) {
-                    Text("২. সেবা ও পণ্য ডিজাইন গ্যালারি সিএমএস", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                    Text("২. প্রোডাক্ট ডিজাইন গ্যালারি", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                }
+            }
+
+            Surface(
+                color = if (selectedTab == 2) Color(0xFF0284C7) else Color(0xFF1E293B),
+                shape = RoundedCornerShape(10.dp),
+                modifier = Modifier.weight(1f).clickable { selectedTab = 2 }
+            ) {
+                Box(modifier = Modifier.padding(vertical = 12.dp), contentAlignment = Alignment.Center) {
+                    Text("৩. অর্ডার ফরম টেক্সট সিএমএস", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 11.sp)
                 }
             }
         }
@@ -292,7 +302,7 @@ fun CmsBannerManagementScreen(
                     }
                 }
             }
-        } else {
+        } else if (selectedTab == 1) {
             // TAB 1: Product Design Template & Technical Spec Upload
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -400,6 +410,169 @@ fun CmsBannerManagementScreen(
                         Text(text = "${template.colorMode} • ${template.paperStock} • ${template.printSize} • ${template.finishing}", fontSize = 11.sp, color = Color(0xFF94A3B8))
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(text = template.priceText, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF10B981))
+                    }
+                }
+            }
+        } else {
+            // TAB 2: Order Form Text & Pricing Dynamic CMS Settings
+            val currentOrderConfig = remember { cmsRepository.getOrderFormConfig() }
+            var cfgTitle by remember { mutableStateOf(currentOrderConfig.formTitle) }
+            var cfgBadge by remember { mutableStateOf(currentOrderConfig.quickCheckoutBadge) }
+            var cfgSubtitle by remember { mutableStateOf(currentOrderConfig.formSubtitle) }
+            var cfgSec1 by remember { mutableStateOf(currentOrderConfig.customerSectionTitle) }
+            var cfgSec2 by remember { mutableStateOf(currentOrderConfig.designSectionTitle) }
+            var cfgSec3 by remember { mutableStateOf(currentOrderConfig.instructionSectionTitle) }
+            var cfgPlaceholder by remember { mutableStateOf(currentOrderConfig.instructionPlaceholder) }
+            var cfgButton by remember { mutableStateOf(currentOrderConfig.confirmButtonText) }
+            var cfgDhakaCharge by remember { mutableStateOf(currentOrderConfig.insideDhakaDeliveryCharge.toInt().toString()) }
+            var cfgOutsideCharge by remember { mutableStateOf(currentOrderConfig.outsideDhakaDeliveryCharge.toInt().toString()) }
+            var isSavedMessage by remember { mutableStateOf(false) }
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B))
+            ) {
+                Column(modifier = Modifier.padding(20.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(imageVector = Icons.Default.Settings, contentDescription = null, tint = Color(0xFF38BDF8), modifier = Modifier.size(20.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(text = "অর্ডার চেকআউট ফরমের ডাইনামিক টেক্সট সিএমএস কন্ট্রোল", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    OutlinedTextField(
+                        value = cfgTitle,
+                        onValueChange = { cfgTitle = it },
+                        label = { Text("ফরমের হেডার শিরোনাম", color = Color(0xFF94A3B8)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    OutlinedTextField(
+                        value = cfgBadge,
+                        onValueChange = { cfgBadge = it },
+                        label = { Text("ফরমের কুইক ট্যাগ ব্যাজ", color = Color(0xFF94A3B8)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    OutlinedTextField(
+                        value = cfgSubtitle,
+                        onValueChange = { cfgSubtitle = it },
+                        label = { Text("ফরমের সাবটাইটেল নির্দেশিকা", color = Color(0xFF94A3B8)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    OutlinedTextField(
+                        value = cfgSec1,
+                        onValueChange = { cfgSec1 = it },
+                        label = { Text("১ম সেকশন লেবেল (Customer Info)", color = Color(0xFF94A3B8)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    OutlinedTextField(
+                        value = cfgSec2,
+                        onValueChange = { cfgSec2 = it },
+                        label = { Text("২য় সেকশন লেবেল (Design Choice)", color = Color(0xFF94A3B8)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    OutlinedTextField(
+                        value = cfgSec3,
+                        onValueChange = { cfgSec3 = it },
+                        label = { Text("৩য় সেকশন লেবেল (Special Instructions)", color = Color(0xFF94A3B8)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    OutlinedTextField(
+                        value = cfgPlaceholder,
+                        onValueChange = { cfgPlaceholder = it },
+                        label = { Text("বিশেষ নির্দেশনা ইনপুট ফিল্ডের প্লেসহোল্ডার", color = Color(0xFF94A3B8)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 2
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    OutlinedTextField(
+                        value = cfgButton,
+                        onValueChange = { cfgButton = it },
+                        label = { Text("অর্ডার কনফার্ম বাটন টেক্সট", color = Color(0xFF94A3B8)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        OutlinedTextField(
+                            value = cfgDhakaCharge,
+                            onValueChange = { cfgDhakaCharge = it },
+                            label = { Text("ঢাকার ভেতরে ডেলিভারি চার্জ (৳)", color = Color(0xFF94A3B8)) },
+                            modifier = Modifier.weight(1f),
+                            singleLine = true
+                        )
+                        OutlinedTextField(
+                            value = cfgOutsideCharge,
+                            onValueChange = { cfgOutsideCharge = it },
+                            label = { Text("ঢাকার বাইরে ডেলিভারি চার্জ (৳)", color = Color(0xFF94A3B8)) },
+                            modifier = Modifier.weight(1f),
+                            singleLine = true
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    if (isSavedMessage) {
+                        Text(
+                            text = "✓ অর্ডার ফরমের টেক্সট ও প্রাইসিং সেটিং সফলভাবে সেভ হয়েছে!",
+                            color = Color(0xFF10B981),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                    }
+
+                    Button(
+                        onClick = {
+                            val updatedConfig = com.sucharu.sucharupro.data.api.model.cms.CmsOrderFormConfigDto(
+                                formTitle = cfgTitle,
+                                quickCheckoutBadge = cfgBadge,
+                                formSubtitle = cfgSubtitle,
+                                customerSectionTitle = cfgSec1,
+                                designSectionTitle = cfgSec2,
+                                instructionSectionTitle = cfgSec3,
+                                instructionPlaceholder = cfgPlaceholder,
+                                confirmButtonText = cfgButton,
+                                insideDhakaDeliveryCharge = cfgDhakaCharge.toDoubleOrNull() ?: 60.0,
+                                outsideDhakaDeliveryCharge = cfgOutsideCharge.toDoubleOrNull() ?: 120.0
+                            )
+                            cmsRepository.updateOrderFormConfig(updatedConfig)
+                            isSavedMessage = true
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF38BDF8)),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(text = "ফরমের সেটিং সেভ করুন", color = Color.White, fontWeight = FontWeight.Bold)
                     }
                 }
             }

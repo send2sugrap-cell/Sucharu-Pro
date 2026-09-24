@@ -98,6 +98,9 @@ fun OfferCheckoutSheet(
     var optionalEmail by remember { mutableStateOf("") }
     var specialInstructions by remember { mutableStateOf("") }
 
+    val cmsRepository = remember { com.sucharu.sucharupro.data.repository.cms.InMemoryCmsRepository() }
+    val cmsConfig = remember { cmsRepository.getOrderFormConfig() }
+
     val aiProvider = remember { com.sucharu.sucharupro.data.ai.FirebaseAiLogicProvider() }
     val coroutineScope = rememberCoroutineScope()
     var isEnriching by remember { mutableStateOf(false) }
@@ -227,7 +230,7 @@ fun OfferCheckoutSheet(
     val detectedCustomerId = remember(normalizedPhone) { checkoutService.findCustomerByPhone(normalizedPhone) }
 
     val basePrice = if (promotionalPriceText.contains("350") || promotionalPriceText.contains("৩৫০")) 350.0 else 800.0
-    val deliveryCharge = if (deliveryZone == "OUTSIDE_DHAKA") 120.0 else 60.0
+    val deliveryCharge = if (deliveryZone == "OUTSIDE_DHAKA") cmsConfig.outsideDhakaDeliveryCharge else cmsConfig.insideDhakaDeliveryCharge
     val totalAmount = basePrice + deliveryCharge
 
     fun validateAndSubmit() {
@@ -312,7 +315,7 @@ fun OfferCheckoutSheet(
                             shape = RoundedCornerShape(6.dp)
                         ) {
                             Text(
-                                text = "🎉 বিশেষ অফার",
+                                text = cmsConfig.formTitle,
                                 color = Color.White,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
@@ -321,7 +324,7 @@ fun OfferCheckoutSheet(
                         }
 
                         Text(
-                            text = "QUICK CHECKOUT",
+                            text = cmsConfig.quickCheckoutBadge,
                             color = Color(0xFF38BDF8),
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold
@@ -354,7 +357,7 @@ fun OfferCheckoutSheet(
 
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "বুকিং করতে নিচের ফরমটি পূরণ করুন।",
+                        text = cmsConfig.formSubtitle,
                         fontSize = 11.sp,
                         color = Color(0xFFCBD5E1)
                     )
@@ -365,7 +368,7 @@ fun OfferCheckoutSheet(
 
             // SECTION 1: Customer Information
             Text(
-                text = "১. গ্রাহকের তথ্য (Customer Info)",
+                text = cmsConfig.customerSectionTitle,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color(0xFF38BDF8)
@@ -482,7 +485,7 @@ fun OfferCheckoutSheet(
 
             // SECTION 2: Design Option
             Text(
-                text = "২. ডিজাইন অপশন (Design Choice)",
+                text = cmsConfig.designSectionTitle,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color(0xFF38BDF8)
@@ -557,7 +560,7 @@ fun OfferCheckoutSheet(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "৩. বিশেষ নির্দেশনা (Special Instructions)",
+                        text = cmsConfig.instructionSectionTitle,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF38BDF8)
@@ -616,7 +619,7 @@ fun OfferCheckoutSheet(
                     label = { Text("বিশেষ নির্দেশনা", color = Color(0xFF94A3B8)) },
                     placeholder = {
                         Text(
-                            text = "বিস্তারিত লিখতে আপনার ব্যবসা বা প্রতিষ্ঠানের ধরন বলে সুচারু এ আই এর সহযোগিতা নিন",
+                            text = cmsConfig.instructionPlaceholder,
                             color = Color(0xFF64748B),
                             fontSize = 11.sp
                         )
@@ -715,7 +718,7 @@ fun OfferCheckoutSheet(
                 } else {
                     Icon(imageVector = Icons.Default.ShoppingBag, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = "অর্ডার কনফার্ম করুন", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Text(text = cmsConfig.confirmButtonText, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White)
                 }
             }
         }

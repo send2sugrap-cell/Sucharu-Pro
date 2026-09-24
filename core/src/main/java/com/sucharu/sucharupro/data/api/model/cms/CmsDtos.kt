@@ -103,3 +103,20 @@ data class PublicWallCmsFeedResponseDto(
     val categories: List<CmsCategoryDto>,
     val templates: List<CmsDesignTemplateDto> = emptyList()
 )
+
+/**
+ * DTO representing Admin Panel CMS Configuration for Order Checkout Form titles, labels & charges.
+ */
+@Serializable
+data class CmsOrderFormConfigDto(
+    val formTitle: String = "🎉 বিশেষ অফার",
+    val quickCheckoutBadge: String = "QUICK CHECKOUT",
+    val formSubtitle: String = "বুকিং করতে নিচের ফরমটি পূরণ করুন।",
+    val customerSectionTitle: String = "১. গ্রাহকের তথ্য (Customer Info)",
+    val designSectionTitle: String = "২. ডিজাইন অপশন (Design Choice)",
+    val instructionSectionTitle: String = "৩. বিশেষ নির্দেশনা (Special Instructions)",
+    val instructionPlaceholder: String = "বিস্তারিত লিখতে আপনার ব্যবসা বা প্রতিষ্ঠানের ধরন বলে সুচারু এ আই এর সহযোগিতা নিন",
+    val confirmButtonText: String = "অর্ডার কনফার্ম করুন",
+    val insideDhakaDeliveryCharge: Double = 60.0,
+    val outsideDhakaDeliveryCharge: Double = 120.0
+)

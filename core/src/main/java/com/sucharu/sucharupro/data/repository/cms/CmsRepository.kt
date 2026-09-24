@@ -23,6 +23,8 @@ interface CmsRepository {
     fun getDesignTemplatesByCategory(categoryName: String): List<CmsDesignTemplateDto>
     fun getAllDesignTemplates(): List<CmsDesignTemplateDto>
     fun getPublicWallFeed(): PublicWallCmsFeedResponseDto
+    fun getOrderFormConfig(): com.sucharu.sucharupro.data.api.model.cms.CmsOrderFormConfigDto
+    fun updateOrderFormConfig(config: com.sucharu.sucharupro.data.api.model.cms.CmsOrderFormConfigDto): com.sucharu.sucharupro.data.api.model.cms.CmsOrderFormConfigDto
 }
 
 class InMemoryCmsRepository : CmsRepository {
@@ -191,5 +193,16 @@ class InMemoryCmsRepository : CmsRepository {
         val activeCategories = categories.values.filter { it.isActive }.sortedBy { it.displayOrder }
         val activeTemplates = templates.values.filter { it.isActive }
         return PublicWallCmsFeedResponseDto(banners = activeBanners, categories = activeCategories, templates = activeTemplates)
+    }
+
+    private var orderFormConfig = com.sucharu.sucharupro.data.api.model.cms.CmsOrderFormConfigDto()
+
+    override fun getOrderFormConfig(): com.sucharu.sucharupro.data.api.model.cms.CmsOrderFormConfigDto {
+        return orderFormConfig
+    }
+
+    override fun updateOrderFormConfig(config: com.sucharu.sucharupro.data.api.model.cms.CmsOrderFormConfigDto): com.sucharu.sucharupro.data.api.model.cms.CmsOrderFormConfigDto {
+        orderFormConfig = config
+        return orderFormConfig
     }
 }
