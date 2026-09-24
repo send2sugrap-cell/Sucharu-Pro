@@ -9,11 +9,14 @@ import androidx.compose.ui.unit.sp
 import com.sucharu.sucharupro.R
 
 /**
- * Primary Permanent App Font Family: SolaimanLipi (Bengali) & Century Gothic (English).
+ * Primary Permanent App Font Family: Century Gothic (English) first, then SolaimanLipi (Bengali fallback).
+ *
+ * Placing Century Gothic first ensures all English/Latin characters use Century Gothic,
+ * while Bengali characters automatically fall through to SolaimanLipi.
  */
 val AppFontFamily = FontFamily(
-    Font(R.font.solaimanlipi_font, FontWeight.Normal),
-    Font(R.font.century_gothic, FontWeight.Normal)
+    Font(R.font.century_gothic, FontWeight.Normal),
+    Font(R.font.solaimanlipi_font, FontWeight.Normal)
 )
 
 val Typography = Typography(
