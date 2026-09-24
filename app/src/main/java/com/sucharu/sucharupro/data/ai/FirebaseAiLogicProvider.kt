@@ -61,20 +61,35 @@ class FirebaseAiLogicProvider(
         }
 
         return try {
-            // Drop initial model greeting so history starts with a user message as required by Gemini SDK
+            // ১. হিস্ট্রি থেকে প্রথম এআই গ্রিটিং বাদ দেওয়া (Gemini SDK বাধ্যবাধকতা)
             val userStartedHistory = history.dropWhile { !it.second }
-            val chatHistory = userStartedHistory.map { (msg, isUser) ->
+
+            // ২. হিস্ট্রির একদম শেষে যদি বর্তমান প্রম্পটটি অলরেডি যুক্ত থাকে, তা বাদ দেওয়া
+            // কারণ sendMessage(prompt) নিজেই এটিকে নতুন একটিভ মেসেজ হিসেবে যুক্ত করবে
+            val cleanHistory = if (userStartedHistory.isNotEmpty() && userStartedHistory.last().second) {
+                userStartedHistory.dropLast(1)
+            } else {
+                userStartedHistory
+            }
+
+            // ৩. কনটেন্ট ম্যাপিং
+            val chatHistory = cleanHistory.map { (msg, isUser) ->
                 content(if (isUser) "user" else "model") { text(msg) }
             }
+
+            // ৪. সেশন শুরু এবং নতুন প্রম্পট পাঠানো
             val chatSession = generativeModel.startChat(history = chatHistory)
             val response = chatSession.sendMessage(prompt)
             val rawText = response.text
+
             if (rawText.isNullOrBlank()) {
-                generateResponse(prompt)
+                Result.failure(IllegalStateException("Empty AI response"))
             } else {
                 Result.success(rawText.trim())
             }
         } catch (e: Exception) {
+            android.util.Log.e("GeminiError", "Chat Error: ${e.message}", e)
+            // হিস্ট্রিতে এরর হলে অন্তত সাধারণ সিঙ্গেল প্রম্পট হিসেবে উত্তর দেওয়ার চেষ্টা করা
             generateResponse(prompt)
         }
     }
