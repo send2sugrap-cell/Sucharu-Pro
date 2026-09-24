@@ -26,6 +26,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.CloudUpload
@@ -626,23 +627,65 @@ fun OfferCheckoutSheet(
                     },
                     colors = textFieldColors,
                     trailingIcon = {
-                        Box(
-                            modifier = Modifier
-                                .size(36.dp)
-                                .clip(CircleShape)
-                                .background(if (isOrderMicListening) Color(0xFFEF4444) else Color.Transparent)
-                                .clickable { handleOrderMicTap() },
-                            contentAlignment = Alignment.Center
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            modifier = Modifier.padding(end = 6.dp)
                         ) {
-                            if (isOrderMicListening) {
-                                CircularProgressIndicator(color = Color.White, modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
-                            } else {
-                                Icon(
-                                    imageVector = Icons.Default.Mic,
-                                    contentDescription = "ভয়েসে বলুন",
-                                    tint = if (isOrderMicListening) Color.White else Color(0xFF38BDF8),
-                                    modifier = Modifier.size(20.dp)
-                                )
+                            // Microphone Button
+                            Box(
+                                modifier = Modifier
+                                    .size(34.dp)
+                                    .clip(CircleShape)
+                                    .background(if (isOrderMicListening) Color(0xFFEF4444) else Color(0xFF334155))
+                                    .clickable { handleOrderMicTap() },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                if (isOrderMicListening) {
+                                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(14.dp), strokeWidth = 2.dp)
+                                } else {
+                                    Icon(
+                                        imageVector = Icons.Default.Mic,
+                                        contentDescription = "ভয়েসে বলুন",
+                                        tint = Color(0xFF38BDF8),
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                            }
+
+                            // AI Send Button for Instruction Enrichment
+                            if (specialInstructions.isNotBlank()) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(34.dp)
+                                        .clip(CircleShape)
+                                        .background(if (!isEnriching) Color(0xFF7C3AED) else Color(0xFF334155))
+                                        .clickable {
+                                            if (!isEnriching) {
+                                                isEnriching = true
+                                                coroutineScope.launch {
+                                                    val currentText = specialInstructions.trim()
+                                                    val enrichedResult = aiProvider.enrichOrderInstruction(currentText)
+                                                    enrichedResult.onSuccess { enrichedText ->
+                                                        specialInstructions = enrichedText
+                                                    }
+                                                    isEnriching = false
+                                                }
+                                            }
+                                        },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    if (isEnriching) {
+                                        CircularProgressIndicator(color = Color.White, modifier = Modifier.size(14.dp), strokeWidth = 2.dp)
+                                    } else {
+                                        Icon(
+                                            imageVector = Icons.AutoMirrored.Filled.Send,
+                                            contentDescription = "এআই প্রসেস করুন",
+                                            tint = Color.White,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                }
                             }
                         }
                     },
