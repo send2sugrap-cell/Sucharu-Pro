@@ -65,14 +65,16 @@ class FirebaseAiLogicProvider(
         }
 
         return try {
-            val chatHistory = history.map { (msg, isUser) ->
+            // Drop initial model greeting so history starts with a user message as required by Gemini SDK
+            val userStartedHistory = history.dropWhile { !it.second }
+            val chatHistory = userStartedHistory.map { (msg, isUser) ->
                 content(if (isUser) "user" else "model") { text(msg) }
             }
             val chatSession = generativeModel.startChat(history = chatHistory)
             val response = chatSession.sendMessage(prompt)
             val rawText = response.text
             if (rawText.isNullOrBlank()) {
-                Result.failure(IllegalStateException("Gemini AI returned empty response"))
+                generateResponse(prompt)
             } else {
                 val cleanText = rawText
                     .replace(Regex("\\*\\*"), "")
