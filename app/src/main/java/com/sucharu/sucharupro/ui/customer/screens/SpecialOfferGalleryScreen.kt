@@ -90,6 +90,7 @@ data class OfferGalleryItem(
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun SpecialOfferGalleryScreen(
+    categoryTitle: String = "আজকের বিশেষ অফার",
     modifier: Modifier = Modifier,
     onNavigateBack: () -> Unit = {},
     onOrderClick: (OfferGalleryItem) -> Unit = {},
@@ -106,7 +107,7 @@ fun SpecialOfferGalleryScreen(
             templateId = "OFFER-001",
             templateCode = "#TMPL-101",
             badgeLabel = "বেস্টসেলার",
-            title = "প্রিমিয়াম ইভেন্ট পোস্টার ডিজাইন",
+            title = "$categoryTitle - প্রিমিয়াম ইভেন্ট ডিজাইন",
             category = "পোস্টার",
             colorMode = "৪ কালার (CMYK)",
             paperStock = "১৫০ GSM আর্ট পেপার",
@@ -188,7 +189,7 @@ fun SpecialOfferGalleryScreen(
                     }
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = "আজকের বিশেষ অফার ডিজাইন গ্যালারি",
+                        text = if (categoryTitle.contains("গ্যালারি")) categoryTitle else "$categoryTitle - ডিজাইন গ্যালারি",
                         fontSize = 18.sp,
                         fontWeight = FontWeight.ExtraBold,
                         color = Color(0xFF0F172A),
