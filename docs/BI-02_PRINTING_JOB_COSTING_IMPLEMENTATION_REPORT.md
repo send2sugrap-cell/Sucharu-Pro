@@ -47,6 +47,14 @@
 
 ---
 
-## 7. FINAL STATUS
-### **`BI-02-A STATUS = VERIFIED_WITH_GAPS`**
-Source code, domain services, DTOs, Admin UI, Printing Job Costing Read Models, REST APIs, and unit tests are 100% implemented and verified. Database runtime execution remains blocked due to Docker Engine offline availability.
+## 7. BI-02-B COST COMPONENT BREAKDOWN & PRODUCTION COST VARIANCE INTELLIGENCE
+- **Cost Component Variance Analysis**: Itemizes estimated vs actual costs across `MATERIAL`, `DIRECT_LABOR`, `MACHINE_OPERATION`, `QUALITY_SCRAP`, `REWORK_CONVERSION`, `PACKAGING`, `OUTSOURCED_FINISHING`, and `OVERHEAD_ALLOCATION`.
+- **Cost Leakage Drivers**: Identifies primary variance drivers (e.g. paper material price surge, press labor setup downtime, test sheet scrap).
+- **REST API Endpoint**: `GET /api/v1/job-costing/component-variance/{jobId}` registered in `BackendRouter.kt`.
+- **Unit Tests**: `CostComponentVarianceServiceTest.kt` (Passed: `buildJobComponentVarianceDetail_computesComponentVariancesAndLeakageSummary`).
+
+---
+
+## 8. FINAL STATUS
+### **`VERIFIED_WITH_GAPS`**
+BI-02-A and BI-02-B source code, domain services, DTOs, Admin UI, Printing Job Costing Read Models, Cost Component Variance detail models, REST APIs, and unit tests are 100% implemented and verified. Database runtime execution remains blocked due to Docker Engine offline availability.
