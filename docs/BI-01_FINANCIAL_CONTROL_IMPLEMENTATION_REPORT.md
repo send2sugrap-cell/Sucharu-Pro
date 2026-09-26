@@ -54,6 +54,14 @@
 
 ---
 
-## 8. FINAL STATUS
+## 8. BI-01-C PAYMENT ALLOCATION, SETTLEMENT OPERATIONS & RECONCILIATION RESOLUTION
+- **Settlement Operations Control**: Actionable exception queues classifying payments into `UNALLOCATED`, `PARTIALLY_ALLOCATED`, `ADVANCE`, and `FULLY_ALLOCATED`.
+- **Reconciliation Exception Center**: Exposes invoice receivable totals, ledger calculated balances, and discrepancy amounts for accounts with exceptions.
+- **REST API Endpoint**: `GET /api/v1/finance/settlement-operations` registered in `BackendRouter.kt`.
+- **Unit Tests**: `SettlementOperationsServiceTest.kt` (Passed: `buildSettlementOperationsSummary_computesUnallocatedTotalsAndReconciliationExceptions`).
+
+---
+
+## 9. FINAL STATUS
 ### **`VERIFIED_WITH_GAPS`**
-BI-01-A and BI-01-B source code, domain services, DTOs, Admin UI, Customer Financial 360 read models, and unit tests are 100% implemented and verified. Database runtime execution remains blocked due to Docker Engine offline availability.
+BI-01-A, BI-01-B, and BI-01-C source code, domain services, DTOs, Admin UI, Customer Financial 360 read models, Settlement Operations Exception Centers, and unit tests are 100% implemented and verified. Database runtime execution remains blocked due to Docker Engine offline availability.
