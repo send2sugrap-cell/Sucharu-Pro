@@ -55,6 +55,14 @@
 
 ---
 
-## 8. FINAL STATUS
+## 8. BI-02-C JOB COST → QUOTATION COST INTELLIGENCE & COMMERCIAL FEEDBACK
+- **Quotation Decision Support**: Evaluates historical actual cost benchmarks from past completed jobs to provide quotation estimators with commercial guidance (e.g. historical avg unit cost: ৳0.265, min: ৳0.250, max: ৳0.280).
+- **Price Immutability Preservation**: `isAutomaticPriceMutationApplied = false` — evaluation NEVER automatically alters quotation prices or Form 04 `OrderPriceSnapshot` records.
+- **REST API Endpoint**: `GET /api/v1/job-costing/quotation-cost-intelligence/{quotationId}` registered in `BackendRouter.kt`.
+- **Unit Tests**: `QuotationCostIntelligenceServiceTest.kt` (Passed: `evaluateQuotationCostIntelligence_generatesHistoricalBenchmarkAndPreservesPriceImmutability`).
+
+---
+
+## 9. FINAL STATUS
 ### **`VERIFIED_WITH_GAPS`**
-BI-02-A and BI-02-B source code, domain services, DTOs, Admin UI, Printing Job Costing Read Models, Cost Component Variance detail models, REST APIs, and unit tests are 100% implemented and verified. Database runtime execution remains blocked due to Docker Engine offline availability.
+BI-02-A, BI-02-B, and BI-02-C source code, domain services, DTOs, Admin UI, Printing Job Costing Read Models, Cost Component Variance detail models, Quotation Cost Intelligence feedback services, REST APIs, and unit tests are 100% implemented and verified. Database runtime execution remains blocked due to Docker Engine offline availability.
