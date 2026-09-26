@@ -26,6 +26,9 @@ class PostgresVisualDesignDataSource(
 
             cardWidthDp = rs.getInt("card_width_dp"),
             cardHeightDp = rs.getInt("card_height_dp"),
+            imageAreaDp = try { rs.getInt("image_area_dp") } catch (e: Exception) { 160 },
+            contentAreaPaddingDp = try { rs.getInt("content_area_padding_dp") } catch (e: Exception) { 12 },
+            sectionHeightDp = try { rs.getInt("section_height_dp") } catch (e: Exception) { 480 },
             layoutType = rs.getEnumByName("layout_type", LayoutType.GRID),
             contentPosition = rs.getEnumByName("content_position", ContentPosition.BOTTOM),
             imagePosition = rs.getEnumByName("image_position", ImagePosition.TOP),
@@ -34,6 +37,7 @@ class PostgresVisualDesignDataSource(
             columnCount = rs.getInt("column_count"),
 
             backgroundColorHex = rs.getString("background_color_hex") ?: "#1E293B",
+            backgroundImageUri = try { rs.getString("background_image_uri") } catch (e: Exception) { null },
             gradientEnable = rs.getBoolean("gradient_enable"),
             gradientStartColorHex = rs.getString("gradient_start_color_hex"),
             gradientEndColorHex = rs.getString("gradient_end_color_hex"),
@@ -48,6 +52,7 @@ class PostgresVisualDesignDataSource(
             shadowEnable = rs.getBoolean("shadow_enable"),
             shadowColorHex = rs.getString("shadow_color_hex") ?: "#000000",
             shadowBlurDp = rs.getInt("shadow_blur_dp"),
+            shadowSpreadDp = try { rs.getInt("shadow_spread_dp") } catch (e: Exception) { 2 },
             shadowOffsetYDp = rs.getInt("shadow_offset_y_dp"),
             shadowOpacity = rs.getFloat("shadow_opacity"),
 
@@ -55,11 +60,16 @@ class PostgresVisualDesignDataSource(
             paddingBottomDp = rs.getInt("padding_bottom_dp"),
             paddingLeftDp = rs.getInt("padding_left_dp"),
             paddingRightDp = rs.getInt("padding_right_dp"),
+            marginTopDp = try { rs.getInt("margin_top_dp") } catch (e: Exception) { 8 },
+            marginBottomDp = try { rs.getInt("margin_bottom_dp") } catch (e: Exception) { 8 },
             elementGapDp = rs.getInt("element_gap_dp"),
 
             fontFamily = rs.getString("font_family") ?: "SOLAIMANLIPI",
             fontSizeSp = rs.getInt("font_size_sp"),
             fontWeight = rs.getString("font_weight") ?: "BOLD",
+            fontStyle = try { rs.getString("font_style") ?: "NORMAL" } catch (e: Exception) { "NORMAL" },
+            letterSpacingSp = try { rs.getFloat("letter_spacing_sp") } catch (e: Exception) { 0.0f },
+            lineHeightSp = try { rs.getInt("line_height_sp") } catch (e: Exception) { 20 },
             textColorHex = rs.getString("text_color_hex") ?: "#FFFFFF",
             textOpacity = rs.getFloat("text_opacity"),
 
@@ -80,6 +90,9 @@ class PostgresVisualDesignDataSource(
             ctaButtonColorHex = rs.getString("cta_button_color_hex") ?: "#EA580C",
             ctaTextColorHex = rs.getString("cta_text_color_hex") ?: "#FFFFFF",
             ctaBorderRadiusDp = rs.getInt("cta_border_radius_dp"),
+            ctaButtonSizeDp = try { rs.getInt("cta_button_size_dp") } catch (e: Exception) { 44 },
+            ctaActionType = try { rs.getString("cta_action_type") ?: "CHECKOUT" } catch (e: Exception) { "CHECKOUT" },
+            ctaIconName = try { rs.getString("cta_icon_name") ?: "SHOPPING_BAG" } catch (e: Exception) { "SHOPPING_BAG" },
 
             createdAt = rs.getTimestamp("created_at")?.toInstant()?.toString() ?: Instant.now().toString(),
             updatedAt = rs.getTimestamp("updated_at")?.toInstant()?.toString() ?: Instant.now().toString(),

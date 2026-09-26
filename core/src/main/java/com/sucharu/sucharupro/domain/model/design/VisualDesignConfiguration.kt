@@ -19,6 +19,9 @@ data class VisualDesignConfiguration(
     // Layout
     val cardWidthDp: Int = 320,
     val cardHeightDp: Int = 420,
+    val imageAreaDp: Int = 160,
+    val contentAreaPaddingDp: Int = 12,
+    val sectionHeightDp: Int = 480,
     val layoutType: LayoutType = LayoutType.GRID,
     val contentPosition: ContentPosition = ContentPosition.BOTTOM,
     val imagePosition: ImagePosition = ImagePosition.TOP,
@@ -28,6 +31,7 @@ data class VisualDesignConfiguration(
 
     // Background, Gradient, Border & Shadow
     val backgroundColorHex: String = "#1E293B",
+    val backgroundImageUri: String? = null,
     val gradientEnable: Boolean = false,
     val gradientStartColorHex: String? = "#0F172A",
     val gradientEndColorHex: String? = "#1E293B",
@@ -42,6 +46,7 @@ data class VisualDesignConfiguration(
     val shadowEnable: Boolean = true,
     val shadowColorHex: String = "#000000",
     val shadowBlurDp: Int = 8,
+    val shadowSpreadDp: Int = 2,
     val shadowOffsetYDp: Int = 4,
     val shadowOpacity: Float = 0.2f,
 
@@ -50,12 +55,17 @@ data class VisualDesignConfiguration(
     val paddingBottomDp: Int = 12,
     val paddingLeftDp: Int = 12,
     val paddingRightDp: Int = 12,
+    val marginTopDp: Int = 8,
+    val marginBottomDp: Int = 8,
     val elementGapDp: Int = 8,
 
     // Typography
     val fontFamily: String = "SOLAIMANLIPI",
     val fontSizeSp: Int = 14,
     val fontWeight: String = "BOLD",
+    val fontStyle: String = "NORMAL", // NORMAL, ITALIC
+    val letterSpacingSp: Float = 0.0f,
+    val lineHeightSp: Int = 20,
     val textColorHex: String = "#FFFFFF",
     val textOpacity: Float = 1.0f,
 
@@ -72,12 +82,15 @@ data class VisualDesignConfiguration(
     val showFavoriteButton: Boolean = false,
     val showShareButton: Boolean = false,
 
-    // CTA Styling
+    // CTA Styling & Action
     val ctaButtonText: String = "অর্ডার করুন",
     val ctaButtonStyle: ButtonStyle = ButtonStyle.FILLED,
     val ctaButtonColorHex: String = "#EA580C",
     val ctaTextColorHex: String = "#FFFFFF",
     val ctaBorderRadiusDp: Int = 8,
+    val ctaButtonSizeDp: Int = 44,
+    val ctaActionType: String = "CHECKOUT", // CHECKOUT, QUOTATION, CONTACT
+    val ctaIconName: String = "SHOPPING_BAG",
 
     val createdAt: String,
     val updatedAt: String,

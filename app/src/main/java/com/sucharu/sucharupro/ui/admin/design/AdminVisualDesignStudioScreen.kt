@@ -367,20 +367,25 @@ fun AdminVisualDesignStudioScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(activeConfig.paddingTopDp.dp)
+                        .padding(
+                            top = activeConfig.paddingTopDp.dp,
+                            bottom = activeConfig.paddingBottomDp.dp,
+                            start = activeConfig.paddingLeftDp.dp,
+                            end = activeConfig.paddingRightDp.dp
+                        )
                 ) {
                     if (activeConfig.showImage) {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(160.dp)
+                                .height(activeConfig.imageAreaDp.dp)
                                 .clip(RoundedCornerShape(8.dp))
                                 .background(Color(0xFF334155)),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(imageVector = Icons.Default.Palette, contentDescription = null, tint = Color(0xFF94A3B8), modifier = Modifier.size(40.dp))
                         }
-                        Spacer(modifier = Modifier.height(10.dp))
+                        Spacer(modifier = Modifier.height(activeConfig.elementGapDp.dp))
                     }
 
                     if (activeConfig.showBadge) {
@@ -390,8 +395,18 @@ fun AdminVisualDesignStudioScreen(
                         Spacer(modifier = Modifier.height(6.dp))
                     }
 
+                    val fontStyleVal = if (activeConfig.fontStyle == "ITALIC") androidx.compose.ui.text.font.FontStyle.Italic else androidx.compose.ui.text.font.FontStyle.Normal
+
                     if (activeConfig.showTitle) {
-                        Text(text = "১০০০ মেট ফিনিশ ভিজিটিং কার্ড", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        Text(
+                            text = "১০০০ মেট ফিনিশ ভিজিটিং কার্ড",
+                            fontSize = activeConfig.fontSizeSp.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontStyle = fontStyleVal,
+                            letterSpacing = activeConfig.letterSpacingSp.sp,
+                            lineHeight = activeConfig.lineHeightSp.sp,
+                            color = Color.White
+                        )
                     }
 
                     if (activeConfig.showSubtitle) {
@@ -410,7 +425,7 @@ fun AdminVisualDesignStudioScreen(
                             onClick = {},
                             colors = ButtonDefaults.buttonColors(containerColor = ctaColor),
                             shape = RoundedCornerShape(activeConfig.ctaBorderRadiusDp.dp),
-                            modifier = Modifier.fillMaxWidth().height(44.dp)
+                            modifier = Modifier.fillMaxWidth().height(activeConfig.ctaButtonSizeDp.dp)
                         ) {
                             Text(text = activeConfig.ctaButtonText, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                         }
