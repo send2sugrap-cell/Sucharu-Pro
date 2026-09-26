@@ -20,7 +20,18 @@ class VisualDesignService(
     }
 
     suspend fun publishDesignStudioVersion(designId: String, actorId: String): VisualDesignConfiguration {
-        return repository.publishDesign(designId, actorId)
+        val published = repository.publishDesign(designId, actorId)
+        val versionSnapshot = com.sucharu.sucharupro.domain.model.design.VisualDesignVersion(
+            versionId = "VER-${published.designId}-${published.versionNumber}",
+            designId = published.designId,
+            versionNumber = published.versionNumber,
+            status = com.sucharu.sucharupro.domain.model.design.DesignPublishStatus.PUBLISHED,
+            configurationSnapshot = published,
+            createdAt = published.updatedAt,
+            createdBy = actorId
+        )
+        repository.saveDesignVersion(versionSnapshot)
+        return published
     }
 
     suspend fun duplicateDesignStudioConfig(designId: String, newName: String, actorId: String): VisualDesignConfiguration {
@@ -28,7 +39,17 @@ class VisualDesignService(
     }
 
     suspend fun revertDesignVersion(designId: String, versionNumber: Int, actorId: String): VisualDesignConfiguration {
-        return repository.revertDesignVersion(designId, versionNumber, actorId)
+        val versionSnapshot = repository.getDesignVersion(designId, versionNumber)
+        val baseConfig = versionSnapshot?.configurationSnapshot ?: (repository.getDesignById(designId) ?: throw IllegalArgumentException("Design not found: $designId"))
+
+        val currentVersionNumber = repository.getDesignById(designId)?.versionNumber ?: 1
+        val newDraft = baseConfig.copy(
+            versionNumber = currentVersionNumber + 1,
+            status = com.sucharu.sucharupro.domain.model.design.DesignPublishStatus.DRAFT,
+            isActivePublished = false,
+            updatedBy = actorId
+        )
+        return repository.updateDesign(newDraft)
     }
 
     suspend fun getPublishedDesignForTarget(targetType: DesignTargetType, targetId: String? = null): VisualDesignConfiguration? {

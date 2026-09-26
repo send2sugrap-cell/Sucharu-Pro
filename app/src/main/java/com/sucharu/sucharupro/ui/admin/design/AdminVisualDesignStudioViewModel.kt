@@ -19,7 +19,7 @@ import java.util.UUID
  * ViewModel for Form 02 — Admin Visual Design Studio Workspace.
  */
 class AdminVisualDesignStudioViewModel(
-    repository: VisualDesignRepository = VisualDesignRepositoryImpl()
+    private val repository: VisualDesignRepository = VisualDesignRepositoryImpl()
 ) : ViewModel() {
 
     private val service = VisualDesignService(repository)
@@ -45,12 +45,26 @@ class AdminVisualDesignStudioViewModel(
         loadDesigns()
     }
 
+    var versionList = mutableStateListOf<com.sucharu.sucharupro.domain.model.design.VisualDesignVersion>()
+        private set
+
     fun loadDesigns() {
         viewModelScope.launch {
             val list = service.listAllDesigns()
             designList.clear()
             designList.addAll(list)
-            list.firstOrNull()?.let { activeDesignState = it }
+            list.firstOrNull()?.let {
+                activeDesignState = it
+                loadVersions(it.designId)
+            }
+        }
+    }
+
+    fun loadVersions(designId: String) {
+        viewModelScope.launch {
+            val versions = repository.getDesignVersions(designId)
+            versionList.clear()
+            versionList.addAll(versions)
         }
     }
 
@@ -79,6 +93,7 @@ class AdminVisualDesignStudioViewModel(
             val published = service.publishDesignStudioVersion(activeDesignState.designId, "ADMIN")
             activeDesignState = published
             loadDesigns()
+            loadVersions(published.designId)
             statusMessage = "🎉 Design configuration published live!"
         }
     }
@@ -88,7 +103,18 @@ class AdminVisualDesignStudioViewModel(
             val dup = service.duplicateDesignStudioConfig(activeDesignState.designId, "${activeDesignState.designName} (Copy)", "ADMIN")
             activeDesignState = dup
             loadDesigns()
+            loadVersions(dup.designId)
             statusMessage = "✓ Design duplicated!"
+        }
+    }
+
+    fun revertToVersion(versionNumber: Int) {
+        viewModelScope.launch {
+            val reverted = service.revertDesignVersion(activeDesignState.designId, versionNumber, "ADMIN")
+            activeDesignState = reverted
+            loadDesigns()
+            loadVersions(activeDesignState.designId)
+            statusMessage = "✓ Reverted to Version $versionNumber!"
         }
     }
 }

@@ -167,4 +167,43 @@ class PostgresVisualDesignDataSource(
             }.firstOrNull()
         }
     }
+
+    suspend fun updateVisualDesign(config: VisualDesignConfiguration, tenantId: String = defaultTenantId): VisualDesignConfiguration {
+        val tenant = TenantContext(tenantId)
+        transactionManager.inTransaction(tenant) { ctx ->
+            val sql = """
+                UPDATE visual_design_configurations
+                SET design_name = ?, target_type = ?, target_id = ?, version_number = ?, status = ?, is_active_published = ?, display_order = ?,
+                    card_width_dp = ?, card_height_dp = ?, layout_type = ?, content_position = ?, image_position = ?, image_ratio = ?, alignment = ?, column_count = ?,
+                    background_color_hex = ?, gradient_enable = ?, gradient_start_color_hex = ?, gradient_end_color_hex = ?, gradient_direction = ?, background_opacity = ?,
+                    border_enable = ?, border_color_hex = ?, border_width_dp = ?, border_radius_dp = ?,
+                    shadow_enable = ?, shadow_color_hex = ?, shadow_blur_dp = ?, shadow_offset_y_dp = ?, shadow_opacity = ?,
+                    padding_top_dp = ?, padding_bottom_dp = ?, padding_left_dp = ?, padding_right_dp = ?, element_gap_dp = ?,
+                    font_family = ?, font_size_sp = ?, font_weight = ?, text_color_hex = ?, text_opacity = ?,
+                    show_image = ?, show_title = ?, show_subtitle = ?, show_description = ?, show_badge = ?, show_specs = ?, show_price = ?, show_cta = ?,
+                    show_rating = ?, show_favorite_button = ?, show_share_button = ?,
+                    cta_button_text = ?, cta_button_style = ?, cta_button_color_hex = ?, cta_text_color_hex = ?, cta_border_radius_dp = ?,
+                    updated_at = NOW(), updated_by = ?, version = version + 1
+                WHERE project_id = ? AND design_id = ?
+            """.trimIndent()
+
+            ctx.sqlExecutor.executeUpdate(
+                sql,
+                listOf(
+                    config.designName, config.targetType.name, config.targetId, config.versionNumber, config.status.name, config.isActivePublished, config.displayOrder,
+                    config.cardWidthDp, config.cardHeightDp, config.layoutType.name, config.contentPosition.name, config.imagePosition.name, config.imageRatio.name, config.alignment.name, config.columnCount,
+                    config.backgroundColorHex, config.gradientEnable, config.gradientStartColorHex, config.gradientEndColorHex, config.gradientDirection.name, config.backgroundOpacity,
+                    config.borderEnable, config.borderColorHex, config.borderWidthDp, config.borderRadiusDp,
+                    config.shadowEnable, config.shadowColorHex, config.shadowBlurDp, config.shadowOffsetYDp, config.shadowOpacity,
+                    config.paddingTopDp, config.paddingBottomDp, config.paddingLeftDp, config.paddingRightDp, config.elementGapDp,
+                    config.fontFamily, config.fontSizeSp, config.fontWeight, config.textColorHex, config.textOpacity,
+                    config.showImage, config.showTitle, config.showSubtitle, config.showDescription, config.showBadge, config.showSpecs, config.showPrice, config.showCta,
+                    config.showRating, config.showFavoriteButton, config.showShareButton,
+                    config.ctaButtonText, config.ctaButtonStyle.name, config.ctaButtonColorHex, config.ctaTextColorHex, config.ctaBorderRadiusDp,
+                    config.updatedBy, tenant.projectId, config.designId
+                )
+            )
+        }
+        return config
+    }
 }

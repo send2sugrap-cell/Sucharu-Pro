@@ -110,6 +110,21 @@ class VisualDesignRepositoryImpl : VisualDesignRepository {
         return reverted
     }
 
+    private val versionsStore = ConcurrentHashMap<String, com.sucharu.sucharupro.domain.model.design.VisualDesignVersion>()
+
+    override suspend fun saveDesignVersion(version: com.sucharu.sucharupro.domain.model.design.VisualDesignVersion): com.sucharu.sucharupro.domain.model.design.VisualDesignVersion {
+        versionsStore[version.versionId] = version
+        return version
+    }
+
+    override suspend fun getDesignVersions(designId: String): List<com.sucharu.sucharupro.domain.model.design.VisualDesignVersion> {
+        return versionsStore.values.filter { it.designId == designId }.sortedByDescending { it.versionNumber }
+    }
+
+    override suspend fun getDesignVersion(designId: String, versionNumber: Int): com.sucharu.sucharupro.domain.model.design.VisualDesignVersion? {
+        return versionsStore.values.firstOrNull { it.designId == designId && it.versionNumber == versionNumber }
+    }
+
     override suspend fun deleteDesign(designId: String): Boolean {
         return store.remove(designId) != null
     }

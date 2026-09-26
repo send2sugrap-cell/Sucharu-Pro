@@ -18,4 +18,7 @@ interface VisualDesignRepository {
     suspend fun publishDesign(designId: String, actorId: String): VisualDesignConfiguration
     suspend fun revertDesignVersion(designId: String, versionNumber: Int, actorId: String): VisualDesignConfiguration
     suspend fun deleteDesign(designId: String): Boolean
+    suspend fun saveDesignVersion(version: com.sucharu.sucharupro.domain.model.design.VisualDesignVersion): com.sucharu.sucharupro.domain.model.design.VisualDesignVersion
+    suspend fun getDesignVersions(designId: String): List<com.sucharu.sucharupro.domain.model.design.VisualDesignVersion>
+    suspend fun getDesignVersion(designId: String, versionNumber: Int): com.sucharu.sucharupro.domain.model.design.VisualDesignVersion?
 }

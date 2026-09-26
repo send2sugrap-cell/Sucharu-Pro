@@ -247,6 +247,48 @@ fun AdminVisualDesignStudioScreen(
                 }
             }
 
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // 5. Version History & Revert Card
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B))
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(text = "৫. ভার্সন হিস্ট্রি ও রিভার্ট (Version History & Revert)", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF38BDF8))
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(text = "বর্তমান অ্যাক্টিভ ভার্সন: v${activeConfig.versionNumber} (${activeConfig.status.name})", fontSize = 11.sp, color = Color.White)
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    viewModel.versionList.forEach { ver ->
+                        Surface(
+                            color = Color(0xFF334155),
+                            shape = RoundedCornerShape(6.dp),
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(8.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column {
+                                    Text(text = "Version ${ver.versionNumber}", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                    Text(text = "Created by ${ver.createdBy} at ${ver.createdAt.take(10)}", fontSize = 9.sp, color = Color(0xFF94A3B8))
+                                }
+                                Button(
+                                    onClick = { viewModel.revertToVersion(ver.versionNumber) },
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0284C7)),
+                                    shape = RoundedCornerShape(4.dp)
+                                ) {
+                                    Text("রিভার্ট", fontSize = 10.sp)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             Spacer(modifier = Modifier.height(16.dp))
 
             // Action Buttons Row
