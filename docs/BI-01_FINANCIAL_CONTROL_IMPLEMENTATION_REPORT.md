@@ -62,6 +62,14 @@
 
 ---
 
-## 9. FINAL STATUS
+## 9. BI-01-D COLLECTION & RECEIVABLE MANAGEMENT INTELLIGENCE
+- **Receivable Aging Breakdown**: Categorizes receivables into `CURRENT`, `DUE_TODAY`, `OVERDUE_1_30`, `OVERDUE_31_60`, `OVERDUE_61_90`, and `OVERDUE_90_PLUS`.
+- **Collection Attention & High Exposure Management**: Tracks active payment promises (`Promise-to-Pay`), overdue days, and high-exposure customer accounts (`HIGH_CUSTOMER_EXPOSURE`).
+- **REST API Endpoint**: `GET /api/v1/finance/collection-intelligence` registered in `BackendRouter.kt`.
+- **Unit Tests**: `CollectionManagementIntelligenceServiceTest.kt` (Passed: `buildCollectionManagementSummary_computesAgingAndHighExposureItems`).
+
+---
+
+## 10. FINAL STATUS
 ### **`VERIFIED_WITH_GAPS`**
-BI-01-A, BI-01-B, and BI-01-C source code, domain services, DTOs, Admin UI, Customer Financial 360 read models, Settlement Operations Exception Centers, and unit tests are 100% implemented and verified. Database runtime execution remains blocked due to Docker Engine offline availability.
+BI-01-A, BI-01-B, BI-01-C, and BI-01-D source code, domain services, DTOs, Admin UI, Customer Financial 360 read models, Settlement Operations Exception Centers, Collection Management Intelligence read models, and unit tests are 100% implemented and verified. Database runtime execution remains blocked due to Docker Engine offline availability.
