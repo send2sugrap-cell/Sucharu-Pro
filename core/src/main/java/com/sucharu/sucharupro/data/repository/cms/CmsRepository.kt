@@ -25,6 +25,11 @@ interface CmsRepository {
     fun getPublicWallFeed(): PublicWallCmsFeedResponseDto
     fun getOrderFormConfig(): com.sucharu.sucharupro.data.api.model.cms.CmsOrderFormConfigDto
     fun updateOrderFormConfig(config: com.sucharu.sucharupro.data.api.model.cms.CmsOrderFormConfigDto): com.sucharu.sucharupro.data.api.model.cms.CmsOrderFormConfigDto
+    fun createGalleryTemplate(item: com.sucharu.sucharupro.data.model.GalleryTemplateItem): com.sucharu.sucharupro.data.model.GalleryTemplateItem
+    fun updateGalleryTemplate(item: com.sucharu.sucharupro.data.model.GalleryTemplateItem): com.sucharu.sucharupro.data.model.GalleryTemplateItem
+    fun deleteGalleryTemplate(templateId: String): Boolean
+    fun getAllGalleryTemplates(): List<com.sucharu.sucharupro.data.model.GalleryTemplateItem>
+    fun getGalleryTemplatesByCategory(category: String): List<com.sucharu.sucharupro.data.model.GalleryTemplateItem>
 }
 
 class InMemoryCmsRepository : CmsRepository {
@@ -196,6 +201,71 @@ class InMemoryCmsRepository : CmsRepository {
     }
 
     private var orderFormConfig = com.sucharu.sucharupro.data.api.model.cms.CmsOrderFormConfigDto()
+    private val galleryItems = ConcurrentHashMap<String, com.sucharu.sucharupro.data.model.GalleryTemplateItem>()
+
+    init {
+        // Initial Default Gallery Template Items
+        val g1 = com.sucharu.sucharupro.data.model.GalleryTemplateItem(
+            id = "G-OFFER-001",
+            category = "পোস্টার",
+            templateCode = "#TMPL-101",
+            title = "১০০০ মেট ফিনিশ ভিজিটিং কার্ড",
+            badgeText = "বেস্টসেলার",
+            badgeColorHex = "#EA580C",
+            cardBackgroundHex = "#FFFFFF",
+            textColorHex = "#0F172A",
+            colorSpec = "৪ কালার (CMYK)",
+            gsmSpec = "১৫০ GSM আর্ট পেপার",
+            sizeSpec = "১৮\" × ২৩\" (Demy)",
+            finishSpec = "গ্লস ল্যামিনেশন",
+            subtitleText = "প্রচারণা ও ইভেন্টের জন্য সেরা কোয়ালিটি",
+            priceText = "৳ ৩৫০ / ১,০০০ পিস",
+            perPieceText = "(৳ ০.৩৫ / পিস)",
+            orderPriority = 1,
+            isActive = true
+        )
+        val g2 = com.sucharu.sucharupro.data.model.GalleryTemplateItem(
+            id = "G-OFFER-002",
+            category = "ভিজিটিং কার্ড",
+            templateCode = "#TMPL-203",
+            title = "প্রফেশনাল বিজনেস কার্ড কালেকশন",
+            badgeText = "পপুলার",
+            badgeColorHex = "#0284C7",
+            cardBackgroundHex = "#FFFFFF",
+            textColorHex = "#0F172A",
+            colorSpec = "৪ কালার (CMYK)",
+            gsmSpec = "৩০০ GSM আর্ট কার্ড",
+            sizeSpec = "২\" × ৩.৫\" (স্ট্যান্ডার্ড)",
+            finishSpec = "ম্যাট ফিনিশ + স্পট UV",
+            subtitleText = "কর্পোরেট পরিচয়ের জন্য নিখুঁত ডিজাইন",
+            priceText = "৳ ৮০০ / ১,০০০ পিস",
+            perPieceText = "(৳ ০.৮০ / পিস)",
+            orderPriority = 2,
+            isActive = true
+        )
+        val g3 = com.sucharu.sucharupro.data.model.GalleryTemplateItem(
+            id = "G-OFFER-003",
+            category = "লিফলেট",
+            templateCode = "#TMPL-307",
+            title = "রঙিন প্রচারপত্র (লিফলেট)",
+            badgeText = "স্পেশাল",
+            badgeColorHex = "#10B981",
+            cardBackgroundHex = "#FFFFFF",
+            textColorHex = "#0F172A",
+            colorSpec = "৪ কালার (CMYK)",
+            gsmSpec = "১ ১০০ GSM আর্ট পেপার",
+            sizeSpec = "A4 সাইজ",
+            finishSpec = "কোন ফিনিশ নেই",
+            subtitleText = "দ্রুত এবং সস্তা প্রচারের জন্য আদর্শ",
+            priceText = "৳ ১,৫০০ / ১,০০০ পিস",
+            perPieceText = "(৳ ১.৫০ / পিস)",
+            orderPriority = 3,
+            isActive = true
+        )
+        galleryItems[g1.id] = g1
+        galleryItems[g2.id] = g2
+        galleryItems[g3.id] = g3
+    }
 
     override fun getOrderFormConfig(): com.sucharu.sucharupro.data.api.model.cms.CmsOrderFormConfigDto {
         return orderFormConfig
@@ -204,5 +274,34 @@ class InMemoryCmsRepository : CmsRepository {
     override fun updateOrderFormConfig(config: com.sucharu.sucharupro.data.api.model.cms.CmsOrderFormConfigDto): com.sucharu.sucharupro.data.api.model.cms.CmsOrderFormConfigDto {
         orderFormConfig = config
         return orderFormConfig
+    }
+
+    override fun createGalleryTemplate(item: com.sucharu.sucharupro.data.model.GalleryTemplateItem): com.sucharu.sucharupro.data.model.GalleryTemplateItem {
+        val id = if (item.id.isNotBlank()) item.id else "G-TMPL-" + UUID.randomUUID().toString().take(8).uppercase()
+        val created = item.copy(id = id)
+        galleryItems[id] = created
+        return created
+    }
+
+    override fun updateGalleryTemplate(item: com.sucharu.sucharupro.data.model.GalleryTemplateItem): com.sucharu.sucharupro.data.model.GalleryTemplateItem {
+        galleryItems[item.id] = item
+        return item
+    }
+
+    override fun deleteGalleryTemplate(templateId: String): Boolean {
+        return galleryItems.remove(templateId) != null
+    }
+
+    override fun getAllGalleryTemplates(): List<com.sucharu.sucharupro.data.model.GalleryTemplateItem> {
+        return galleryItems.values.sortedBy { it.orderPriority }
+    }
+
+    override fun getGalleryTemplatesByCategory(category: String): List<com.sucharu.sucharupro.data.model.GalleryTemplateItem> {
+        val active = galleryItems.values.filter { it.isActive }
+        return if (category == "সব" || category == "ALL") {
+            active.sortedBy { it.orderPriority }
+        } else {
+            active.filter { it.category == category }.sortedBy { it.orderPriority }
+        }
     }
 }
