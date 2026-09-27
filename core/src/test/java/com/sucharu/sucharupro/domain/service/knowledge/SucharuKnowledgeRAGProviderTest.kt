@@ -3,7 +3,6 @@ package com.sucharu.sucharupro.domain.service.knowledge
 import com.sucharu.sucharupro.domain.model.knowledge.KnowledgeCategory
 import com.sucharu.sucharupro.domain.model.knowledge.KnowledgeCategoryRegistry
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -38,16 +37,26 @@ class SucharuKnowledgeRAGProviderTest {
     }
 
     @Test
-    fun `searchKnowledge_returnsRelevantApprovedKnowledge`() {
-        val results = provider.searchKnowledge("GSM", userRole = "CUSTOMER")
+    fun `searchKnowledge_returnsRelevantApprovedKnowledgeForCoreOperationalDomains`() {
+        // Query GSM paper guide
+        val paperResults = provider.searchKnowledge("GSM", userRole = "CUSTOMER")
+        assertTrue(paperResults.isNotEmpty())
+        assertEquals("KNOW-PRINT-001", paperResults.first().document.knowledgeId)
 
-        assertNotNull(results)
-        assertTrue(results.isNotEmpty())
+        // Query VAT compliance guide
+        val vatResults = provider.searchKnowledge("VAT", userRole = "CUSTOMER")
+        assertTrue(vatResults.isNotEmpty())
+        assertEquals(KnowledgeCategory.BANGLADESH_COMMERCIAL_COMPLIANCE, vatResults.first().document.category)
 
-        val matchedDoc = results.first().document
-        assertEquals("KNOW-PRINT-002", matchedDoc.knowledgeId)
-        assertEquals(KnowledgeCategory.PRINTING_TECHNICAL, matchedDoc.category)
-        assertTrue(matchedDoc.contentChunk.contains("300 GSM Art Card"))
+        // Query QC inspection SOP for Staff
+        val qcResults = provider.searchKnowledge("inspection", userRole = "STAFF")
+        assertTrue(qcResults.isNotEmpty())
+        assertEquals(KnowledgeCategory.QUALITY_REWORK, qcResults.first().document.category)
+
+        // Query Finished Goods Inventory SOP
+        val invResults = provider.searchKnowledge("challan", userRole = "CUSTOMER")
+        assertTrue(invResults.isNotEmpty())
+        assertEquals(KnowledgeCategory.INVENTORY_DISTRIBUTION, invResults.first().document.category)
     }
 
     @Test
