@@ -7,7 +7,7 @@ import java.util.concurrent.ConcurrentHashMap
  * Production-grade Structured RAG Knowledge Provider for Sucharu Pro.
  *
  * Provides approved, version-controlled knowledge for Printing SOPs, Paper Specifications,
- * Commercial Rules, and Bangladesh Compliance.
+ * Commercial Rules, and Bangladesh Compliance across the 25 Canonical Knowledge Domains.
  *
  * Enforces Security Sensitivity Tiers (PUBLIC, CUSTOMER_VISIBLE, STAFF_ONLY, MANAGEMENT_ONLY, CONFIDENTIAL_SECRET).
  */
@@ -21,7 +21,7 @@ class SucharuKnowledgeRAGProvider {
             knowledgeId = "KNOW-SOP-001",
             title = "Sucharu Production Pipeline 13 Stages SOP",
             contentChunk = "Sucharu Graphics production follows 13 locked stages: DESIGN -> APPROVAL -> QC -> ITEM_APPROVAL -> CTP -> PRINTING -> LAMINATION -> FOLDING -> BINDING -> FINAL_QC -> PACKAGING -> READY -> DELIVERED. Each stage requires explicit QC verification.",
-            category = KnowledgeCategory.OFFICE_SOP,
+            category = KnowledgeCategory.SOP_PROCESS_MANAGEMENT,
             status = KnowledgeStatus.PUBLISHED,
             sensitivity = KnowledgeSensitivity.PUBLIC,
             sourceReference = "SOP-PROD-2026-01",
@@ -32,7 +32,7 @@ class SucharuKnowledgeRAGProvider {
             knowledgeId = "KNOW-PRINT-002",
             title = "GSM Paper Selection Guide for Commercial Printing",
             contentChunk = "For Business Cards, recommended paper is 300 GSM Art Card with Matte/Gloss Lamination. For Promotional Flyers, recommended paper is 150 GSM Art Paper. For Book Covers, 300 GSM Art Card with Spot UV is standard.",
-            category = KnowledgeCategory.PRINTING_SPECIFICATIONS,
+            category = KnowledgeCategory.PRINTING_TECHNICAL,
             status = KnowledgeStatus.PUBLISHED,
             sensitivity = KnowledgeSensitivity.PUBLIC,
             sourceReference = "SOP-PAPER-2026-02",
@@ -43,7 +43,7 @@ class SucharuKnowledgeRAGProvider {
             knowledgeId = "KNOW-COMM-003",
             title = "Quotation Approval & Commercial Lock Rules",
             contentChunk = "Quotations prepared by AI or sales estimators require human Admin/Staff approval before release to customer. Upon customer acceptance, commercial terms are locked into an immutable OrderPriceSnapshot.",
-            category = KnowledgeCategory.COMMERCIAL_RULES,
+            category = KnowledgeCategory.QUOTATION_SALES,
             status = KnowledgeStatus.PUBLISHED,
             sensitivity = KnowledgeSensitivity.CUSTOMER_VISIBLE,
             sourceReference = "SOP-COMM-2026-03",
@@ -54,7 +54,7 @@ class SucharuKnowledgeRAGProvider {
             knowledgeId = "KNOW-CONF-004",
             title = "Internal Costing Formula & Margin Policy",
             contentChunk = "Internal vendor purchase rates, paper substrate supplier discounts, and gross margin calculations are strictly confidential management information and must never be disclosed to external customers or affiliates.",
-            category = KnowledgeCategory.COMMERCIAL_RULES,
+            category = KnowledgeCategory.JOB_COSTING_COMMERCIAL,
             status = KnowledgeStatus.PUBLISHED,
             sensitivity = KnowledgeSensitivity.CONFIDENTIAL_SECRET,
             sourceReference = "SOP-MGMT-2026-99",
@@ -115,6 +115,7 @@ class SucharuKnowledgeRAGProvider {
 
         return KnowledgeRAGSummary(
             totalPublishedDocumentsCount = docs.size,
+            totalDomainsCount = 25,
             categoriesSummary = categoryCounts,
             isCanonicalErpBoundaryPreserved = true,
             generatedAt = timestamp

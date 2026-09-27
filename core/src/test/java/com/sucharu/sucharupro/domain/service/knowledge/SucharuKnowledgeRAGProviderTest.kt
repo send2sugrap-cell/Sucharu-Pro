@@ -1,6 +1,7 @@
 package com.sucharu.sucharupro.domain.service.knowledge
 
 import com.sucharu.sucharupro.domain.model.knowledge.KnowledgeCategory
+import com.sucharu.sucharupro.domain.model.knowledge.KnowledgeCategoryRegistry
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
@@ -17,6 +18,26 @@ class SucharuKnowledgeRAGProviderTest {
     }
 
     @Test
+    fun `taxonomyRegistry_containsExactly25CanonicalDomains`() {
+        val domains = KnowledgeCategoryRegistry.ALL_25_DOMAINS
+
+        assertEquals(25, domains.size)
+
+        val uniqueCodes = domains.map { it.code }.toSet()
+        assertEquals(25, uniqueCodes.size)
+
+        val uniqueNumbers = domains.map { it.domainNumber }.toSet()
+        assertEquals(25, uniqueNumbers.size)
+
+        // Verify First and Last Domains
+        assertEquals(1, domains.first().domainNumber)
+        assertEquals(KnowledgeCategory.PRINTING_TECHNICAL, domains.first().code)
+
+        assertEquals(25, domains.last().domainNumber)
+        assertEquals(KnowledgeCategory.CROSS_INDUSTRY_PROFESSION, domains.last().code)
+    }
+
+    @Test
     fun `searchKnowledge_returnsRelevantApprovedKnowledge`() {
         val results = provider.searchKnowledge("GSM", userRole = "CUSTOMER")
 
@@ -25,7 +46,7 @@ class SucharuKnowledgeRAGProviderTest {
 
         val matchedDoc = results.first().document
         assertEquals("KNOW-PRINT-002", matchedDoc.knowledgeId)
-        assertEquals(KnowledgeCategory.PRINTING_SPECIFICATIONS, matchedDoc.category)
+        assertEquals(KnowledgeCategory.PRINTING_TECHNICAL, matchedDoc.category)
         assertTrue(matchedDoc.contentChunk.contains("300 GSM Art Card"))
     }
 
