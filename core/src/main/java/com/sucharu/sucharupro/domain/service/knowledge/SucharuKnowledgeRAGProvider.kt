@@ -6,10 +6,8 @@ import java.util.concurrent.ConcurrentHashMap
 /**
  * Production-grade Structured RAG Knowledge Provider for Sucharu Pro.
  *
- * Provides approved, version-controlled knowledge across the Core Sucharu Operational Domains:
- * Printing Technical, Business Operations, Job Costing, Quotation Sales, CRM, Production Planning,
- * Quality Control, Finished Goods Inventory, Vendor Procurement, Finance, Office SOPs, KPIs,
- * Bangladesh Compliance, and Decision Support.
+ * Provides approved, version-controlled knowledge across Core Sucharu Operational,
+ * Marketing, Sales, Growth, Leadership, Market Intelligence, and AI Productivity domains.
  *
  * Enforces Security Sensitivity Tiers (PUBLIC, CUSTOMER_VISIBLE, STAFF_ONLY, MANAGEMENT_ONLY, CONFIDENTIAL_SECRET).
  */
@@ -100,8 +98,56 @@ class SucharuKnowledgeRAGProvider {
             tags = listOf("crm", "customer 360", "retention", "history")
         )
 
-        // Domain 10: PRODUCTION_PLANNING
+        // Domain 06: MARKETING_CUSTOMER_ACQUISITION
         val doc8 = KnowledgeDocument(
+            knowledgeId = "KNOW-MKT-001",
+            title = "Printing Customer Acquisition & Lead Generation Strategy",
+            contentChunk = "Customer acquisition in commercial printing focuses on target business segmentation (educational, corporate, publishing, retail) and needs discovery. High-converting leads originate from specification clarity and sample proofing.",
+            category = KnowledgeCategory.MARKETING_CUSTOMER_ACQUISITION,
+            status = KnowledgeStatus.PUBLISHED,
+            sensitivity = KnowledgeSensitivity.CUSTOMER_VISIBLE,
+            sourceReference = "MKT-ACQ-2026-01",
+            tags = listOf("marketing", "acquisition", "leads", "segmentation")
+        )
+
+        // Domain 07: DIGITAL_MARKETING_CONTENT
+        val doc9 = KnowledgeDocument(
+            knowledgeId = "KNOW-DIGI-001",
+            title = "Printing Services Digital Content & Campaign Planning",
+            contentChunk = "Digital content strategy highlights print product visual showcases (embossing, spot UV, matte foil), seasonal event offers (calendars, diaries, Hajj leaflets), and educational paper selection tips across Facebook and messaging channels.",
+            category = KnowledgeCategory.DIGITAL_MARKETING_CONTENT,
+            status = KnowledgeStatus.PUBLISHED,
+            sensitivity = KnowledgeSensitivity.PUBLIC,
+            sourceReference = "MKT-DIGI-2026-01",
+            tags = listOf("digital marketing", "content", "social media", "campaigns")
+        )
+
+        // Domain 08: B2B_B2C_SALES
+        val doc10 = KnowledgeDocument(
+            knowledgeId = "KNOW-SALE-001",
+            title = "Commercial Sales Discovery & Objection Handling",
+            contentChunk = "B2B commercial sales discovery requires identifying key procurement decision makers, paper GSM preferences, and target delivery deadlines. Common price objections are resolved by explaining volume economics.",
+            category = KnowledgeCategory.B2B_B2C_SALES,
+            status = KnowledgeStatus.PUBLISHED,
+            sensitivity = KnowledgeSensitivity.CUSTOMER_VISIBLE,
+            sourceReference = "SALES-B2B-2026-01",
+            tags = listOf("sales", "b2b", "objection handling", "proposals")
+        )
+
+        // Domain 09: RETENTION_UPSELL_CROSSSELL
+        val doc11 = KnowledgeDocument(
+            knowledgeId = "KNOW-RET-001",
+            title = "Customer Retention & Value-Add Cross-Selling",
+            contentChunk = "Customer retention is driven by delivery reliability and proactive reorder reminders for seasonal items. Cross-selling adds value by recommending matching stationery or packaging alongside primary print orders.",
+            category = KnowledgeCategory.RETENTION_UPSELL_CROSSSELL,
+            status = KnowledgeStatus.PUBLISHED,
+            sensitivity = KnowledgeSensitivity.STAFF_ONLY,
+            sourceReference = "MKT-RET-2026-01",
+            tags = listOf("retention", "repeat order", "cross-selling", "upselling")
+        )
+
+        // Domain 10: PRODUCTION_PLANNING
+        val doc12 = KnowledgeDocument(
             knowledgeId = "KNOW-PROD-001",
             title = "Production Scheduling & Job Workload Prioritization",
             contentChunk = "Production scheduling prioritizes jobs based on promised delivery date, CTP plate availability, machine load balancing, and finishing dependencies. Jobs at risk of delay trigger immediate SLA alerts.",
@@ -113,7 +159,7 @@ class SucharuKnowledgeRAGProvider {
         )
 
         // Domain 11: QUALITY_REWORK
-        val doc9 = KnowledgeDocument(
+        val doc13 = KnowledgeDocument(
             knowledgeId = "KNOW-QC-001",
             title = "Quality Control & Rework Inspection SOP",
             contentChunk = "Quality inspection is performed at 3 checkpoints: Prepress Proofing, In-Process Printing Sheet Inspection, and Final QC before Packaging. Defective output requires root-cause classification and rework approval.",
@@ -125,7 +171,7 @@ class SucharuKnowledgeRAGProvider {
         )
 
         // Domain 12: INVENTORY_DISTRIBUTION
-        val doc10 = KnowledgeDocument(
+        val doc14 = KnowledgeDocument(
             knowledgeId = "KNOW-INV-001",
             title = "Finished Goods Inventory & Delivery Challan SOP",
             contentChunk = "Sucharu inventory tracks finished products only. Upon Final QC release, items are moved to Ready status, linked to a Delivery Challan, and dispatched with receiver Proof of Delivery (POD) signature.",
@@ -137,7 +183,7 @@ class SucharuKnowledgeRAGProvider {
         )
 
         // Domain 13: VENDOR_PROCUREMENT
-        val doc11 = KnowledgeDocument(
+        val doc15 = KnowledgeDocument(
             knowledgeId = "KNOW-VND-001",
             title = "Subcontracted Services & 3-Way Matching SOP",
             contentChunk = "Subcontracted finishing and prepress services require Purchase Orders. Supplier Invoices undergo 3-Way Matching (PO, Delivery Receipt, Invoice) before Vendor Payable posting in General Ledger.",
@@ -149,7 +195,7 @@ class SucharuKnowledgeRAGProvider {
         )
 
         // Domain 14: FINANCE_CASHFLOW
-        val doc12 = KnowledgeDocument(
+        val doc16 = KnowledgeDocument(
             knowledgeId = "KNOW-FIN-001",
             title = "Customer Accounts Receivable & Payment Allocation",
             contentChunk = "Invoices issued upon order delivery create customer receivables. Payments received via bKash or Bank are allocated against specific invoice line items in Customer Financial Account ledger.",
@@ -161,7 +207,7 @@ class SucharuKnowledgeRAGProvider {
         )
 
         // Domain 15: OFFICE_MANAGEMENT
-        val doc13 = KnowledgeDocument(
+        val doc17 = KnowledgeDocument(
             knowledgeId = "KNOW-OFF-001",
             title = "Daily Office Workload & Coordination SOP",
             contentChunk = "Daily operational coordination reviews open quotations awaiting customer approval, jobs in production, ready shipments, overdue receivables, and urgent customer follow-up actions.",
@@ -173,7 +219,7 @@ class SucharuKnowledgeRAGProvider {
         )
 
         // Domain 16: SOP_PROCESS_MANAGEMENT
-        val doc14 = KnowledgeDocument(
+        val doc18 = KnowledgeDocument(
             knowledgeId = "KNOW-SOP-001-PIPE",
             title = "Sucharu Production Pipeline 13 Stages SOP",
             contentChunk = "Sucharu Graphics production follows 13 locked stages: DESIGN -> APPROVAL -> QC -> ITEM_APPROVAL -> CTP -> PRINTING -> LAMINATION -> FOLDING -> BINDING -> FINAL_QC -> PACKAGING -> READY -> DELIVERED. Each stage requires explicit QC verification.",
@@ -185,7 +231,7 @@ class SucharuKnowledgeRAGProvider {
         )
 
         // Domain 17: BUSINESS_ANALYTICS_KPI
-        val doc15 = KnowledgeDocument(
+        val doc19 = KnowledgeDocument(
             knowledgeId = "KNOW-KPI-001",
             title = "Executive Decision Intelligence & KPI Guide",
             contentChunk = "Executive decision intelligence monitors 6 core metrics: Sales Revenue YTD, Quotation Conversion Rate, Average Gross Margin %, Active Production Workload, Overdue Receivables, and SLA On-Time Performance.",
@@ -197,7 +243,7 @@ class SucharuKnowledgeRAGProvider {
         )
 
         // Domain 18: BANGLADESH_COMMERCIAL_COMPLIANCE
-        val doc16 = KnowledgeDocument(
+        val doc20 = KnowledgeDocument(
             knowledgeId = "KNOW-COMP-001",
             title = "Bangladesh VAT & Commercial Invoice Requirements",
             contentChunk = "Commercial invoices issued for printing services comply with Bangladesh VAT rules, requiring Customer BIN, Customer TIN, configurable VAT calculation, and immutable invoice tax snapshots.",
@@ -208,8 +254,44 @@ class SucharuKnowledgeRAGProvider {
             tags = listOf("vat", "bangladesh", "invoice", "bin", "tin", "tax")
         )
 
+        // Domain 19: LEADERSHIP_TEAM
+        val doc21 = KnowledgeDocument(
+            knowledgeId = "KNOW-LEAD-001",
+            title = "Operational Leadership & Team Accountability Principles",
+            contentChunk = "Leadership in printing operations centers on clear task delegation, daily stage milestone check-ins, transparent team feedback, and bottleneck resolution without shifting blame.",
+            category = KnowledgeCategory.LEADERSHIP_TEAM,
+            status = KnowledgeStatus.PUBLISHED,
+            sensitivity = KnowledgeSensitivity.STAFF_ONLY,
+            sourceReference = "MGMT-LEAD-2026-01",
+            tags = listOf("leadership", "delegation", "teamwork", "accountability")
+        )
+
+        // Domain 20: BUSINESS_GROWTH
+        val doc22 = KnowledgeDocument(
+            knowledgeId = "KNOW-GROW-001",
+            title = "Printing Business Growth & Operational Scaling Strategy",
+            contentChunk = "Sustainable business growth combines repeat institutional customer retention, high quotation conversion rates, capacity optimization, and disciplined financial cash-flow management.",
+            category = KnowledgeCategory.BUSINESS_GROWTH,
+            status = KnowledgeStatus.PUBLISHED,
+            sensitivity = KnowledgeSensitivity.MANAGEMENT_ONLY,
+            sourceReference = "MGMT-GROW-2026-01",
+            tags = listOf("growth", "scaling", "business model", "capacity")
+        )
+
+        // Domain 21: PROFESSIONAL_SKILL_DEVELOPMENT
+        val doc23 = KnowledgeDocument(
+            knowledgeId = "KNOW-SKILL-001",
+            title = "Professional Client Relations & Commercial Negotiation Skills",
+            contentChunk = "Professional skill development emphasizes active listening, clear specification communication, structured problem-solving, time management, and empathetic customer relations.",
+            category = KnowledgeCategory.PROFESSIONAL_SKILL_DEVELOPMENT,
+            status = KnowledgeStatus.PUBLISHED,
+            sensitivity = KnowledgeSensitivity.PUBLIC,
+            sourceReference = "SKILL-DEV-2026-01",
+            tags = listOf("skills", "communication", "negotiation", "client relations")
+        )
+
         // Domain 22: PROBLEM_SOLVING_DECISION_SUPPORT
-        val doc17 = KnowledgeDocument(
+        val doc24 = KnowledgeDocument(
             knowledgeId = "KNOW-DEC-001",
             title = "Production Delay & Root Cause Analysis Framework",
             contentChunk = "Production delay analysis identifies root causes across 11 controlled categories (Customer Approval Delay, QC Rework, Machine Operation Delay, Outsourced Finishing Delay, Payment Hold) to drive corrective action.",
@@ -218,6 +300,30 @@ class SucharuKnowledgeRAGProvider {
             sensitivity = KnowledgeSensitivity.STAFF_ONLY,
             sourceReference = "SOP-DEC-2026-01",
             tags = listOf("decision", "root cause", "delay", "rework", "sla")
+        )
+
+        // Domain 23: MARKET_INTELLIGENCE
+        val doc25 = KnowledgeDocument(
+            knowledgeId = "KNOW-MKTG-001",
+            title = "Printing Market Demand Signals & Seasonal Trend Analysis",
+            contentChunk = "Commercial printing demand exhibits seasonal spikes during academic enrollment periods (textbooks, notebooks), Islamic holidays (Hajj leaflets, calendars), and corporate year-end diaries.",
+            category = KnowledgeCategory.MARKET_INTELLIGENCE,
+            status = KnowledgeStatus.PUBLISHED,
+            sensitivity = KnowledgeSensitivity.CUSTOMER_VISIBLE,
+            sourceReference = "MKTG-INTEL-2026-01",
+            tags = listOf("market intelligence", "seasonal trends", "demand signals")
+        )
+
+        // Domain 24: AI_BUSINESS_PRODUCTIVITY
+        val doc26 = KnowledgeDocument(
+            knowledgeId = "KNOW-AIPROD-001",
+            title = "AI-Assisted Business Drafting & Operational Productivity",
+            contentChunk = "AI-assisted productivity streamlines quotation drafting, customer follow-up messages, meeting summaries, and daily workload briefs while maintaining human confirmation gates for sensitive actions.",
+            category = KnowledgeCategory.AI_BUSINESS_PRODUCTIVITY,
+            status = KnowledgeStatus.PUBLISHED,
+            sensitivity = KnowledgeSensitivity.PUBLIC,
+            sourceReference = "AIPROD-2026-01",
+            tags = listOf("ai productivity", "drafting", "automation", "confirmation gate")
         )
 
         knowledgeStore[doc1.knowledgeId] = doc1
@@ -237,6 +343,15 @@ class SucharuKnowledgeRAGProvider {
         knowledgeStore[doc15.knowledgeId] = doc15
         knowledgeStore[doc16.knowledgeId] = doc16
         knowledgeStore[doc17.knowledgeId] = doc17
+        knowledgeStore[doc18.knowledgeId] = doc18
+        knowledgeStore[doc19.knowledgeId] = doc19
+        knowledgeStore[doc20.knowledgeId] = doc20
+        knowledgeStore[doc21.knowledgeId] = doc21
+        knowledgeStore[doc22.knowledgeId] = doc22
+        knowledgeStore[doc23.knowledgeId] = doc23
+        knowledgeStore[doc24.knowledgeId] = doc24
+        knowledgeStore[doc25.knowledgeId] = doc25
+        knowledgeStore[doc26.knowledgeId] = doc26
     }
 
     /**
@@ -281,7 +396,7 @@ class SucharuKnowledgeRAGProvider {
     }
 
     fun getKnowledgeRAGSummary(): KnowledgeRAGSummary {
-        val timestamp = "2026-09-27T17:45:00Z"
+        val timestamp = "2026-09-27T17:55:00Z"
         val docs = knowledgeStore.values.filter { it.status == KnowledgeStatus.PUBLISHED }
         val categoryCounts = docs.groupBy { it.category.name }.mapValues { it.value.size }
 

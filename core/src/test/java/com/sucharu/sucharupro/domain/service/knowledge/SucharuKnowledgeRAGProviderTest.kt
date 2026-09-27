@@ -60,6 +60,28 @@ class SucharuKnowledgeRAGProviderTest {
     }
 
     @Test
+    fun `searchKnowledge_returnsRelevantGrowthMarketingAndSkillKnowledge`() {
+        // Query Marketing Acquisition
+        val mktResults = provider.searchKnowledge("acquisition", userRole = "CUSTOMER")
+        assertTrue(mktResults.isNotEmpty())
+        assertEquals(KnowledgeCategory.MARKETING_CUSTOMER_ACQUISITION, mktResults.first().document.category)
+
+        // Query Digital Marketing Content Strategy
+        val digiResults = provider.searchKnowledge("campaign", userRole = "CUSTOMER")
+        assertTrue(digiResults.isNotEmpty())
+
+        // Query B2B Sales Discovery
+        val salesResults = provider.searchKnowledge("objection", userRole = "CUSTOMER")
+        assertTrue(salesResults.isNotEmpty())
+        assertEquals(KnowledgeCategory.B2B_B2C_SALES, salesResults.first().document.category)
+
+        // Query AI Productivity
+        val aiProdResults = provider.searchKnowledge("drafting", userRole = "CUSTOMER")
+        assertTrue(aiProdResults.isNotEmpty())
+        assertEquals(KnowledgeCategory.AI_BUSINESS_PRODUCTIVITY, aiProdResults.first().document.category)
+    }
+
+    @Test
     fun `searchKnowledge_enforcesRoleSensitivityBoundariesAndProtectsSecrets`() {
         // Customer Role searching for confidential margin/costing secrets -> MUST BE EMPTY!
         val customerResults = provider.searchKnowledge("margin", userRole = "CUSTOMER")
