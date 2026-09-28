@@ -10,10 +10,11 @@ enum class CustomerPaymentMethod {
     BKASH,
     NAGAD,
     BANK,
+    BANGLA_QR,
     OTHER;
 
-    val isDigitalWallet: Boolean get() = this in setOf(BKASH, NAGAD)
-    val requiresReference: Boolean get() = this in setOf(BKASH, NAGAD, BANK)
+    val isDigitalWallet: Boolean get() = this in setOf(BKASH, NAGAD, BANGLA_QR)
+    val requiresReference: Boolean get() = this in setOf(BKASH, NAGAD, BANK, BANGLA_QR)
 }
 
 /**
