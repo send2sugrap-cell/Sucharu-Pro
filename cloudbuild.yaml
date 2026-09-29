@@ -1,0 +1,80 @@
+# ==============================================================================
+# SUCHARU PRO PRODUCTION GOOGLE CLOUD BUILD DEPLOYMENT PIPELINE
+# ==============================================================================
+# Automated CI/CD build & deployment pipeline for Sucharu Pro Backend Service.
+# Build Strategy:
+#   1. Compiles backend production fat JAR via `./gradlew :backend:jar`
+#   2. Builds container image using `deploy/Dockerfile.backend`
+#   3. Pushes versioned image tag to Artifact Registry (`asia-southeast1-docker.pkg.dev`)
+#   4. Deploys stateless container to Google Cloud Run (`sucharu-backend-server`)
+
+substitutions:
+  _REGION: 'asia-southeast1'
+  _REPOSITORY: 'sucharu-pro-repo'
+  _SERVICE: 'sucharu-backend-server'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+  dynamic_substitutions: true
+
+steps:
+  # ----------------------------------------------------------------------------
+  # Step 1: Compile Backend Production Fat JAR
+  # ----------------------------------------------------------------------------
+  - name: 'gradle:8.10-jdk17'
+    id: 'build-backend-jar'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - './gradlew :backend:jar --no-daemon'
+
+  # ----------------------------------------------------------------------------
+  # Step 2: Build Multi-Stage Docker Container Image
+  # ----------------------------------------------------------------------------
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-docker-image'
+    args:
+      - 'build'
+      - '-f'
+      - 'deploy/Dockerfile.backend'
+      - '-t'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE}:${COMMIT_SHA}'
+      - '-t'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE}:latest'
+      - '.'
+
+  # ----------------------------------------------------------------------------
+  # Step 3: Push Container Image Tags to Artifact Registry
+  # ----------------------------------------------------------------------------
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-artifact-registry'
+    args:
+      - 'push'
+      - '--all-tags'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE}'
+
+  # ----------------------------------------------------------------------------
+  # Step 4: Deploy Stateless Container to Google Cloud Run
+  # ----------------------------------------------------------------------------
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'deploy-cloud-run'
+    entrypoint: 'gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - '${_SERVICE}'
+      - '--image'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE}:${COMMIT_SHA}'
+      - '--region'
+      - '${_REGION}'
+      - '--platform'
+      - 'managed'
+      - '--port'
+      - '8080'
+      - '--allow-unauthenticated'
+
+images:
+  - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE}:${COMMIT_SHA}'
+  - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE}:latest'
+
+timeout: '1200s'
