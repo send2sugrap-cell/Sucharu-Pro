@@ -1,0 +1,9 @@
+.git
+.gitignore
+.gradle/
+**/build/
+.idea/
+*.apk
+.artifacts/
+docs/
+!gradle/wrapper/gradle-wrapper.jar

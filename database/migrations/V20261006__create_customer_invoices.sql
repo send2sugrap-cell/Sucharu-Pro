@@ -86,22 +86,28 @@ CREATE INDEX IF NOT EXISTS idx_ci_audit_lookup
     ON customer_invoice_audit_events(tenant_id, invoice_id, occurred_at DESC);
 
 -- Enable and Force Row Level Security (RLS)
+ALTER TABLE customer_invoices ADD COLUMN IF NOT EXISTS tenant_id VARCHAR(64) NOT NULL DEFAULT 'TENANT-001';
 ALTER TABLE customer_invoices ENABLE ROW LEVEL SECURITY;
 ALTER TABLE customer_invoices FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS rls_customer_invoices ON customer_invoices;
 CREATE POLICY rls_customer_invoices ON customer_invoices
     FOR ALL
     USING (tenant_id = current_setting('app.current_tenant_id', true))
     WITH CHECK (tenant_id = current_setting('app.current_tenant_id', true));
 
+ALTER TABLE customer_invoice_lines ADD COLUMN IF NOT EXISTS tenant_id VARCHAR(64) NOT NULL DEFAULT 'TENANT-001';
 ALTER TABLE customer_invoice_lines ENABLE ROW LEVEL SECURITY;
 ALTER TABLE customer_invoice_lines FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS rls_customer_invoice_lines ON customer_invoice_lines;
 CREATE POLICY rls_customer_invoice_lines ON customer_invoice_lines
     FOR ALL
     USING (tenant_id = current_setting('app.current_tenant_id', true))
     WITH CHECK (tenant_id = current_setting('app.current_tenant_id', true));
 
+ALTER TABLE customer_invoice_audit_events ADD COLUMN IF NOT EXISTS tenant_id VARCHAR(64) NOT NULL DEFAULT 'TENANT-001';
 ALTER TABLE customer_invoice_audit_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE customer_invoice_audit_events FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS rls_customer_invoice_audit_events ON customer_invoice_audit_events;
 CREATE POLICY rls_customer_invoice_audit_events ON customer_invoice_audit_events
     FOR ALL
     USING (tenant_id = current_setting('app.current_tenant_id', true))

@@ -26,7 +26,7 @@ steps:
     entrypoint: 'bash'
     args:
       - '-c'
-      - './gradlew :backend:jar --no-daemon'
+      - 'chmod +x gradlew && ./gradlew :backend:jar --no-daemon'
 
   # ----------------------------------------------------------------------------
   # Step 2: Build Multi-Stage Docker Container Image
@@ -54,7 +54,7 @@ steps:
       - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE}'
 
   # ----------------------------------------------------------------------------
-  # Step 4: Deploy Stateless Container to Google Cloud Run
+  # Step 4: Deploy Stateless Container to Google Cloud Run (0% Traffic Initial)
   # ----------------------------------------------------------------------------
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     id: 'deploy-cloud-run'
@@ -72,6 +72,18 @@ steps:
       - '--port'
       - '8080'
       - '--allow-unauthenticated'
+      - '--service-account'
+      - 'sucharu-backend-sa@${PROJECT_ID}.iam.gserviceaccount.com'
+      - '--network'
+      - 'sucharu-vpc'
+      - '--subnet'
+      - 'sucharu-subnet'
+      - '--vpc-egress'
+      - 'all-traffic'
+      - '--set-secrets'
+      - 'DATABASE_PASSWORD=DATABASE_PASSWORD:latest,JWT_SIGNING_SECRET=JWT_SIGNING_SECRET:latest,GEMINI_API_KEY=GEMINI_API_KEY:latest,N8N_SIGNING_SECRET=N8N_SIGNING_SECRET:latest'
+      - '--set-env-vars'
+      - 'ENVIRONMENT=production,APP_ENV=production,DATABASE_HOST=10.20.0.3,DATABASE_PORT=5432,DATABASE_NAME=sucharu_pro,DATABASE_USER=sucharu_app,DATABASE_URL=jdbc:postgresql://10.20.0.3:5432/sucharu_pro,FLYWAY_ENABLED=true,MIGRATION_MODE=AUTO_APPLY'
 
 images:
   - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE}:${COMMIT_SHA}'
