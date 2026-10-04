@@ -64,6 +64,9 @@ import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
 
+private data class Tuple3<A, B, C>(val first: A, val second: B, val third: C)
+private data class Tuple5<A, B, C, D, E>(val first: A, val second: B, val third: C, val fourth: D, val fifth: E)
+
 /**
  * 1:1 Master Admin Operations Center ERP Dashboard for Web (Wasm), Desktop, and Mobile.
  * Includes Left High-Tech Sidebar, Top Header, 24h Operations Chart, Order Health Ring,
@@ -88,8 +91,15 @@ fun SharedAdminDashboardWorkspace(
             activeNavTab = activeNavTab,
             onTabSelected = { tab ->
                 activeNavTab = tab
-                if (tab != "Dashboard") {
-                    onModuleClick(tab)
+                when (tab) {
+                    "Orders" -> onModuleClick("Module 03")
+                    "Production" -> onModuleClick("Module 04")
+                    "Finance" -> onModuleClick("Module 09/14")
+                    "Affiliate" -> onModuleClick("Module 20")
+                    "Reports" -> onModuleClick("Module 24")
+                    "Users" -> onModuleClick("Module 01")
+                    "Settings" -> onModuleClick("Module 00")
+                    else -> { /* Dashboard tab */ }
                 }
             }
         )
@@ -112,7 +122,10 @@ fun SharedAdminDashboardWorkspace(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // A. TOP BAR & KPI HEADER
-            TopHeaderComponent(onOpenCalculator = onOpenCalculator)
+            TopHeaderComponent(
+                onOpenCalculator = onOpenCalculator,
+                onModuleClick = onModuleClick
+            )
 
             // B. TWO-COLUMN ANALYTICS TOP SECTION
             Row(
@@ -141,7 +154,7 @@ fun SharedAdminDashboardWorkspace(
                     icon = Icons.Default.ShoppingCart,
                     accentColor = Color(0xFF00F0FF),
                     modifier = Modifier.weight(1f),
-                    onClick = { onModuleClick("Orders") }
+                    onClick = { onModuleClick("Module 03") }
                 )
                 KpiCard(
                     title = "উৎপাদন লোড",
@@ -150,7 +163,7 @@ fun SharedAdminDashboardWorkspace(
                     icon = Icons.Default.Settings,
                     accentColor = Color(0xFF00F0FF),
                     modifier = Modifier.weight(1f),
-                    onClick = { onModuleClick("Production") }
+                    onClick = { onModuleClick("Module 04") }
                 )
                 KpiCard(
                     title = "নগদ আদায় (আজ)",
@@ -159,7 +172,7 @@ fun SharedAdminDashboardWorkspace(
                     icon = Icons.Default.Star,
                     accentColor = Color(0xFF00F0FF),
                     modifier = Modifier.weight(1f),
-                    onClick = { onModuleClick("Finance") }
+                    onClick = { onModuleClick("Module 09/14") }
                 )
                 KpiCard(
                     title = "কমিশন বাকি",
@@ -168,7 +181,7 @@ fun SharedAdminDashboardWorkspace(
                     icon = Icons.Default.Person,
                     accentColor = Color(0xFF00F0FF),
                     modifier = Modifier.weight(1f),
-                    onClick = { onModuleClick("Affiliate") }
+                    onClick = { onModuleClick("Module 23") }
                 )
             }
 
@@ -397,7 +410,10 @@ private fun SidebarNavTile(
 // 2. TOP HEADER COMPONENT
 // ============================================================================
 @Composable
-private fun TopHeaderComponent(onOpenCalculator: () -> Unit) {
+private fun TopHeaderComponent(
+    onOpenCalculator: () -> Unit,
+    onModuleClick: (String) -> Unit
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -430,7 +446,8 @@ private fun TopHeaderComponent(onOpenCalculator: () -> Unit) {
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Black,
                     color = Color(0xFF00F0FF),
-                    letterSpacing = 0.5.sp
+                    letterSpacing = 0.5.sp,
+                    modifier = Modifier.clickable { onModuleClick("Module 24") }
                 )
                 Text(
                     text = "নিয়ন্ত্রণ • সমন্বয় • উৎপাদন • উন্নত ভবিষ্যৎ",
@@ -449,7 +466,8 @@ private fun TopHeaderComponent(onOpenCalculator: () -> Unit) {
             Surface(
                 shape = RoundedCornerShape(10.dp),
                 color = Color(0xFF0F172A),
-                border = BorderStroke(1.dp, Color(0xFF1E293B))
+                border = BorderStroke(1.dp, Color(0xFF1E293B)),
+                modifier = Modifier.clickable { onModuleClick("Module 24") }
             ) {
                 Row(
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
@@ -479,7 +497,7 @@ private fun TopHeaderComponent(onOpenCalculator: () -> Unit) {
             }
 
             // Notification Badge Pill
-            Box {
+            Box(modifier = Modifier.clickable { onModuleClick("Module 10") }) {
                 Surface(
                     shape = RoundedCornerShape(10.dp),
                     color = Color(0xFF0F172A),
@@ -511,7 +529,8 @@ private fun TopHeaderComponent(onOpenCalculator: () -> Unit) {
             Surface(
                 shape = RoundedCornerShape(10.dp),
                 color = Color(0xFF0F172A),
-                border = BorderStroke(1.dp, Color(0xFF1E293B))
+                border = BorderStroke(1.dp, Color(0xFF1E293B)),
+                modifier = Modifier.clickable { onModuleClick("Module 01") }
             ) {
                 Row(
                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
@@ -558,7 +577,7 @@ private fun TodayOperationsCard(
     onModuleClick: (String) -> Unit
 ) {
     Surface(
-        modifier = modifier.clickable { onModuleClick("Operations") },
+        modifier = modifier.clickable { onModuleClick("Module 04") },
         shape = RoundedCornerShape(16.dp),
         color = Color(0xFF0A1224),
         border = BorderStroke(1.dp, Color(0xFF00B4D8).copy(alpha = 0.4f))
@@ -588,7 +607,8 @@ private fun TodayOperationsCard(
                 Surface(
                     shape = RoundedCornerShape(16.dp),
                     color = Color(0xFF132038),
-                    border = BorderStroke(1.dp, Color(0xFF1E293B))
+                    border = BorderStroke(1.dp, Color(0xFF1E293B)),
+                    modifier = Modifier.clickable { onModuleClick("Module 04") }
                 ) {
                     Text(
                         text = "আজকের ∨",
@@ -793,7 +813,7 @@ private fun OrderHealthCard(
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF00F0FF),
-                    modifier = Modifier.clickable { onModuleClick("Orders") }
+                    modifier = Modifier.clickable { onModuleClick("Module 03") }
                 )
             }
 
@@ -806,7 +826,9 @@ private fun OrderHealthCard(
             ) {
                 // Donut Circular Chart
                 Box(
-                    modifier = Modifier.size(125.dp),
+                    modifier = Modifier
+                        .size(125.dp)
+                        .clickable { onModuleClick("Module 03") },
                     contentAlignment = Alignment.Center
                 ) {
                     Canvas(modifier = Modifier.fillMaxSize()) {
@@ -870,10 +892,10 @@ private fun OrderHealthCard(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.padding(start = 12.dp)
                 ) {
-                    LegendItem(color = Color(0xFF00F0FF), label = "মোট অর্ডার", value = "৮৪")
-                    LegendItem(color = Color(0xFF38BDF8), label = "সম্পন্ন", value = "৬১")
-                    LegendItem(color = Color(0xFFF59E0B), label = "প্রক্রিয়াধীন", value = "১৮")
-                    LegendItem(color = Color(0xFFEF4444), label = "বাতিল", value = "৫")
+                    LegendItem(color = Color(0xFF00F0FF), label = "মোট অর্ডার", value = "৮৪", onClick = { onModuleClick("Module 03") })
+                    LegendItem(color = Color(0xFF38BDF8), label = "সম্পন্ন", value = "৬১", onClick = { onModuleClick("Module 03") })
+                    LegendItem(color = Color(0xFFF59E0B), label = "প্রক্রিয়াধীন", value = "১৮", onClick = { onModuleClick("Module 04") })
+                    LegendItem(color = Color(0xFFEF4444), label = "বাতিল", value = "৫", onClick = { onModuleClick("Module 12") })
                 }
             }
         }
@@ -881,11 +903,13 @@ private fun OrderHealthCard(
 }
 
 @Composable
-private fun LegendItem(color: Color, label: String, value: String) {
+private fun LegendItem(color: Color, label: String, value: String, onClick: () -> Unit = {}) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
-        modifier = Modifier.width(130.dp)
+        modifier = Modifier
+            .width(130.dp)
+            .clickable { onClick() }
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
@@ -1015,7 +1039,7 @@ private fun AffiliateIntelligenceCard(
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF00F0FF),
-                    modifier = Modifier.clickable { onModuleClick("Affiliate") }
+                    modifier = Modifier.clickable { onModuleClick("Module 20") }
                 )
             }
 
@@ -1028,14 +1052,16 @@ private fun AffiliateIntelligenceCard(
             ) {
                 // Left Stats Column
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    AffiliateStatRow(title = "সক্রিয় পার্টনার", value = "২৮", trend = "↑ +৮ জন", icon = Icons.Default.Person)
-                    AffiliateStatRow(title = "রেফারেল বিক্রি", value = "৳ ১,৭৩,২০০", trend = "↑ +৩২.৫%", icon = Icons.Default.ShoppingCart)
-                    AffiliateStatRow(title = "কমিশন প্রদান", value = "৳ ১২,৪৫০", trend = "৫ জন পার্টনারের", icon = Icons.Default.Star)
+                    AffiliateStatRow(title = "সক্রিয় পার্টনার", value = "২৮", trend = "↑ +৮ জন", icon = Icons.Default.Person, onClick = { onModuleClick("Module 20") })
+                    AffiliateStatRow(title = "রেফারেল বিক্রি", value = "৳ ১,৭৩,২০০", trend = "↑ +৩২.৫%", icon = Icons.Default.ShoppingCart, onClick = { onModuleClick("Module 20") })
+                    AffiliateStatRow(title = "কমিশন প্রদান", value = "৳ ১২,৪৫০", trend = "৫ জন পার্টনারের", icon = Icons.Default.Star, onClick = { onModuleClick("Module 23") })
                 }
 
                 // Center Topology Network Canvas
                 Box(
-                    modifier = Modifier.size(160.dp),
+                    modifier = Modifier
+                        .size(160.dp)
+                        .clickable { onModuleClick("Module 20") },
                     contentAlignment = Alignment.Center
                 ) {
                     Canvas(modifier = Modifier.fillMaxSize()) {
@@ -1076,7 +1102,9 @@ private fun AffiliateIntelligenceCard(
                 // Right Commission Trend Sparkline Chart
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.width(180.dp)
+                    modifier = Modifier
+                        .width(180.dp)
+                        .clickable { onModuleClick("Module 23") }
                 ) {
                     Text(text = "কমিশন প্রবণতা (গত ৭ দিন)", fontSize = 10.sp, color = Color(0xFF94A3B8))
                     Spacer(modifier = Modifier.height(6.dp))
@@ -1142,8 +1170,11 @@ private fun AffiliateIntelligenceCard(
 }
 
 @Composable
-private fun AffiliateStatRow(title: String, value: String, trend: String, icon: ImageVector) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
+private fun AffiliateStatRow(title: String, value: String, trend: String, icon: ImageVector, onClick: () -> Unit = {}) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.clickable { onClick() }
+    ) {
         Box(
             modifier = Modifier
                 .size(30.dp)
@@ -1198,37 +1229,43 @@ private fun PriorityAlertsCard(onModuleClick: (String) -> Unit) {
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF00F0FF),
-                    modifier = Modifier.clickable { onModuleClick("Alerts") }
+                    modifier = Modifier.clickable { onModuleClick("Module 10") }
                 )
             }
 
             Spacer(modifier = Modifier.height(10.dp))
 
             val alerts = listOf(
-                Tuple4("পেমেন্ট বকেয়া (২ দিনের বেশি)", "১২", Color(0xFFEF4444), Icons.Default.Warning),
-                Tuple4("ডেলিভারি দেরি হওয়ার ঝুঁকি", "৫", Color(0xFFF59E0B), Icons.Default.Info),
-                Tuple4("ডিজাইন অনুমোদন অপেক্ষমান", "৮", Color(0xFF00F0FF), Icons.Default.Info),
-                Tuple4("কাঁচামাল কম আছে", "৩", Color(0xFFA855F7), Icons.Default.Warning),
-                Tuple4("উৎপাদনে আটকে আছে", "৮", Color(0xFFFF8800), Icons.Default.Settings),
-                Tuple4("আজ সম্পন্ন হওয়ার লক্ষ্যমাত্রা", "১৮", Color(0xFF10B981), Icons.Default.CheckCircle)
+                Tuple5("পেমেন্ট বকেয়া (২ দিনের বেশি)", "১২", Color(0xFFEF4444), Icons.Default.Warning, "Module 09/14"),
+                Tuple5("ডেলিভারি দেরি হওয়ার ঝুঁকি", "৫", Color(0xFFF59E0B), Icons.Default.Info, "Module 08/11"),
+                Tuple5("ডিজাইন অনুমোদন অপেক্ষমান", "৮", Color(0xFF00F0FF), Icons.Default.Info, "Module 05"),
+                Tuple5("কাঁচামাল কম আছে", "৩", Color(0xFFA855F7), Icons.Default.Warning, "Module 19"),
+                Tuple5("উৎপাদনে আটকে আছে", "৮", Color(0xFFFF8800), Icons.Default.Settings, "Module 04"),
+                Tuple5("আজ সম্পন্ন হওয়ার লক্ষ্যমাত্রা", "১৮", Color(0xFF10B981), Icons.Default.CheckCircle, "Module 04")
             )
 
-            alerts.forEach { (title, count, color, icon) ->
-                AlertItemRow(title = title, count = count, color = color, icon = icon)
+            alerts.forEach { (title, count, color, icon, moduleCode) ->
+                AlertItemRow(
+                    title = title,
+                    count = count,
+                    color = color,
+                    icon = icon,
+                    onClick = { onModuleClick(moduleCode) }
+                )
                 Spacer(modifier = Modifier.height(4.dp))
             }
         }
     }
 }
 
-private data class Tuple4<A, B, C, D>(val first: A, val second: B, val third: C, val fourth: D)
-
 @Composable
-private fun AlertItemRow(title: String, count: String, color: Color, icon: ImageVector) {
+private fun AlertItemRow(title: String, count: String, color: Color, icon: ImageVector, onClick: () -> Unit = {}) {
     Surface(
         shape = RoundedCornerShape(8.dp),
         color = Color(0xFF111C33),
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
@@ -1273,12 +1310,12 @@ private fun QuickControlsCard(onModuleClick: (String) -> Unit) {
             Spacer(modifier = Modifier.height(10.dp))
 
             val controls = listOf(
-                "নতুন অর্ডার" to Icons.Default.ShoppingCart,
-                "উৎপাদন নিয়ন্ত্রণ" to Icons.Default.Settings,
-                "আর্থিক ব্যবস্থাপনা" to Icons.Default.Star,
-                "অ্যাফিলিয়েট ব্যবস্থাপনা" to Icons.Default.Person,
-                "রিপোর্ট এবং বিশ্লেষণ" to Icons.AutoMirrored.Filled.List,
-                "সিস্টেম সেটিংস" to Icons.Default.Settings
+                Tuple3("নতুন অর্ডার", Icons.Default.ShoppingCart, "Module 03"),
+                Tuple3("উৎপাদন নিয়ন্ত্রণ", Icons.Default.Settings, "Module 04"),
+                Tuple3("আর্থিক ব্যবস্থাপনা", Icons.Default.Star, "Module 09/14"),
+                Tuple3("অ্যাফিলিয়েট ব্যবস্থাপনা", Icons.Default.Person, "Module 20"),
+                Tuple3("রিপোর্ট এবং বিশ্লেষণ", Icons.AutoMirrored.Filled.List, "Module 24"),
+                Tuple3("সিস্টেম সেটিংস", Icons.Default.Settings, "Module 00")
             )
 
             val cols = 2
@@ -1287,12 +1324,14 @@ private fun QuickControlsCard(onModuleClick: (String) -> Unit) {
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    QuickControlPill(label = controls[i].first, icon = controls[i].second, modifier = Modifier.weight(1f)) {
-                        onModuleClick(controls[i].first)
+                    val ctrl1 = controls[i]
+                    QuickControlPill(label = ctrl1.first, icon = ctrl1.second, modifier = Modifier.weight(1f)) {
+                        onModuleClick(ctrl1.third)
                     }
                     if (i + 1 < controls.size) {
-                        QuickControlPill(label = controls[i + 1].first, icon = controls[i + 1].second, modifier = Modifier.weight(1f)) {
-                            onModuleClick(controls[i + 1].first)
+                        val ctrl2 = controls[i + 1]
+                        QuickControlPill(label = ctrl2.first, icon = ctrl2.second, modifier = Modifier.weight(1f)) {
+                            onModuleClick(ctrl2.third)
                         }
                     } else {
                         Spacer(modifier = Modifier.weight(1f))
@@ -1337,6 +1376,8 @@ private fun QuickControlPill(
 // ============================================================================
 @Composable
 private fun WorkflowStepperBar(onModuleClick: (String) -> Unit) {
+    var activeWorkflowStep by remember { mutableStateOf("অর্ডার গ্রহণ") }
+
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -1370,7 +1411,7 @@ private fun WorkflowStepperBar(onModuleClick: (String) -> Unit) {
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF00F0FF),
-                    modifier = Modifier.clickable { onModuleClick("Workflow") }
+                    modifier = Modifier.clickable { onModuleClick("Module 04") }
                 )
             }
 
@@ -1378,12 +1419,12 @@ private fun WorkflowStepperBar(onModuleClick: (String) -> Unit) {
 
             // 6-Step Pipeline Nodes Row
             val steps = listOf(
-                Tuple4("অর্ডার গ্রহণ", "৪৪", Color(0xFF10B981), Icons.AutoMirrored.Filled.List),
-                Tuple4("ডিজাইন", "৬১", Color(0xFF10B981), Icons.Default.Star),
-                Tuple4("প্রিন্টিং", "৩৮", Color(0xFF10B981), Icons.Default.Settings),
-                Tuple4("ফিনিশিং", "২২", Color(0xFFF59E0B), Icons.Default.Settings),
-                Tuple4("প্যাকেজিং", "১৮", Color(0xFF00F0FF), Icons.Default.Info),
-                Tuple4("ডেলিভারি", "১২", Color(0xFF38BDF8), Icons.Default.CheckCircle)
+                Tuple5("অর্ডার গ্রহণ", "৪৪", Color(0xFF10B981), Icons.AutoMirrored.Filled.List, "Module 03"),
+                Tuple5("ডিজাইন", "৬১", Color(0xFF10B981), Icons.Default.Star, "Module 05"),
+                Tuple5("প্রিন্টিং", "৩৮", Color(0xFF10B981), Icons.Default.Settings, "Module 04"),
+                Tuple5("ফিনিশিং", "২২", Color(0xFFF59E0B), Icons.Default.Settings, "Module 04"),
+                Tuple5("প্যাকেজিং", "১৮", Color(0xFF00F0FF), Icons.Default.Info, "Module 07"),
+                Tuple5("ডেলিভারি", "১২", Color(0xFF38BDF8), Icons.Default.CheckCircle, "Module 08/11")
             )
 
             Box(
@@ -1410,30 +1451,40 @@ private fun WorkflowStepperBar(onModuleClick: (String) -> Unit) {
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    steps.forEach { (label, count, color, icon) ->
+                    steps.forEach { (label, count, color, icon, moduleCode) ->
+                        val isSelected = activeWorkflowStep == label
+
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.clickable { onModuleClick(label) }
+                            modifier = Modifier.clickable {
+                                activeWorkflowStep = label
+                                onModuleClick(moduleCode)
+                            }
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .size(46.dp)
+                                    .size(if (isSelected) 52.dp else 46.dp)
                                     .clip(CircleShape)
-                                    .background(Color(0xFF0B182E))
-                                    .border(2.dp, Color(0xFF00F0FF), CircleShape),
+                                    .background(if (isSelected) Color(0xFF0284C7) else Color(0xFF0B182E))
+                                    .border(if (isSelected) 2.5.dp else 1.5.dp, Color(0xFF00F0FF), CircleShape),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
                                     imageVector = icon,
                                     contentDescription = null,
-                                    tint = Color(0xFF00F0FF),
-                                    modifier = Modifier.size(22.dp)
+                                    tint = if (isSelected) Color.White else Color(0xFF00F0FF),
+                                    modifier = Modifier.size(if (isSelected) 24.dp else 22.dp)
                                 )
                             }
 
                             Spacer(modifier = Modifier.height(8.dp))
 
-                            Text(text = label, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                            Text(
+                                text = label,
+                                fontSize = 12.sp,
+                                fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Bold,
+                                color = if (isSelected) Color(0xFF00F0FF) else Color.White
+                            )
 
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Box(
@@ -1443,7 +1494,12 @@ private fun WorkflowStepperBar(onModuleClick: (String) -> Unit) {
                                         .background(color)
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text(text = count, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                Text(
+                                    text = count,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
+                                )
                             }
                         }
                     }
