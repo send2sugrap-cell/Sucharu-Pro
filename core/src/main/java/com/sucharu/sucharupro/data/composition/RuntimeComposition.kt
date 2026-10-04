@@ -296,7 +296,7 @@ class PostgresRuntimeComposition(
 class ProductionRuntimeComposition(
     private val apiGatewayUrl: String? = System.getenv("SUCHARU_API_GATEWAY_URL")
         ?: System.getProperty("sucharu.api.gateway.url")
-        ?: "http://192.168.1.100:8080", // Current Local Wi-Fi LAN IP for Physical Mobile Phone & PC Server
+        ?: "https://sucharu-backend-staging-89696832110.asia-southeast1.run.app",
     private val tokenStorage: AuthTokenStorage = InMemoryAuthTokenStorage(),
     private val authenticationProvider: com.sucharu.sucharupro.data.auth.provider.AuthenticationProvider? = null
 ) : AppRuntimeComposition {

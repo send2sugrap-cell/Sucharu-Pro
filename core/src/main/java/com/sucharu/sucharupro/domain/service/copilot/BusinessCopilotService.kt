@@ -26,7 +26,9 @@ class BusinessCopilotService {
         val proposals = mutableListOf<CopilotActionProposal>()
         var isPending = false
 
-        if (query.contains("বকেয়া") || query.contains("receivable") || query.contains("due")) {
+        if (query.contains("আসসালামু") || query.contains("সালাম") || query.contains("salam") || query.contains("হ্যালো") || query.contains("hello") || query.contains("hi") || query.equals("সালাম", ignoreCase = true)) {
+            responseText = "ওয়ালাইকুমুস সালাম! 😊 সুচারু প্রফেশনাল প্রিন্টিং ও প্যাকেজিং সেবায় আপনাকে স্বাগতম। কীভাবে সাহায্য করতে পারি?"
+        } else if (query.contains("বকেয়া") || query.contains("receivable") || query.contains("due")) {
             responseText = "আপনার বর্তমান বকেয়া অ্যাকাউন্ট বিবরণী অনুযায়ী: মোট বকেয়া ৳১৫০,০০০.০০ (ইনভয়েস #INV-002, ৩২ দিন অতিবাহিত)।"
             val proposalId = "PROP-" + UUID.randomUUID().toString().take(8).uppercase()
             val prop = CopilotActionProposal(

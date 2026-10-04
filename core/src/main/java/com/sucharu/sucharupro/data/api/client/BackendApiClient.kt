@@ -59,6 +59,12 @@ interface BackendApiClient {
         ApiResult.Error(ApiErrorResponse(errorCode = ErrorCode.INTERNAL_ERROR, message = "Not implemented in stub"))
     suspend fun exportReport(request: com.sucharu.sucharupro.data.api.model.report.ExportReportRequestDto): ApiResult<com.sucharu.sucharupro.data.api.model.report.ReportExportDocumentDto> =
         ApiResult.Error(ApiErrorResponse(errorCode = ErrorCode.INTERNAL_ERROR, message = "Not implemented in stub"))
+
+    // BI-12 Copilot / Sucharu AI Gateway Endpoints
+    suspend fun processCopilotQuery(request: com.sucharu.sucharupro.data.api.model.copilot.ProcessCopilotQueryRequestDto): ApiResult<com.sucharu.sucharupro.data.api.model.copilot.BusinessCopilotResponseDto> =
+        ApiResult.Error(ApiErrorResponse(errorCode = ErrorCode.INTERNAL_ERROR, message = "Not implemented in stub"))
+    suspend fun confirmCopilotProposal(proposalId: String): ApiResult<com.sucharu.sucharupro.data.api.model.copilot.CopilotActionProposalDto> =
+        ApiResult.Error(ApiErrorResponse(errorCode = ErrorCode.INTERNAL_ERROR, message = "Not implemented in stub"))
 }
 
 typealias DevelopmentDirectBackendApiClient = DirectBackendApiClient
@@ -546,6 +552,28 @@ class DirectBackendApiClient(
             val success = res.body as ApiSuccessResponse<*>
             @Suppress("UNCHECKED_CAST")
             ApiResult.Success(success.data as com.sucharu.sucharupro.data.api.model.report.ReportExportDocumentDto, res.correlationId)
+        } else {
+            ApiResult.Error(res.body as ApiErrorResponse)
+        }
+    }
+
+    override suspend fun processCopilotQuery(request: com.sucharu.sucharupro.data.api.model.copilot.ProcessCopilotQueryRequestDto): ApiResult<com.sucharu.sucharupro.data.api.model.copilot.BusinessCopilotResponseDto> {
+        val res = server.handle(HttpRequest(method = "POST", path = "/api/v1/copilot/query", headers = buildHeaders(), body = request))
+        return if (res.statusCode == 200) {
+            val success = res.body as ApiSuccessResponse<*>
+            @Suppress("UNCHECKED_CAST")
+            ApiResult.Success(success.data as com.sucharu.sucharupro.data.api.model.copilot.BusinessCopilotResponseDto, res.correlationId)
+        } else {
+            ApiResult.Error(res.body as ApiErrorResponse)
+        }
+    }
+
+    override suspend fun confirmCopilotProposal(proposalId: String): ApiResult<com.sucharu.sucharupro.data.api.model.copilot.CopilotActionProposalDto> {
+        val res = server.handle(HttpRequest(method = "POST", path = "/api/v1/copilot/proposals/$proposalId/confirm", headers = buildHeaders()))
+        return if (res.statusCode == 200) {
+            val success = res.body as ApiSuccessResponse<*>
+            @Suppress("UNCHECKED_CAST")
+            ApiResult.Success(success.data as com.sucharu.sucharupro.data.api.model.copilot.CopilotActionProposalDto, res.correlationId)
         } else {
             ApiResult.Error(res.body as ApiErrorResponse)
         }

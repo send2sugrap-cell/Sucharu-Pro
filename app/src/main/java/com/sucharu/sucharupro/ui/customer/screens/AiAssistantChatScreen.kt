@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -23,15 +22,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -46,10 +43,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sucharu.sucharupro.data.ai.FirebaseAiLogicProvider
+import com.sucharu.sucharupro.data.persistence.copilot.CopilotChatDatabaseHelper
 import com.sucharu.sucharupro.domain.service.ai.SucharuAiProvider
 import kotlinx.coroutines.launch
 
@@ -68,23 +67,43 @@ data class ChatMessageItem(
 fun AiAssistantChatScreen(
     modifier: Modifier = Modifier,
     onNavigateBack: () -> Unit = {},
-    aiProvider: SucharuAiProvider = remember { FirebaseAiLogicProvider() }
+    composition: com.sucharu.sucharupro.data.composition.AppRuntimeComposition? = null,
+    aiProvider: SucharuAiProvider = remember(composition) {
+        val client = (composition as? com.sucharu.sucharupro.data.composition.ProductionRuntimeComposition)?.client
+        FirebaseAiLogicProvider(apiClient = client)
+    }
 ) {
+    val context = LocalContext.current
+    val dbHelper = remember { CopilotChatDatabaseHelper(context.applicationContext) }
+
     val coroutineScope = rememberCoroutineScope()
     val listState = rememberLazyListState()
 
     var userQueryInput by remember { mutableStateOf("") }
     var isThinking by remember { mutableStateOf(false) }
 
-    val messageList = remember {
-        mutableStateListOf(
-            ChatMessageItem(
-                messageId = "MSG-001",
-                text = "আসসালামু আলাইকুম! আমি সুচারু প্রো প্রফেশনাল প্রিন্টিং ও প্যাকেজিং এআই সহকারী। কাগজের GSM, অফসেট বনাম ডিজিটাল প্রিন্টিং, স্পট UV ল্যামিনেশন বা যেকোনো তথ্যের জন্য আমাকে প্রশ্ন করুন।",
+    val messageList = remember { mutableStateListOf<ChatMessageItem>() }
+
+    // Load persisted chat history from local SQLite database
+    LaunchedEffect(Unit) {
+        val saved = dbHelper.getAllMessages()
+        if (saved.isEmpty()) {
+            val initialGreeting = ChatMessageItem(
+                messageId = "MSG-INIT-001",
+                text = "আসসালামু আলাইকুম! আমি সুচারু গ্রাফিক্সের প্রিন্টিং অ্যাডভাইজার। অফসেট বনাম ডিজিটাল প্রিন্টিং, কাগজের GSM, স্পট UV ল্যামিনেশন বা যেকোনো তথ্যের জন্য আমাকে প্রশ্ন করুন।",
                 isUser = false,
                 timestamp = "এখন"
             )
-        )
+            dbHelper.insertMessage(initialGreeting)
+            messageList.clear()
+            messageList.add(initialGreeting)
+        } else {
+            messageList.clear()
+            messageList.addAll(saved)
+        }
+        if (messageList.isNotEmpty()) {
+            listState.scrollToItem(messageList.size - 1)
+        }
     }
 
     val quickPrompts = listOf(
@@ -102,7 +121,7 @@ fun AiAssistantChatScreen(
         // ১. বর্তমান মেসেজ যোগ করার আগেই পূর্ববর্তী হিস্ট্রি সংরক্ষণ করুন
         val previousHistory = messageList.map { Pair(it.text, it.isUser) }
 
-        // ২. এবার ইউজার মেসেজ UI লিস্টে যোগ করুন
+        // ২. এবার ইউজার মেসেজ UI লিস্টে যোগ করুন এবং লোকাল ডাটাবেজে সংরক্ষণ করুন
         val userMsg = ChatMessageItem(
             messageId = "USR-" + System.currentTimeMillis(),
             text = trimmedPrompt,
@@ -114,6 +133,7 @@ fun AiAssistantChatScreen(
         isThinking = true
 
         coroutineScope.launch {
+            dbHelper.insertMessage(userMsg)
             listState.animateScrollToItem(messageList.size - 1)
 
             // ৩. এআই-তে পূর্ববর্তী হিস্ট্রি এবং নতুন প্রম্পট পাঠান
@@ -123,7 +143,7 @@ fun AiAssistantChatScreen(
                 aiProvider.generatePrintingAdvice(trimmedPrompt, null)
             }
 
-            // ৪. রেসপন্স গ্রহণ (এরর হলে রোবোটিক অফার না দিয়ে আসল সমস্যা বুঝতে এরর মেসেজ দিন)
+            // ৪. রেসপন্স গ্রহণ (এরর হলে মেসেজ দিন)
             val replyText = aiResult.getOrElse { error ->
                 android.util.Log.e("ChatViewModel", "AI Error: ${error.message}")
                 "দুঃখিত, সার্ভারের সাথে সংযোগে সমস্যা হচ্ছে। কিছুক্ষণ পর আবার চেষ্টা করুন।"
@@ -136,6 +156,7 @@ fun AiAssistantChatScreen(
                 timestamp = "এখন"
             )
             messageList.add(aiMsg)
+            dbHelper.insertMessage(aiMsg)
             isThinking = false
             listState.animateScrollToItem(messageList.size - 1)
         }
@@ -183,10 +204,10 @@ fun AiAssistantChatScreen(
 
                 Spacer(modifier = Modifier.width(10.dp))
 
-                Column {
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "স্মার্ট AI প্রিন্টিং সহকারী",
-                        fontSize = 16.sp,
+                        text = "সুচারু গ্রাফিক্সের প্রিন্টিং অ্যাডভাইজার",
+                        fontSize = 21.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
                     )
@@ -199,12 +220,34 @@ fun AiAssistantChatScreen(
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = "Gemini AI Advisor • Online",
-                            fontSize = 10.sp,
+                            text = "Online • Smart Advisor",
+                            fontSize = 13.sp,
                             color = Color(0xFF10B981),
                             fontWeight = FontWeight.Bold
                         )
                     }
+                }
+
+                // Clear Chat History Option
+                IconButton(onClick = {
+                    coroutineScope.launch {
+                        dbHelper.clearHistory()
+                        val initialGreeting = ChatMessageItem(
+                            messageId = "MSG-INIT-" + System.currentTimeMillis(),
+                            text = "আসসালামু আলাইকুম! আমি সুচারু গ্রাফিক্সের প্রিন্টিং অ্যাডভাইজার। অফসেট বনাম ডিজিটাল প্রিন্টিং, কাগজের GSM, স্পট UV ল্যামিনেশন বা যেকোনো তথ্যের জন্য আমাকে প্রশ্ন করুন।",
+                            isUser = false,
+                            timestamp = "এখন"
+                        )
+                        dbHelper.insertMessage(initialGreeting)
+                        messageList.clear()
+                        messageList.add(initialGreeting)
+                    }
+                }) {
+                    Icon(
+                        imageVector = Icons.Default.DeleteOutline,
+                        contentDescription = "Clear Chat",
+                        tint = Color(0xFF94A3B8)
+                    )
                 }
             }
         }
@@ -227,7 +270,7 @@ fun AiAssistantChatScreen(
                     Text(
                         text = prompt,
                         color = Color(0xFF38BDF8),
-                        fontSize = 11.sp,
+                        fontSize = 14.sp,
                         fontWeight = FontWeight.Medium,
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                     )
@@ -263,7 +306,7 @@ fun AiAssistantChatScreen(
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = "সুচারু এআই এজেন্ট উত্তর তৈরি করছে...",
-                            fontSize = 12.sp,
+                            fontSize = 15.sp,
                             color = Color(0xFF94A3B8)
                         )
                     }
@@ -323,8 +366,8 @@ private fun ChatMessageBubble(msg: ChatMessageItem) {
                 Text(
                     text = msg.text,
                     color = Color.White,
-                    fontSize = 13.sp,
-                    lineHeight = 18.sp
+                    fontSize = 16.sp,
+                    lineHeight = 22.sp
                 )
             }
         }
@@ -345,30 +388,6 @@ private fun ChatMessageBubble(msg: ChatMessageItem) {
                     modifier = Modifier.size(16.dp)
                 )
             }
-        }
-    }
-}
-
-private fun getFallbackPrintingAdvice(prompt: String): String {
-    val text = prompt.lowercase()
-    return when {
-        text.contains("সালাম") || text.contains("আসসালামু") || text.contains("হ্যালো") || text.contains("hi") || text.contains("hello") -> {
-            "ওয়ালাইকুম আসসালাম! সুচারু প্রো প্রিন্টিং ও প্যাকেজিং সেবায় আপনাকে স্বাগতম। বলুন, আপনার ব্যবসার জন্য কী ধরনের কার্ড বা প্রিন্টিং সহায়তা প্রয়োজন?"
-        }
-        text.contains("কার্ড") || text.contains("দোকান") || text.contains("চাউল") || text.contains("ভিজিটিং") -> {
-            "আপনার প্রতিষ্ঠানের ব্যবসার জন্য ৩০০ GSM প্রিমিয়াম ম্যাট ল্যামিনেশন ও স্পট UV ভিজিটিং কার্ড সবচেয়ে আকর্ষণীয় হবে। ১০০০ পিসের বিশেষ অফারে প্রফেশনাল আর্ট কার্ড প্রিন্ট করে নিতে পারবেন।"
-        }
-        text.contains("gsm") || text.contains("জিএসএম") -> {
-            "প্রিন্টিং-এ সাধারণ ভিজিটিং কার্ডের জন্য ৩০০ GSM আর্ট কার্ড, পোস্টার ও ফ্লাইয়ারের জন্য ১৫০ GSM আর্ট পেপার এবং লিফলেটের জন্য ১০০ GSM আর্ট পেপার সবচেয়ে উপযুক্ত।"
-        }
-        text.contains("অফসেট") || text.contains("ডিজিটাল") -> {
-            "১০০০ পিস বা তার বেশি অর্ডারের জন্য অফসেট প্রিন্টিং খরচ অনেক কম হয়। তবে দ্রুত ১ ঘণ্টার মধ্যে বা অল্প ২০-৫০ পিস প্রিন্টের জন্য ডিজিটাল প্রিন্টিং সেরা।"
-        }
-        text.contains("স্পট") || text.contains("ল্যামিনেশন") -> {
-            "ম্যাট ল্যামিনেশনের ওপর লোগো বা নির্দিষ্ট টেক্সটকে চকচকে ও উঁচিয়ে দেখানোর জন্য 'স্পট UV' ল্যামিনেশন ব্যবহার করা হয়, যা কার্ডকে প্রফেশনাল আউটলুক দেয়।"
-        }
-        else -> {
-            "সুচারু কমার্শিয়াল প্রিন্টিং ও প্যাকেজিং অর্ডারের জন্য ১০০০ পিসে বিশেষ ছাড় চলছে। আপনার পছন্দের সাইজ, ডিজাইন ও পরিমাণ জানান, আমরা বিস্তারিত হিসাব জানিয়ে দেব।"
         }
     }
 }

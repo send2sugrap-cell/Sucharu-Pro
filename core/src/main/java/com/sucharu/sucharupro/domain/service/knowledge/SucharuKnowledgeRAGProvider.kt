@@ -362,24 +362,42 @@ class SucharuKnowledgeRAGProvider {
         category: KnowledgeCategory? = null,
         userRole: String = "CUSTOMER"
     ): List<KnowledgeSearchResult> {
-        val lowerQuery = query.lowercase()
+        val lowerQuery = query.lowercase().trim()
 
-        return knowledgeStore.values
+        val directMatches = knowledgeStore.values
             .filter { doc -> doc.status == KnowledgeStatus.PUBLISHED || doc.status == KnowledgeStatus.APPROVED }
             .filter { doc -> category == null || doc.category == category }
             .filter { doc -> isRoleAuthorizedForSensitivity(userRole, doc.sensitivity) }
             .filter { doc ->
+                lowerQuery.split(" ", "-", "_", ",", "।", "?").any { token ->
+                    token.length >= 2 && (
+                        doc.title.lowercase().contains(token) ||
+                        doc.contentChunk.lowercase().contains(token) ||
+                        doc.tags.any { it.lowercase().contains(token) }
+                    )
+                } ||
                 doc.title.lowercase().contains(lowerQuery) ||
-                doc.contentChunk.lowercase().contains(lowerQuery) ||
-                doc.tags.any { it.lowercase().contains(lowerQuery) }
+                doc.contentChunk.lowercase().contains(lowerQuery)
             }
-            .map { doc ->
-                KnowledgeSearchResult(
-                    document = doc,
-                    relevanceScore = 0.95,
-                    matchSnippet = doc.contentChunk.take(150) + "..."
-                )
-            }
+
+        val docsToReturn = if (directMatches.isNotEmpty()) {
+            directMatches
+        } else {
+            // General query fallback: Retrieve public & customer-visible core printing technical & service SOPs
+            knowledgeStore.values
+                .filter { doc -> doc.status == KnowledgeStatus.PUBLISHED || doc.status == KnowledgeStatus.APPROVED }
+                .filter { doc -> isRoleAuthorizedForSensitivity(userRole, doc.sensitivity) }
+                .filter { doc -> doc.sensitivity == KnowledgeSensitivity.PUBLIC || doc.sensitivity == KnowledgeSensitivity.CUSTOMER_VISIBLE }
+                .take(3)
+        }
+
+        return docsToReturn.map { doc ->
+            KnowledgeSearchResult(
+                document = doc,
+                relevanceScore = 0.95,
+                matchSnippet = doc.contentChunk.take(150) + "..."
+            )
+        }
     }
 
     /**

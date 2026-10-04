@@ -360,4 +360,12 @@ class HttpBackendApiClient(
     override suspend fun exportReport(request: com.sucharu.sucharupro.data.api.model.report.ExportReportRequestDto): ApiResult<com.sucharu.sucharupro.data.api.model.report.ReportExportDocumentDto> {
         return request("POST", "/api/v1/reports/export", body = request, typeToken = object : TypeToken<com.sucharu.sucharupro.data.api.model.report.ReportExportDocumentDto>() {}.type)
     }
+
+    override suspend fun processCopilotQuery(request: com.sucharu.sucharupro.data.api.model.copilot.ProcessCopilotQueryRequestDto): ApiResult<com.sucharu.sucharupro.data.api.model.copilot.BusinessCopilotResponseDto> {
+        return request("POST", "/api/v1/copilot/query", body = request, typeToken = object : TypeToken<com.sucharu.sucharupro.data.api.model.copilot.BusinessCopilotResponseDto>() {}.type)
+    }
+
+    override suspend fun confirmCopilotProposal(proposalId: String): ApiResult<com.sucharu.sucharupro.data.api.model.copilot.CopilotActionProposalDto> {
+        return request("POST", "/api/v1/copilot/proposals/$proposalId/confirm", typeToken = object : TypeToken<com.sucharu.sucharupro.data.api.model.copilot.CopilotActionProposalDto>() {}.type)
+    }
 }

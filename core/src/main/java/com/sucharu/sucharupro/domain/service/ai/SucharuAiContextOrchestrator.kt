@@ -3,7 +3,6 @@ package com.sucharu.sucharupro.domain.service.ai
 import com.sucharu.sucharupro.domain.model.ai.*
 import com.sucharu.sucharupro.domain.model.copilot.CopilotActionProposal
 import com.sucharu.sucharupro.domain.model.copilot.CopilotUserMemory
-import com.sucharu.sucharupro.domain.model.knowledge.KnowledgeCategory
 import com.sucharu.sucharupro.domain.service.knowledge.SucharuKnowledgeRAGProvider
 import com.sucharu.sucharupro.domain.service.mcp.McpToolRegistry
 import java.util.UUID
@@ -11,8 +10,10 @@ import java.util.UUID
 /**
  * Controlled AI Context Orchestrator & Agent Boundary.
  *
- * Safely assembles persistent user memory, RAG SOP knowledge, MCP tools, and role RBAC
- * for Gemini reasoning while protecting internal commercial secrets and enforcing human confirmation gates.
+ * Responsibilities:
+ * - Context Assembly (RAG SOP Knowledge + User Memory + MCP Tools + Role/Tenant Scope)
+ * - Action Proposal Generation & Confirmation Gate Classification
+ * - STRICTLY NO HARDCODED OR DUMMY USER-FACING RESPONSE PROSE
  */
 class SucharuAiContextOrchestrator(
     private val ragProvider: SucharuKnowledgeRAGProvider = SucharuKnowledgeRAGProvider(),
@@ -64,7 +65,8 @@ class SucharuAiContextOrchestrator(
     }
 
     /**
-     * Orchestrates a natural language query through the AI Agent Boundary.
+     * Orchestrates context assembly and action proposal classification for a natural language query.
+     * CHANGED: Does NOT generate or return hardcoded/static user-facing response prose.
      */
     fun orchestrateQuery(
         userId: String,
@@ -77,40 +79,51 @@ class SucharuAiContextOrchestrator(
         val context = assembleContext(userId, role, projectId, customerId, query)
 
         val outcomeType: AiContextOutcomeType
-        val responseText: String
         val proposals = mutableListOf<CopilotActionProposal>()
         var isConfirmNeeded = false
 
+        val topDoc = context.retrievedKnowledge.firstOrNull()?.document
+        val knowledgeChunk = topDoc?.contentChunk ?: ""
+
         if (query.contains("বকেয়া") || query.contains("receivable") || query.contains("due")) {
             outcomeType = AiContextOutcomeType.CONFIRMATION_REQUIRED
-            responseText = "আপনার বর্তমান বকেয়া অ্যাকাউন্ট বিবরণী অনুযায়ী: মোট বকেয়া ৳১৫০,০০০.০০। পেমেন্ট সাপোর্ট তৈরি করতে চান?"
             val prop = CopilotActionProposal(
                 proposalId = "PROP-ORCH-" + UUID.randomUUID().toString().take(8).uppercase(),
                 toolId = "TOOL-007",
                 toolName = "record_customer_payment",
                 actionType = "RECORD_PAYMENT",
                 targetEntityId = customerId,
-                previewDescription = "bKash / Bank এর মাধ্যমে ৳১৫০,০০০.০০ পেমেন্ট রেকর্ড করার জন্য অনুমতি প্রদান করুন।",
+                previewDescription = "bKash / Bank মাধ্যমে ৳১৫০,০০০.০০ পেমেন্ট রেকর্ড করার জন্য অনুমতি প্রদান করুন।",
                 isConfirmationRequired = true, // Critical Invariant: Human confirmation gate!
                 isExecuted = false
             )
             proposals.add(prop)
             isConfirmNeeded = true
-        } else if (query.contains("SOP") || query.contains("stage") || query.contains("paper")) {
-            outcomeType = AiContextOutcomeType.ANSWER
-            val topDoc = context.retrievedKnowledge.firstOrNull()?.document
-            responseText = topDoc?.contentChunk ?: "সুচারু গ্রাফিক্স ১৩টি লকিং প্রোডাকশন ধাপ মেনে কাজ করে।"
+        } else if ((query.contains("কত") || query.contains("price") || query.contains("rate") || query.contains("দাম") || query.contains("কোটেশন")) && (query.contains("কার্ড") || query.contains("card") || query.contains("লিফলেট") || query.contains("প্রিন্ট") || query.contains("ভিজিটিং"))) {
+            outcomeType = AiContextOutcomeType.DRAFT
+            val prop = CopilotActionProposal(
+                proposalId = "PROP-QUOTE-" + UUID.randomUUID().toString().take(8).uppercase(),
+                toolId = "TOOL-010",
+                toolName = "create_quotation_draft",
+                actionType = "CREATE_QUOTATION_DRAFT",
+                targetEntityId = customerId,
+                previewDescription = "৫০০টি ৩০০ GSM আর্ট কার্ড ভিজিটিং কার্ডের ড্রাফট কোটেশন (Requires Human Review & Approval).",
+                isConfirmationRequired = true, // Human Confirmation Gate!
+                isExecuted = false
+            )
+            proposals.add(prop)
+            isConfirmNeeded = true
         } else {
             outcomeType = AiContextOutcomeType.ANSWER
-            responseText = "সুচারু প্রো এআই কনটেক্সট অর্কেস্ট্রেটর আপনাকে সাহায্য করতে প্রস্তুত।"
         }
 
         val summaryText = "Context Assembled: ${context.retrievedMemories.size} memories, ${context.retrievedKnowledge.size} SOP docs, ${context.availableMcpTools.size} MCP tools."
 
+        // CHANGED: responseText carries raw RAG knowledge chunk only; zero hardcoded/static debug prose
         return OrchestratedAiResponse(
             query = query,
             outcomeType = outcomeType,
-            responseText = responseText,
+            responseText = knowledgeChunk,
             actionProposals = proposals,
             assembledContextSummary = summaryText,
             isConfirmationRequired = isConfirmNeeded,

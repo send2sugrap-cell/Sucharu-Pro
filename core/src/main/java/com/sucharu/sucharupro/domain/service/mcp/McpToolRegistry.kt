@@ -27,6 +27,7 @@ class McpToolRegistry {
         register(CopilotToolDefinition("TOOL-007", "record_customer_payment", "Submits a proposal to record customer payment (requires human confirmation)", CopilotToolRiskLevel.CONFIRM_REQUIRED, "CUSTOMER_PAYMENT_CREATE"))
         register(CopilotToolDefinition("TOOL-008", "accept_and_lock_quotation", "Submits a proposal to accept quotation and lock commercial terms (requires human confirmation)", CopilotToolRiskLevel.CONFIRM_REQUIRED, "QUOTATION_LOCK_MANAGE"))
         register(CopilotToolDefinition("TOOL-009", "dispatch_communication_event", "Submits a proposal to dispatch automated customer communication (requires human confirmation)", CopilotToolRiskLevel.CONFIRM_REQUIRED, "COMMUNICATION_MANAGE"))
+        register(CopilotToolDefinition("TOOL-010", "create_quotation_draft", "Creates an R1 draft quotation for human review and commercial lock", CopilotToolRiskLevel.PREPARE_ACTION, "QUOTATION_LOCK_MANAGE"))
     }
 
     fun register(tool: CopilotToolDefinition) {

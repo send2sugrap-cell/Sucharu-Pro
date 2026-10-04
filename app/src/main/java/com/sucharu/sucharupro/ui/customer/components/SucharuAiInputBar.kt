@@ -195,7 +195,7 @@ fun SucharuAiInputBar(
                     Text(
                         text = if (micState == MicState.LISTENING) "কথা বলুন... (বাংলা)" else placeholderText,
                         color = if (micState == MicState.LISTENING) Color(0xFFEF4444) else Color(0xFF94A3B8),
-                        fontSize = 12.sp
+                        fontSize = 15.sp
                     )
                 },
                 leadingIcon = {

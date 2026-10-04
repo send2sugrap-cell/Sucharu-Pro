@@ -72,7 +72,8 @@ fun PublicWorkspaceShell(
     onNavigate: (AppDestination) -> Unit,
     modifier: Modifier = Modifier,
     isDemoMode: Boolean = false,
-    onTryDemo: (() -> Unit)? = null
+    onTryDemo: (() -> Unit)? = null,
+    composition: com.sucharu.sucharupro.data.composition.AppRuntimeComposition? = null
 ) {
     if (currentDestination is AppDestination.Public.Home) {
         SucharuWallScreen(
@@ -115,7 +116,8 @@ fun PublicWorkspaceShell(
                 is AppDestination.Public.Faq -> PublicFaqView(onNavigate = onNavigate)
                 is AppDestination.Public.Contact, is AppDestination.Public.Location -> PublicContactView(onNavigate = onNavigate)
                 is AppDestination.Public.PublicAiAssistant -> com.sucharu.sucharupro.ui.customer.screens.AiAssistantChatScreen(
-                    onNavigateBack = { onNavigate(AppDestination.Public.Home) }
+                    onNavigateBack = { onNavigate(AppDestination.Public.Home) },
+                    composition = composition
                 )
                 else -> SucharuWallScreen(
                     viewModel = viewModel { SucharuWallViewModel() },

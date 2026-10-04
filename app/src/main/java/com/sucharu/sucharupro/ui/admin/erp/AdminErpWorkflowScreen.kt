@@ -42,7 +42,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 @Composable
 fun AdminErpWorkflowScreen(
     modifier: Modifier = Modifier,
-    viewModel: AdminErpWorkflowViewModel = viewModel { AdminErpWorkflowViewModel() }
+    viewModel: AdminErpWorkflowViewModel = viewModel { AdminErpWorkflowViewModel() },
+    onNavigateToDestination: (com.sucharu.sucharupro.ui.navigation.AppDestination) -> Unit = {}
 ) {
     val scrollState = rememberScrollState()
 
@@ -186,5 +187,12 @@ fun AdminErpWorkflowScreen(
             Spacer(modifier = Modifier.height(8.dp))
             Text(text = msg, color = Color(0xFF10B981), fontSize = 12.sp, fontWeight = FontWeight.Bold)
         }
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        // SECTION 04: 24-Module Master Control Center Grid Widget
+        com.sucharu.sucharupro.ui.admin.components.AdminMasterModulesGridCard(
+            onNavigateToDestination = onNavigateToDestination
+        )
     }
 }

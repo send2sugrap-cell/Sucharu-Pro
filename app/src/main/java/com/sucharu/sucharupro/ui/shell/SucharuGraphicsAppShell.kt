@@ -507,7 +507,8 @@ fun SucharuGraphicsAppShell(
                             currentDestination = currentDestination,
                             onNavigate = { dest -> navigationManager.navigateTo(dest, (entryState as? AppEntryState.Authenticated)?.principal) },
                             isDemoMode = isDemoMode,
-                            onTryDemo = if (isDemoMode) { { activeAuthScreenOverride = "demo_role_selector" } } else null
+                            onTryDemo = if (isDemoMode) { { activeAuthScreenOverride = "demo_role_selector" } } else null,
+                            composition = composition
                         )
                     } else {
                         when (val state = entryState) {
@@ -523,7 +524,8 @@ fun SucharuGraphicsAppShell(
                                     currentDestination = currentDestination,
                                     onNavigate = { dest -> navigationManager.navigateTo(dest, null) },
                                     isDemoMode = isDemoMode,
-                                    onTryDemo = if (isDemoMode) { { activeAuthScreenOverride = "demo_role_selector" } } else null
+                                    onTryDemo = if (isDemoMode) { { activeAuthScreenOverride = "demo_role_selector" } } else null,
+                                    composition = composition
                                 )
                             }
 
@@ -567,7 +569,8 @@ fun SucharuGraphicsAppShell(
                                             currentDestination = currentDestination,
                                             onNavigate = { dest -> navigationManager.navigateTo(dest, principal) },
                                             isDemoMode = isDemoMode,
-                                            onTryDemo = if (isDemoMode) { { activeAuthScreenOverride = "demo_role_selector" } } else null
+                                            onTryDemo = if (isDemoMode) { { activeAuthScreenOverride = "demo_role_selector" } } else null,
+                                            composition = composition
                                         )
                                     }
                                 }

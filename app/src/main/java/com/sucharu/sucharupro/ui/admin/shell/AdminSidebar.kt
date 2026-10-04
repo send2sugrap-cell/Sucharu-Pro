@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Print
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
@@ -71,13 +72,13 @@ fun AdminSidebar(
     val navItems = remember {
         listOf(
             CustomAdminSidebarItem(AppDestination.Admin.FullAdministration, "Dashboard", Icons.Default.Dashboard),
-            CustomAdminSidebarItem(AppDestination.Customer.Orders, "Orders", Icons.Default.Print),
+            CustomAdminSidebarItem(AppDestination.Customer.Orders, "Orders", Icons.Default.ShoppingCart),
             CustomAdminSidebarItem(AppDestination.Admin.PrepressOrchestration, "Production", Icons.Default.Print),
             CustomAdminSidebarItem(AppDestination.Admin.AffiliateManagement, "Affiliate", Icons.Default.Campaign),
             CustomAdminSidebarItem(AppDestination.Admin.Finance, "Finance", Icons.Default.AccountBalanceWallet),
             CustomAdminSidebarItem(AppDestination.Admin.Reports, "Reports", Icons.Default.Analytics),
             CustomAdminSidebarItem(AppDestination.Admin.Users, "Users", Icons.Default.Group),
-            CustomAdminSidebarItem(AppDestination.Admin.Settings, "Settings", Icons.Default.ChevronRight)
+            CustomAdminSidebarItem(AppDestination.Admin.Configuration, "Settings", Icons.Default.ChevronRight)
         )
     }
 

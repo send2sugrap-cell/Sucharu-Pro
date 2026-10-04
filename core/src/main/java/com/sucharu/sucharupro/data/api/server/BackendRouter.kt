@@ -2685,6 +2685,11 @@ class BackendRouter(
             handleReportingRoutes(request, correlationId) ?: HttpResponse(404, ApiErrorResponse(errorCode = ErrorCode.NOT_FOUND, message = "API endpoint not found: ${request.path}"), correlationId)
         }
 
+        // BI-12 - Copilot / Sucharu AI Gateway Routes Delegation
+        request.path.startsWith("/api/v1/copilot/") -> {
+            handleCopilotRoutes(request, correlationId) ?: HttpResponse(404, ApiErrorResponse(errorCode = ErrorCode.NOT_FOUND, message = "API endpoint not found: ${request.path}"), correlationId)
+        }
+
         request.path.matches(Regex("^/api/v1/shop-floor-tracking/jobs/[^/]+/telemetry$")) && request.method == "GET" -> {
             val principal = securityContext.authenticate(request.authorizationHeader)
             val jobId = request.path.removePrefix("/api/v1/shop-floor-tracking/jobs/").removeSuffix("/telemetry")
