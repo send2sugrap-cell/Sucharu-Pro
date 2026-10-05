@@ -46,14 +46,16 @@ import kotlin.math.ceil
 
 /**
  * Complete Multiplatform Commercial Printing Calculator Engine Workspace.
- * Full Substrate Selection, Job Specifications, Pre-Press CTP, Offset Machine Rates,
+ * Substrate Selection, Job Specifications, Pre-Press CTP, Offset Machine Rates,
  * Post-Press Finishing Operations (Lamination, Die-Cut, Spot UV, Folding, Binding),
- * and Real-Time Quotation Cost Breakdown.
+ * Material Optimization Display (Items/Sheet, Cut Direction, Paper Weight Kg),
+ * and Module 03 Quotation Handoff Contract Integration.
  */
 @Composable
 fun SharedPrintingCalculatorWorkspace(
     modifier: Modifier = Modifier,
-    onClose: () -> Unit = {}
+    onClose: () -> Unit = {},
+    onConfirmQuotation: (calculationId: String) -> Unit = {}
 ) {
     var selectedSectorIndex by remember { mutableIntStateOf(0) }
 
@@ -95,12 +97,20 @@ fun SharedPrintingCalculatorWorkspace(
         "৮. প্যাকেজিং ও কার্টন"
     )
 
-    // Calculation Engine
+    // Calculation Engine Math
     val quantity = quantityInput.toDoubleOrNull() ?: 1000.0
     val pages = pagesInput.toDoubleOrNull() ?: 2.0
     val reamPrice = reamPriceInput.toDoubleOrNull() ?: 3200.0
     val wasteSheets = wasteSheetsInput.toDoubleOrNull() ?: 100.0
     val marginPercent = marginPercentInput.toDoubleOrNull() ?: 20.0
+    val gsmVal = selectedGsm.replace(" GSM", "").toDoubleOrNull() ?: 150.0
+
+    // Sheet Dimensions in inches
+    val (sheetWidthIn, sheetHeightIn) = when {
+        selectedSheetSize.contains("23") -> Pair(23.0, 36.0)
+        selectedSheetSize.contains("25") -> Pair(25.0, 37.0)
+        else -> Pair(20.0, 30.0)
+    }
 
     // Cut items per full sheet logic
     val itemsPerSheet = when {
@@ -111,17 +121,23 @@ fun SharedPrintingCalculatorWorkspace(
         selectedCutSize.contains("Flyer") -> 16
         else -> 6
     }
+    val cutDirection = "Grid Layout ($itemsPerSheet up)"
 
     val totalCutItems = quantity * (pages / 2.0)
-    val netSheets = ceil(totalCutItems / itemsPerSheet)
-    val totalFullSheets = netSheets + wasteSheets
+    val productiveSheets = ceil(totalCutItems / itemsPerSheet)
+    val totalFullSheets = productiveSheets + wasteSheets
     val reamsRequired = totalFullSheets / 500.0
+
+    // Paper Weight in KG
+    val sheetAreaSqM = (sheetWidthIn * sheetHeightIn) * 0.00064516
+    val paperWeightKg = (sheetAreaSqM * gsmVal * totalFullSheets) / 1000.0
 
     // Paper Cost
     val paperCost = reamsRequired * reamPrice
 
-    // Plate Cost
+    // CTP Plate Cost & Passes
     val platesPerSet = when {
+        selectedColorMode.contains("CMYK 4-Color Double") -> 8
         selectedColorMode.contains("CMYK 4-Color") -> 4
         selectedColorMode.contains("2-Color") -> 2
         else -> 1
@@ -136,7 +152,7 @@ fun SharedPrintingCalculatorWorkspace(
     // Printing Cost
     val impressionRate = 180.0 // per 1000 impressions
     val setupCharge = 600.0
-    val totalImpressions = totalFullSheets * platesPerSet
+    val totalImpressions = (totalFullSheets * platesPerSet).toLong()
     val printingCost = setupCharge + (ceil(totalImpressions / 1000.0) * impressionRate)
 
     // Finishing Costs
@@ -146,7 +162,7 @@ fun SharedPrintingCalculatorWorkspace(
         selectedLamination.contains("Cold Gloss") -> 0.50
         else -> 0.0
     }
-    val laminationCost = totalFullSheets * 4.16 * laminationUnitPrice // 20x30 = ~4.16 sq.ft
+    val laminationCost = totalFullSheets * ((sheetWidthIn * sheetHeightIn) / 144.0) * laminationUnitPrice
     val dieCuttingCost = if (dieCuttingEnabled) (800.0 + (quantity * 0.20)) else 0.0
     val spotUvCost = if (spotUvEnabled) (1200.0 + (quantity * 0.50)) else 0.0
     val foldingUnitPrice = when {
@@ -165,11 +181,13 @@ fun SharedPrintingCalculatorWorkspace(
     val bindingCost = quantity * bindingUnitRate
     val finishingCost = laminationCost + dieCuttingCost + spotUvCost + foldingCost + bindingCost
 
-    // Total Financial Summary
+    // Financial Summary
     val netProductionCost = paperCost + plateCost + printingCost + finishingCost
     val marginAmount = netProductionCost * (marginPercent / 100.0)
     val grandTotalEstimate = netProductionCost + marginAmount
     val unitCost = if (quantity > 0) grandTotalEstimate / quantity else 0.0
+
+    val generatedCalculationId = remember(grandTotalEstimate) { "CALC-2026-${(1000..9999).random()}" }
 
     Column(
         modifier = modifier
@@ -504,7 +522,7 @@ fun SharedPrintingCalculatorWorkspace(
                 }
             }
 
-            // Right Column: Live Real-Time Quotation Breakdown
+            // Right Column: Material Optimization & Quotation Breakdown
             Card(
                 modifier = Modifier.weight(1.1f),
                 shape = RoundedCornerShape(14.dp),
@@ -513,29 +531,48 @@ fun SharedPrintingCalculatorWorkspace(
             ) {
                 Column(modifier = Modifier.padding(18.dp)) {
                     Text(
-                        text = "প্রিন্টিং কস্ট এস্টিমেট ও কোটেশন ব্রেকডাউন",
+                        text = "প্রিন্টিং কস্ট এস্টিমেট ও ম্যাটেরিয়াল অপ্টিমাইজেশন",
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Black,
                         color = Color.White
                     )
                     Text(
-                        text = "সেক্টর: ${sectorTabs[selectedSectorIndex]}",
+                        text = "সেক্টর: ${sectorTabs[selectedSectorIndex]} • আইডি: $generatedCalculationId",
                         fontSize = 11.sp,
                         color = Color(0xFF00F0FF),
                         fontWeight = FontWeight.Bold
                     )
 
-                    Spacer(modifier = Modifier.height(14.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    // Material Optimization Box
+                    Surface(
+                        color = Color(0xFF060D1A),
+                        shape = RoundedCornerShape(10.dp),
+                        border = BorderStroke(1.dp, Color(0xFF0284C7)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(10.dp)) {
+                            Text(text = "মেটেরিয়াল ও শিট কাটিং অপ্টিমাইজেশন", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF00F0FF))
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(text = "• শিট প্রতি কাট: $itemsPerSheet পিস ($cutDirection)", fontSize = 11.sp, color = Color.White)
+                            Text(text = "• প্রয়োজনীয় মোট কাগজ: ${reamsRequired.formatDec()} রিম (${totalFullSheets.toInt()} শিট)", fontSize = 11.sp, color = Color.White)
+                            Text(text = "• প্রোডাক্টিভ শিট: ${productiveSheets.toInt()} | ওয়েস্টেজ/মেক-রেডি: ${wasteSheets.toInt()}", fontSize = 10.sp, color = Color(0xFF94A3B8))
+                            Text(text = "• আনুমানিক মোট কাগজের ওজন: ${paperWeightKg.formatDec()} কেজি", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF10B981))
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
 
                     CostBreakdownRow("কাগজ খরচ (Paper Cost)", "৳ ${paperCost.toInt()}", "${reamsRequired.formatDec()} রিম (${totalFullSheets.toInt()} শিট)")
-                    CostBreakdownRow("প্লেট/সিটিপি খরচ (CTP Plate)", "৳ ${plateCost.toInt()}", "$platesPerSet টি CTP প্লেট")
-                    CostBreakdownRow("প্রিন্টিং ছাপাই খরচ (Press)", "৳ ${printingCost.toInt()}", "ছাপাই পাস + সেটআপ")
+                    CostBreakdownRow("প্লেট/সিটিপি খরচ (CTP Plate)", "৳ ${plateCost.toInt()}", "$platesPerSet টি CTP প্লেট ($totalImpressions ইমপ্রেশন)")
+                    CostBreakdownRow("প্রিন্টিং ছাপাই খরচ (Press)", "৳ ${printingCost.toInt()}", "ছাপাই পাস + সেটআপ চার্জ")
                     CostBreakdownRow("ফিনিশিং ও বাইন্ডিং খরচ", "৳ ${finishingCost.toInt()}", "লেমিনেশন/ডাই/বাইন্ডিং")
 
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 8.dp)
+                            .padding(vertical = 6.dp)
                             .height(1.dp)
                             .background(Color(0xFF1E293B))
                     )
@@ -543,7 +580,7 @@ fun SharedPrintingCalculatorWorkspace(
                     CostBreakdownRow("প্রোডাকশন সাবটোটাল", "৳ ${netProductionCost.toInt()}", "উৎপাদন নিট খরচ")
                     CostBreakdownRow("মার্জিন (${marginPercent.toInt()}%)", "৳ ${marginAmount.toInt()}", "প্রফিট মার্জিন")
 
-                    Spacer(modifier = Modifier.height(14.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
 
                     // Final Total Box
                     Surface(
@@ -552,7 +589,7 @@ fun SharedPrintingCalculatorWorkspace(
                         border = BorderStroke(1.5.dp, Color(0xFF10B981)),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Column(modifier = Modifier.padding(14.dp)) {
+                        Column(modifier = Modifier.padding(12.dp)) {
                             Text(text = "সর্বমোট আনুমানিক কোটেশন মূল্য", fontSize = 11.sp, color = Color(0xFF94A3B8))
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -561,14 +598,14 @@ fun SharedPrintingCalculatorWorkspace(
                             ) {
                                 Text(
                                     text = "৳ ${grandTotalEstimate.toInt()}.০০",
-                                    fontSize = 26.sp,
+                                    fontSize = 24.sp,
                                     fontWeight = FontWeight.Black,
                                     color = Color(0xFF10B981)
                                 )
                                 Column(horizontalAlignment = Alignment.End) {
                                     Text(
                                         text = "প্রতি পিস ৳ ${unitCost.formatDec()}",
-                                        fontSize = 13.sp,
+                                        fontSize = 12.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = Color(0xFF00F0FF)
                                     )
@@ -578,24 +615,27 @@ fun SharedPrintingCalculatorWorkspace(
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
-                    // Action Buttons
+                    // Quotation Handoff CTA Button (Module 03 Integration)
                     Surface(
                         color = Color(0xFF0284C7),
                         shape = RoundedCornerShape(10.dp),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { onClose() }
+                            .clickable {
+                                onConfirmQuotation(generatedCalculationId)
+                                onClose()
+                            }
                     ) {
                         Box(
                             modifier = Modifier.padding(vertical = 12.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "অর্ডার ও কোটেশন কনফার্ম করুন (Order Confirm)",
+                                text = "কোটেশন রিকোয়েস্ট পাঠান (Handoff to Module 03)",
                                 color = Color.White,
-                                fontSize = 13.sp,
+                                fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold
                             )
                         }

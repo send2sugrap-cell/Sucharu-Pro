@@ -128,7 +128,10 @@ fun main() {
                                 onModuleClick = { moduleCode -> activeModuleDetail = moduleCode }
                             )
                             1 -> SharedPrintingCalculatorWorkspace(
-                                onClose = { selectedWebTab = 0 }
+                                onClose = { selectedWebTab = 0 },
+                                onConfirmQuotation = { _ ->
+                                    activeModuleDetail = "Module 03"
+                                }
                             )
                             2 -> SharedPublicWallWorkspace(
                                 onOpenAdmin = { selectedWebTab = 0 },
