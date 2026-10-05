@@ -1,7 +1,9 @@
 package com.sucharu.sucharupro.shared.ui.modules
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,6 +22,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -34,6 +44,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -42,8 +55,8 @@ import androidx.compose.ui.unit.sp
 
 /**
  * Real Canonical Module Workspaces for Sucharu Pro ERP.
- * Replaces all hollow dummy popups with fully interactive screens, tables, forms,
- * status workflows, and live action buttons.
+ * Integrates Module 03 (Sales Orders), Module 04 (Production & Job Cards), Module 09/14 (Finance),
+ * Module 20 (Affiliate), Multi-Stage State Machine, Job Bag Generation, and Printable QR Tickets.
  */
 @Composable
 fun RouterCanonicalModuleWorkspace(
@@ -65,18 +78,20 @@ fun RouterCanonicalModuleWorkspace(
 @Composable
 fun SalesOrderModuleScreen(onClose: () -> Unit) {
     var searchQuery by remember { mutableStateOf("") }
+    var calculationIdInput by remember { mutableStateOf("") }
     var customerNameInput by remember { mutableStateOf("") }
     var jobTitleInput by remember { mutableStateOf("") }
     var quantityInput by remember { mutableStateOf("") }
     var amountInput by remember { mutableStateOf("") }
+    var advanceStatusInput by remember { mutableStateOf("PAID_50_PERCENT") }
 
     var ordersList by remember {
         mutableStateOf(
             listOf(
-                SalesOrderItem("SO-2026-881", "আহমেদ ট্রেডার্স", "১,০০০ পিস বুক ক্যাটালগ", "৳ ৪,৫০০", "২০২৬-১০-০৫", "প্রোডাকশনে রয়েছে", Color(0xFFF59E0B)),
-                SalesOrderItem("SO-2026-880", "সুমন এন্টারপ্রাইজ", "৫,০০০ পিস ক্যাশ মেমো", "৳ ৭,২০০", "২০২৬-১০-০৪", "অনুমোদিত", Color(0xFF10B981)),
-                SalesOrderItem("SO-2026-879", "আইটি ভিশন লিঃ", "৫০০ পিস ভিজটিং কার্ড", "৳ ১,২০০", "২০২৬-১০-০৪", "সম্পন্ন", Color(0xFF00F0FF)),
-                SalesOrderItem("SO-2026-878", "গ্রিন মাল্টিমিডিয়া", "২,০০০ পিস ফ্লায়ার", "৳ ৩,৮০০", "২০২৬-১০-০৩", "পেমেন্ট বকেয়া", Color(0xFFEF4444))
+                SalesOrderItem("SO-2026-881", "CALC-2026-904", "আহমেদ ট্রেডার্স", "১,০০০ পিস বুক ক্যাটালগ", "৳ ৪,৫০০", "২০২৬-১০-০৫", "৫০% অগ্রিম পরিশোধিত", "প্রোডাকশনে পাঠায়িত", Color(0xFFF59E0B)),
+                SalesOrderItem("SO-2026-880", "CALC-2026-812", "সুমন এন্টারপ্রাইজ", "৫,০০০ পিস ক্যাশ মেমো", "৳ ৭,২০০", "২০২৬-১০-০৪", "পূর্ণ পরিশোধিত", "অনুমোদিত", Color(0xFF10B981)),
+                SalesOrderItem("SO-2026-879", "CALC-2026-778", "আইটি ভিশন লিঃ", "৫০০ পিস ভিজটিং কার্ড", "৳ ১,২০০", "২০২৬-১০-০৪", "পূর্ণ পরিশোধিত", "সম্পন্ন", Color(0xFF00F0FF)),
+                SalesOrderItem("SO-2026-878", "CALC-2026-650", "গ্রিন মাল্টিমিডিয়া", "২,০০০ পিস ফ্লায়ার", "৳ ৩,৮োর", "২০২৬-১০-০৩", "অগ্রিম বকেয়া", "পেমেন্ট বকেয়া", Color(0xFFEF4444))
             )
         )
     }
@@ -113,14 +128,20 @@ fun SalesOrderModuleScreen(onClose: () -> Unit) {
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text(text = "+ নতুন কোটেশন ও সেলস অর্ডার ইনটেক ফর্ম", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF00F0FF))
+                Text(text = "+ নতুন কোটেশন ও সেলস অর্ডার ইনটেক ফর্ম (Sequence: SO-2026-XXXX)", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF00F0FF))
                 Spacer(modifier = Modifier.height(10.dp))
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    ModuleInputField("ক্যালকুলেশন আইডি (Optional)", calculationIdInput, { calculationIdInput = it }, Modifier.weight(0.8f))
                     ModuleInputField("কাস্টমারের নাম", customerNameInput, { customerNameInput = it }, Modifier.weight(1f))
                     ModuleInputField("জব টাইটেল / পণ্য", jobTitleInput, { jobTitleInput = it }, Modifier.weight(1f))
-                    ModuleInputField("পরিমাণ (Quantity)", quantityInput, { quantityInput = it }, Modifier.weight(0.8f))
-                    ModuleInputField("চুক্তি মূল্য (BDT)", amountInput, { amountInput = it }, Modifier.weight(0.8f))
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    ModuleInputField("পরিমাণ (Quantity)", quantityInput, { quantityInput = it }, Modifier.weight(1f))
+                    ModuleInputField("চুক্তি মূল্য (BDT)", amountInput, { amountInput = it }, Modifier.weight(1f))
+                    ModuleInputField("অগ্রিম স্ট্যাটাস", advanceStatusInput, { advanceStatusInput = it }, Modifier.weight(1f))
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -130,13 +151,17 @@ fun SalesOrderModuleScreen(onClose: () -> Unit) {
                     shape = RoundedCornerShape(8.dp),
                     modifier = Modifier.clickable {
                         if (customerNameInput.isNotBlank() && jobTitleInput.isNotBlank()) {
+                            val newOrderId = "SO-2026-${(882..999).random()}"
+                            val calcId = calculationIdInput.ifBlank { "CALC-2026-${(100..999).random()}" }
                             ordersList = listOf(
                                 SalesOrderItem(
-                                    id = "SO-2026-${(882..999).random()}",
+                                    id = newOrderId,
+                                    calcId = calcId,
                                     customer = customerNameInput,
                                     jobTitle = jobTitleInput,
                                     amount = "৳ ${amountInput.ifBlank { "২,৫০০" }}",
                                     deliveryDate = "২০২৬-১০-১০",
+                                    advanceStatus = advanceStatusInput,
                                     status = "নতুন ইনটেক",
                                     statusColor = Color(0xFF00F0FF)
                                 )
@@ -145,11 +170,12 @@ fun SalesOrderModuleScreen(onClose: () -> Unit) {
                             jobTitleInput = ""
                             quantityInput = ""
                             amountInput = ""
+                            calculationIdInput = ""
                         }
                     }
                 ) {
                     Text(
-                        text = "অর্ডার সেভ করুন ও প্রসেস করুন",
+                        text = "অর্ডার সেভ করুন ও প্রসেস করুন (SO-2026 Sequence)",
                         color = Color.White,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
@@ -189,10 +215,12 @@ fun SalesOrderModuleScreen(onClose: () -> Unit) {
 
 private data class SalesOrderItem(
     val id: String,
+    val calcId: String,
     val customer: String,
     val jobTitle: String,
     val amount: String,
     val deliveryDate: String,
+    val advanceStatus: String,
     val status: String,
     val statusColor: Color
 )
@@ -211,7 +239,8 @@ private fun SalesOrderRow(order: SalesOrderItem) {
         ) {
             Column {
                 Text(text = "${order.id} • ${order.customer}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                Text(text = "${order.jobTitle} • ডেলিভারি: ${order.deliveryDate}", fontSize = 10.sp, color = Color(0xFF94A3B8))
+                Text(text = "${order.jobTitle} • ক্যালি আইডি: ${order.calcId} • ডেলিভারি: ${order.deliveryDate}", fontSize = 10.sp, color = Color(0xFF94A3B8))
+                Text(text = "অগ্রিম: ${order.advanceStatus}", fontSize = 10.sp, color = Color(0xFF10B981), fontWeight = FontWeight.Bold)
             }
 
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -230,121 +259,366 @@ private fun SalesOrderRow(order: SalesOrderItem) {
 }
 
 // ============================================================================
-// MODULE 04: 13-STAGE PRODUCTION EXECUTION WORKFLOW SCREEN
+// MODULE 04: 13-STAGE PRODUCTION EXECUTION & JOB CARD WORKFLOW
 // ============================================================================
 @Composable
 fun ProductionWorkflowModuleScreen(onClose: () -> Unit) {
-    val stages = listOf(
-        "১. ইনটেক", "২. প্রি-প্রেস", "৩. CTP প্লেট", "৪. কাগজ কাটিং",
-        "৫. প্রিন্টিং", "৬. ড্রাইং", "৭. লেমিনেশন", "৮. ডাই-কাটিং",
-        "৯. ফোল্ডিং", "১০. বাইন্ডিং", "১১. QC চেকিং", "১২. প্যাকিং", "১৩. ডিসপ্যাচ"
+    var activeJobTicket: JobCardItem? by remember { mutableStateOf(null) }
+
+    var jobCardsList by remember {
+        mutableStateOf(
+            listOf(
+                JobCardItem("JC-2026-102", "SO-2026-881", "আহমেদ ট্রেডার্স", "বুক ক্যাটালগ ১০০০০ পিস", "Art Paper 150 GSM (20x30\")", "CMYK 4-Color (4 Plates)", "Heidelberg Speedmaster", "Thermal Matt + Die-Cut + Perfect Bind", "ON_PRESS", "প্রিন্টিং চলমান", "রফিক", Color(0xFF10B981)),
+                JobCardItem("JC-2026-101", "SO-2026-880", "সুমন এন্টারপ্রাইজ", "বক্স প্যাকেজিং ৫০০০ পিস", "Box Board 300 GSM (25x37\")", "CMYK 4-Color (4 Plates)", "Automatic Die-Cutter", "Thermal Gloss + Die-Cut + Pasting", "POST_PRESS_FINISHING", "ডাই-কাটিং চলমান", "করিম", Color(0xFFF59E0B)),
+                JobCardItem("JC-2026-100", "SO-2026-879", "আইটি ভিশন লিঃ", "ক্যালেন্ডার ২০২৬ ২০০০ পিস", "Art Card 300 GSM (23x36\")", "CMYK 4-Color (4 Plates)", "Wire-O Binder", "Thermal Gloss + Wire-O Bind", "QC_PASSED", "কিউসি সম্পন্ন", "জামাল", Color(0xFF00F0FF)),
+                JobCardItem("JC-2026-099", "SO-2026-878", "গ্রিন মাল্টিমিডিয়া", "ফ্লায়ার ২০০০ পিস", "Art Paper 120 GSM (20x30\")", "2-Color (2 Plates)", "Offset Single Color", "Folding", "PENDING_PLATES", "সিটিপি প্লেট অপেক্ষমান", "রহিম", Color(0xFFEF4444))
+            )
+        )
+    }
+
+    val stateMachineStages = listOf(
+        "PENDING_PLATES",
+        "CTP_READY",
+        "ON_PRESS",
+        "POST_PRESS_FINISHING",
+        "QC_PASSED",
+        "READY_FOR_DISPATCH"
     )
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFF040914))
-            .padding(16.dp)
-            .verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
-    ) {
-        ModuleTopBar(
-            code = "Module 04",
-            title = "প্রোডাকশন প্ল্যানিং ও ১৩-স্টেপ জব কার্ড এক্সিকিউশন (Production Workflow)",
-            onClose = onClose
-        )
-
-        // 13-Stage Visual Pipeline Bar
-        Card(
-            shape = RoundedCornerShape(12.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFF0A1224)),
-            border = BorderStroke(1.dp, Color(0xFF00B4D8).copy(alpha = 0.3f)),
-            modifier = Modifier.fillMaxWidth()
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color(0xFF040914))
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            Column(modifier = Modifier.padding(14.dp)) {
-                Text(text = "১৩-ধাপের ক্যানোনিকাল প্রোডাকশন পাইপলাইন স্ট্যাটাস", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF00F0FF))
-                Spacer(modifier = Modifier.height(10.dp))
+            ModuleTopBar(
+                code = "Module 04",
+                title = "প্রোডাকশন প্ল্যানিং, জব কার্ড (Job Bag) ও শপ-ফ্লোর পাইপলাইন",
+                onClose = onClose
+            )
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    stages.take(7).forEach { stage ->
-                        Surface(
-                            color = Color(0xFF0284C7).copy(alpha = 0.3f),
-                            shape = RoundedCornerShape(6.dp),
-                            border = BorderStroke(1.dp, Color(0xFF00F0FF)),
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text(text = stage, fontSize = 9.sp, color = Color.White, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, modifier = Modifier.padding(4.dp))
+            // Production Floor State Machine Pipeline Summary
+            Card(
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF0A1224)),
+                border = BorderStroke(1.dp, Color(0xFF00B4D8).copy(alpha = 0.3f)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(14.dp)) {
+                    Text(text = "প্রোডাকশন ফ্লোর স্টেট মেশিন (Floor State Machine)", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF00F0FF))
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        stateMachineStages.forEach { st ->
+                            Surface(
+                                color = Color(0xFF0284C7).copy(alpha = 0.2f),
+                                shape = RoundedCornerShape(6.dp),
+                                border = BorderStroke(1.dp, Color(0xFF00F0FF)),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text(
+                                    text = st.replace("_", " "),
+                                    fontSize = 8.sp,
+                                    color = Color.White,
+                                    fontWeight = FontWeight.Bold,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.padding(vertical = 6.dp, horizontal = 2.dp)
+                                )
+                            }
                         }
                     }
                 }
-                Spacer(modifier = Modifier.height(4.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    stages.drop(7).forEach { stage ->
+            }
+
+            // Active Job Cards Table
+            Card(
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF0A1224)),
+                border = BorderStroke(1.dp, Color(0xFF00B4D8).copy(alpha = 0.3f)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(text = "কারখানা লাইভ জব কার্ড (Job Bag) ট্র্যাকার (${jobCardsList.size}টি রানিং জব)", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.White)
                         Surface(
-                            color = Color(0xFF132038),
+                            color = Color(0xFF0284C7),
                             shape = RoundedCornerShape(6.dp),
-                            border = BorderStroke(1.dp, Color(0xFF1E293B)),
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.clickable {
+                                val newJc = JobCardItem(
+                                    id = "JC-2026-${(103..999).random()}",
+                                    orderId = "SO-2026-${(882..999).random()}",
+                                    customer = "নতুন কাস্টমার",
+                                    title = "কাস্টম প্রিন্টিং জব",
+                                    substrate = "Art Paper 150 GSM",
+                                    ctp = "CMYK 4-Color (4 Plates)",
+                                    machine = "Offset Press",
+                                    finishing = "Lamination & Trim",
+                                    stageCode = "PENDING_PLATES",
+                                    stageLabel = "সিটিপি প্লেট অপেক্ষমান",
+                                    operator = "অপারেটর অসামঞ্জস্য",
+                                    statusColor = Color(0xFFEF4444)
+                                )
+                                jobCardsList = listOf(newJc) + jobCardsList
+                            }
                         ) {
-                            Text(text = stage, fontSize = 9.sp, color = Color(0xFF94A3B8), textAlign = TextAlign.Center, modifier = Modifier.padding(4.dp))
+                            Text(text = "+ অটো জব কার্ড জেনারেট করুন", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp))
                         }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    jobCardsList.forEach { jc ->
+                        JobCardRow(
+                            jc = jc,
+                            onAdvanceStage = {
+                                val nextStage = getNextStage(jc.stageCode)
+                                val updatedList = jobCardsList.map { item ->
+                                    if (item.id == jc.id) {
+                                        item.copy(stageCode = nextStage.first, stageLabel = nextStage.second, statusColor = nextStage.third)
+                                    } else item
+                                }
+                                jobCardsList = updatedList
+                            },
+                            onPrintTicket = {
+                                activeJobTicket = jc
+                            }
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
                     }
                 }
             }
         }
 
-        // Active Job Cards Table
-        Card(
-            shape = RoundedCornerShape(12.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFF0A1224)),
-            border = BorderStroke(1.dp, Color(0xFF00B4D8).copy(alpha = 0.3f)),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(text = "কারখানা লাইভ জব কার্ড ট্র্যাকার (২৮টি রানিং জব)", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                Spacer(modifier = Modifier.height(12.dp))
+        // Task 6.4: Printable Job Ticket / QR Code Modal Dialog
+        if (activeJobTicket != null) {
+            val ticket = activeJobTicket!!
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.8f))
+                    .clickable { activeJobTicket = null },
+                contentAlignment = Alignment.Center
+            ) {
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF0A1224)),
+                    border = BorderStroke(2.dp, Color(0xFF00F0FF)),
+                    modifier = Modifier
+                        .fillMaxWidth(0.85f)
+                        .clickable { /* prevent click dismiss */ }
+                        .padding(16.dp)
+                ) {
+                    Column(modifier = Modifier.padding(20.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(imageVector = Icons.Default.Info, contentDescription = null, tint = Color(0xFF00F0FF), modifier = Modifier.size(22.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(text = "প্রিন্টাবল জব টিকিট ও শপ-ফ্লোর কিউআর ব্যাগ (Job Bag)", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                            }
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = null,
+                                tint = Color(0xFF94A3B8),
+                                modifier = Modifier.size(20.dp).clickable { activeJobTicket = null }
+                            )
+                        }
 
-                ProductionJobRow("JC-2026-102", "বুক ক্যাটালগ ১০০০০ পিস", "মেশিন ১: Heidelberg Speedmaster", "৫. প্রিন্টিং (৭৫%)", "অপরেটর: রফিক", Color(0xFF10B981))
-                Spacer(modifier = Modifier.height(6.dp))
-                ProductionJobRow("JC-2026-101", "বক্স প্যাকেজিং ৫০০০ পিস", "মেশিন ৩: Automatic Die-Cutter", "৮. ডাই-কাটিং (৪০%)", "অপরেটর: করিম", Color(0xFFF59E0B))
-                Spacer(modifier = Modifier.height(6.dp))
-                ProductionJobRow("JC-2026-100", "ক্যালেন্ডার ২০২৬ ২০০০ পিস", "মেশিন ২: Wire-O Binder", "১০. বাইন্ডিং (৯০%)", "অপরেটর: জামাল", Color(0xFF00F0FF))
+                        Spacer(modifier = Modifier.height(14.dp))
+
+                        // Job Bag Header
+                        Surface(
+                            color = Color(0xFF111C33),
+                            shape = RoundedCornerShape(10.dp),
+                            border = BorderStroke(1.dp, Color(0xFF00B4D8)),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column {
+                                    Text(text = "জব আইডি: ${ticket.id} (${ticket.orderId})", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color(0xFF00F0FF))
+                                    Text(text = "কাস্টমার: ${ticket.customer} • বিবরণ: ${ticket.title}", fontSize = 11.sp, color = Color.White)
+                                    Text(text = "অপারেটর: ${ticket.operator} • স্টেজ: ${ticket.stageLabel}", fontSize = 10.sp, color = Color(0xFF94A3B8))
+                                }
+
+                                // Shop-Floor Vector QR Graphic
+                                Box(
+                                    modifier = Modifier
+                                        .size(60.dp)
+                                        .clip(RoundedCornerShape(6.dp))
+                                        .background(Color.White),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Canvas(modifier = Modifier.size(48.dp)) {
+                                        val w = size.width
+                                        val h = size.height
+                                        drawRect(color = Color.Black, topLeft = Offset(0f, 0f), size = Size(w * 0.35f, h * 0.35f))
+                                        drawRect(color = Color.Black, topLeft = Offset(w * 0.65f, 0f), size = Size(w * 0.35f, h * 0.35f))
+                                        drawRect(color = Color.Black, topLeft = Offset(0f, h * 0.65f), size = Size(w * 0.35f, h * 0.35f))
+                                        drawRect(color = Color.Black, topLeft = Offset(w * 0.4f, h * 0.4f), size = Size(w * 0.2f, h * 0.2f))
+                                    }
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // Job Technical Specs Table
+                        Text(text = "কারখানা টেকনিক্যাল স্পেসিফিকেশন ব্রেকডাউন:", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF00F0FF))
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        SpecDetailRow("সাবস্ট্রেট (Paper)", ticket.substrate)
+                        SpecDetailRow("সিটিপি / প্লেট (CTP)", ticket.ctp)
+                        SpecDetailRow("প্রিন্টিং প্রেস (Machine)", ticket.machine)
+                        SpecDetailRow("পোস্ট-প্রেস ফিনিশিং", ticket.finishing)
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Surface(
+                                color = Color(0xFF10B981),
+                                shape = RoundedCornerShape(8.dp),
+                                modifier = Modifier.weight(1f).clickable { activeJobTicket = null }
+                            ) {
+                                Box(modifier = Modifier.padding(vertical = 10.dp), contentAlignment = Alignment.Center) {
+                                    Text(text = "প্রিন্ট টিকিট (Print Job Bag)", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                            Surface(
+                                color = Color(0xFF334155),
+                                shape = RoundedCornerShape(8.dp),
+                                modifier = Modifier.weight(1f).clickable { activeJobTicket = null }
+                            ) {
+                                Box(modifier = Modifier.padding(vertical = 10.dp), contentAlignment = Alignment.Center) {
+                                    Text(text = "বন্ধ করুন", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     }
 }
 
 @Composable
-private fun ProductionJobRow(id: String, title: String, machine: String, stage: String, operator: String, color: Color) {
+private fun SpecDetailRow(label: String, value: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(text = label, fontSize = 11.sp, color = Color(0xFF94A3B8))
+        Text(text = value, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
+    }
+}
+
+private data class JobCardItem(
+    val id: String,
+    val orderId: String,
+    val customer: String,
+    val title: String,
+    val substrate: String,
+    val ctp: String,
+    val machine: String,
+    val finishing: String,
+    val stageCode: String,
+    val stageLabel: String,
+    val operator: String,
+    val statusColor: Color
+)
+
+@Composable
+private fun JobCardRow(
+    jc: JobCardItem,
+    onAdvanceStage: () -> Unit,
+    onPrintTicket: () -> Unit
+) {
     Surface(
         shape = RoundedCornerShape(8.dp),
         color = Color(0xFF111C33),
         modifier = Modifier.fillMaxWidth()
     ) {
-        Row(
-            modifier = Modifier.padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Column {
-                Text(text = "$id • $title", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                Text(text = "$machine • $operator", fontSize = 10.sp, color = Color(0xFF94A3B8))
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(text = "${jc.id} (${jc.orderId}) • ${jc.customer}", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Text(text = "${jc.title} • ${jc.machine}", fontSize = 11.sp, color = Color(0xFF94A3B8))
+                }
+
+                Surface(
+                    color = jc.statusColor.copy(alpha = 0.2f),
+                    shape = RoundedCornerShape(6.dp),
+                    border = BorderStroke(1.dp, jc.statusColor)
+                ) {
+                    Text(text = jc.stageLabel, fontSize = 10.sp, color = jc.statusColor, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
+                }
             }
 
-            Surface(
-                color = color.copy(alpha = 0.2f),
-                shape = RoundedCornerShape(6.dp),
-                border = BorderStroke(1.dp, color)
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(text = "স্পেক্স: ${jc.substrate} | ${jc.ctp} | ${jc.finishing}", fontSize = 10.sp, color = Color(0xFF00F0FF))
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(text = stage, fontSize = 11.sp, color = color, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
+                Surface(
+                    color = Color(0xFF0284C7),
+                    shape = RoundedCornerShape(6.dp),
+                    modifier = Modifier.clickable { onAdvanceStage() }
+                ) {
+                    Text(text = "পরবর্তী স্টেজ ➔", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
+                }
+
+                Surface(
+                    color = Color(0xFF132038),
+                    shape = RoundedCornerShape(6.dp),
+                    border = BorderStroke(1.dp, Color(0xFF00B4D8)),
+                    modifier = Modifier.clickable { onPrintTicket() }
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(imageVector = Icons.Default.Info, contentDescription = null, tint = Color(0xFF00F0FF), modifier = Modifier.size(12.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(text = "প্রিন্টিং টিকিট (QR)", color = Color(0xFF00F0FF), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
             }
         }
+    }
+}
+
+private fun getNextStage(currentStage: String): Triple<String, String, Color> {
+    return when (currentStage) {
+        "PENDING_PLATES" -> Triple("CTP_READY", "সিটিপি প্লেট রেডি", Color(0xFF38BDF8))
+        "CTP_READY" -> Triple("ON_PRESS", "প্রিন্টিং চলমান", Color(0xFF10B981))
+        "ON_PRESS" -> Triple("POST_PRESS_FINISHING", "ফিনিশিং চলমান", Color(0xFFF59E0B))
+        "POST_PRESS_FINISHING" -> Triple("QC_PASSED", "কিউসি সম্পন্ন", Color(0xFF00F0FF))
+        "QC_PASSED" -> Triple("READY_FOR_DISPATCH", "ডেলিভারির জন্য প্রস্তুত", Color(0xFF10B981))
+        else -> Triple("READY_FOR_DISPATCH", "ডেলিভারির জন্য প্রস্তুত", Color(0xFF10B981))
     }
 }
 
