@@ -7,6 +7,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -68,10 +70,9 @@ private data class Tuple3<A, B, C>(val first: A, val second: B, val third: C)
 private data class Tuple5<A, B, C, D, E>(val first: A, val second: B, val third: C, val fourth: D, val fifth: E)
 
 /**
- * 1:1 Master Admin Operations Center ERP Dashboard for Web (Wasm), Desktop, and Mobile.
- * Includes Left High-Tech Sidebar, Top Header, 24h Operations Chart, Order Health Ring,
- * Dynamic KPI Cards, Affiliate Intelligence Topology, Priority Alerts & Quick Controls,
- * and Order-to-Delivery Pipeline Stepper.
+ * Task 13.1 & 13.2: Master Admin Operations Center ERP Dashboard for Web (Wasm), Desktop, and Mobile.
+ * Implements Responsive Adaptive Dark Theme Layouts across Compact (<600dp), Medium (600-839dp),
+ * and Expanded (>=840dp) screen dimensions with min 48dp touch targets and live operational cards.
  */
 @Composable
 fun SharedAdminDashboardWorkspace(
@@ -81,131 +82,135 @@ fun SharedAdminDashboardWorkspace(
 ) {
     var activeNavTab by remember { mutableStateOf("Dashboard") }
 
-    Row(
+    BoxWithConstraints(
         modifier = modifier
             .fillMaxSize()
             .background(Color(0xFF040914))
     ) {
-        // 1. LEFT VERTICAL SIDEBAR
-        SidebarComponent(
-            activeNavTab = activeNavTab,
-            onTabSelected = { tab ->
-                activeNavTab = tab
-                when (tab) {
-                    "Orders" -> onModuleClick("Module 03")
-                    "Production" -> onModuleClick("Module 04")
-                    "Finance" -> onModuleClick("Module 09/14")
-                    "Affiliate" -> onModuleClick("Module 20")
-                    "Reports" -> onModuleClick("Module 24")
-                    "Users" -> onModuleClick("Module 01")
-                    "Settings" -> onModuleClick("Module 00")
-                    else -> { /* Dashboard tab */ }
+        val isCompact = maxWidth < 600.dp
+        val isExpanded = maxWidth >= 840.dp
+
+        Row(modifier = Modifier.fillMaxSize()) {
+            // 1. LEFT VERTICAL SIDEBAR (Shown on Medium & Expanded screens)
+            if (!isCompact) {
+                SidebarComponent(
+                    activeNavTab = activeNavTab,
+                    onTabSelected = { tab ->
+                        activeNavTab = tab
+                        when (tab) {
+                            "Orders" -> onModuleClick("Module 03")
+                            "Production" -> onModuleClick("Module 04")
+                            "Finance" -> onModuleClick("Module 09/14")
+                            "Affiliate" -> onModuleClick("Module 20")
+                            "Reports" -> onModuleClick("Module 24")
+                            "Users" -> onModuleClick("Module 01")
+                            "Settings" -> onModuleClick("Module 00")
+                            else -> { /* Dashboard tab */ }
+                        }
+                    }
+                )
+
+                // Vertical Divider Glow
+                Box(
+                    modifier = Modifier
+                        .width(1.dp)
+                        .fillMaxHeight()
+                        .background(Color(0xFF00B4D8).copy(alpha = 0.25f))
+                )
+            }
+
+            // 2. MAIN OPERATIONS AREA (Adaptive Grid)
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+                    .verticalScroll(rememberScrollState())
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // A. TOP BAR & KPI HEADER
+                TopHeaderComponent(
+                    onOpenCalculator = onOpenCalculator,
+                    onModuleClick = onModuleClick
+                )
+
+                // B. TWO-COLUMN ANALYTICS TOP SECTION
+                if (isExpanded) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        TodayOperationsCard(
+                            modifier = Modifier.weight(1.5f),
+                            onModuleClick = onModuleClick
+                        )
+                        OrderHealthCard(
+                            modifier = Modifier.weight(1f),
+                            onModuleClick = onModuleClick
+                        )
+                    }
+                } else {
+                    TodayOperationsCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        onModuleClick = onModuleClick
+                    )
+                    OrderHealthCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        onModuleClick = onModuleClick
+                    )
                 }
-            }
-        )
 
-        // Vertical Divider Glow
-        Box(
-            modifier = Modifier
-                .width(1.dp)
-                .fillMaxHeight()
-                .background(Color(0xFF00B4D8).copy(alpha = 0.25f))
-        )
+                // C. 4 DYNAMIC TOP KPI CARDS
+                if (isCompact) {
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        KpiCard("আজকের অর্ডার", "৮৪", "↑ +১২%", Icons.Default.ShoppingCart, Color(0xFF00F0FF), Modifier.fillMaxWidth()) { onModuleClick("Module 03") }
+                        KpiCard("উৎপাদন লোড", "২৮", "↑ +৮%", Icons.Default.Settings, Color(0xFF00F0FF), Modifier.fillMaxWidth()) { onModuleClick("Module 04") }
+                        KpiCard("নগদ আদায় (আজ)", "৳ ১,২২,৩০০", "↑ +১৮.০%", Icons.Default.Star, Color(0xFF00F0FF), Modifier.fillMaxWidth()) { onModuleClick("Module 09/14") }
+                        KpiCard("কমিশন বাকি", "৳ ১২,৪৫০", "↑ +৬.২%", Icons.Default.Person, Color(0xFF00F0FF), Modifier.fillMaxWidth()) { onModuleClick("Module 23") }
+                    }
+                } else {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        KpiCard("আজকের অর্ডার", "৮৪", "↑ +১২%", Icons.Default.ShoppingCart, Color(0xFF00F0FF), Modifier.weight(1f)) { onModuleClick("Module 03") }
+                        KpiCard("উৎপাদন লোড", "২৮", "↑ +৮%", Icons.Default.Settings, Color(0xFF00F0FF), Modifier.weight(1f)) { onModuleClick("Module 04") }
+                        KpiCard("নগদ আদায় (আজ)", "৳ ১,২২,৩০০", "↑ +১৮.০%", Icons.Default.Star, Color(0xFF00F0FF), Modifier.weight(1f)) { onModuleClick("Module 09/14") }
+                        KpiCard("কমিশন বাকি", "৳ ১২,৪৫০", "↑ +৬.২%", Icons.Default.Person, Color(0xFF00F0FF), Modifier.weight(1f)) { onModuleClick("Module 23") }
+                    }
+                }
 
-        // 2. MAIN OPERATIONS AREA
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxHeight()
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            // A. TOP BAR & KPI HEADER
-            TopHeaderComponent(
-                onOpenCalculator = onOpenCalculator,
-                onModuleClick = onModuleClick
-            )
+                // D. BOTTOM INTELLIGENCE & WORKFLOW ROW (ADAPTIVE GRID)
+                if (isExpanded) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        AffiliateIntelligenceCard(
+                            modifier = Modifier.weight(1.5f),
+                            onModuleClick = onModuleClick
+                        )
 
-            // B. TWO-COLUMN ANALYTICS TOP SECTION
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                TodayOperationsCard(
-                    modifier = Modifier.weight(1.5f),
-                    onModuleClick = onModuleClick
-                )
-                OrderHealthCard(
-                    modifier = Modifier.weight(1f),
-                    onModuleClick = onModuleClick
-                )
-            }
-
-            // C. 4 DYNAMIC TOP KPI CARDS
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                KpiCard(
-                    title = "আজকের অর্ডার",
-                    value = "৮৪",
-                    trend = "↑ +১২%",
-                    icon = Icons.Default.ShoppingCart,
-                    accentColor = Color(0xFF00F0FF),
-                    modifier = Modifier.weight(1f),
-                    onClick = { onModuleClick("Module 03") }
-                )
-                KpiCard(
-                    title = "উৎপাদন লোড",
-                    value = "২৮",
-                    trend = "↑ +৮%",
-                    icon = Icons.Default.Settings,
-                    accentColor = Color(0xFF00F0FF),
-                    modifier = Modifier.weight(1f),
-                    onClick = { onModuleClick("Module 04") }
-                )
-                KpiCard(
-                    title = "নগদ আদায় (আজ)",
-                    value = "৳ ১,২২,৩০০",
-                    trend = "↑ +১৮.০%",
-                    icon = Icons.Default.Star,
-                    accentColor = Color(0xFF00F0FF),
-                    modifier = Modifier.weight(1f),
-                    onClick = { onModuleClick("Module 09/14") }
-                )
-                KpiCard(
-                    title = "কমিশন বাকি",
-                    value = "৳ ১২,৪৫০",
-                    trend = "↑ +৬.২%",
-                    icon = Icons.Default.Person,
-                    accentColor = Color(0xFF00F0FF),
-                    modifier = Modifier.weight(1f),
-                    onClick = { onModuleClick("Module 23") }
-                )
-            }
-
-            // D. BOTTOM INTELLIGENCE & WORKFLOW ROW (2-COLUMN GRID)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                AffiliateIntelligenceCard(
-                    modifier = Modifier.weight(1.5f),
-                    onModuleClick = onModuleClick
-                )
-
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            PriorityAlertsCard(onModuleClick = onModuleClick)
+                            QuickControlsCard(onModuleClick = onModuleClick)
+                        }
+                    }
+                } else {
+                    AffiliateIntelligenceCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        onModuleClick = onModuleClick
+                    )
                     PriorityAlertsCard(onModuleClick = onModuleClick)
                     QuickControlsCard(onModuleClick = onModuleClick)
                 }
-            }
 
-            // E. ORDER-TO-DELIVERY 6-STEP WORKFLOW STEPPER BAR
-            WorkflowStepperBar(onModuleClick = onModuleClick)
+                // E. ORDER-TO-DELIVERY 6-STEP WORKFLOW STEPPER BAR
+                WorkflowStepperBar(onModuleClick = onModuleClick)
+            }
         }
     }
 }
@@ -371,6 +376,7 @@ private fun SidebarNavTile(
     Surface(
         modifier = Modifier
             .fillMaxWidth()
+            .heightIn(min = 48.dp)
             .clickable { onClick() },
         shape = RoundedCornerShape(10.dp),
         color = if (isActive) Color(0xFF0284C7) else Color.Transparent,
@@ -425,7 +431,7 @@ private fun TopHeaderComponent(
                 color = Color(0xFF0F172A),
                 border = BorderStroke(1.dp, Color(0xFF00F0FF).copy(alpha = 0.4f)),
                 modifier = Modifier
-                    .size(38.dp)
+                    .size(48.dp)
                     .clickable { onOpenCalculator() }
             ) {
                 Box(contentAlignment = Alignment.Center) {
@@ -467,7 +473,7 @@ private fun TopHeaderComponent(
                 shape = RoundedCornerShape(10.dp),
                 color = Color(0xFF0F172A),
                 border = BorderStroke(1.dp, Color(0xFF1E293B)),
-                modifier = Modifier.clickable { onModuleClick("Module 24") }
+                modifier = Modifier.heightIn(min = 48.dp).clickable { onModuleClick("Module 24") }
             ) {
                 Row(
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
@@ -502,7 +508,7 @@ private fun TopHeaderComponent(
                     shape = RoundedCornerShape(10.dp),
                     color = Color(0xFF0F172A),
                     border = BorderStroke(1.dp, Color(0xFF1E293B)),
-                    modifier = Modifier.size(38.dp)
+                    modifier = Modifier.size(48.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
@@ -530,7 +536,7 @@ private fun TopHeaderComponent(
                 shape = RoundedCornerShape(10.dp),
                 color = Color(0xFF0F172A),
                 border = BorderStroke(1.dp, Color(0xFF1E293B)),
-                modifier = Modifier.clickable { onModuleClick("Module 01") }
+                modifier = Modifier.heightIn(min = 48.dp).clickable { onModuleClick("Module 01") }
             ) {
                 Row(
                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
@@ -538,7 +544,7 @@ private fun TopHeaderComponent(
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(26.dp)
+                            .size(28.dp)
                             .clip(CircleShape)
                             .background(Color(0xFF0284C7)),
                         contentAlignment = Alignment.Center
@@ -939,7 +945,7 @@ private fun KpiCard(
     onClick: () -> Unit
 ) {
     Surface(
-        modifier = modifier.clickable { onClick() },
+        modifier = modifier.heightIn(min = 48.dp).clickable { onClick() },
         shape = RoundedCornerShape(14.dp),
         color = Color(0xFF0A1224),
         border = BorderStroke(1.dp, Color(0xFF00B4D8).copy(alpha = 0.35f))
@@ -1351,7 +1357,7 @@ private fun QuickControlPill(
     onClick: () -> Unit
 ) {
     Surface(
-        modifier = modifier.clickable { onClick() },
+        modifier = modifier.heightIn(min = 48.dp).clickable { onClick() },
         shape = RoundedCornerShape(10.dp),
         color = Color(0xFF132038),
         border = BorderStroke(1.dp, Color(0xFF00B4D8).copy(alpha = 0.3f))

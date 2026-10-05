@@ -8,6 +8,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,6 +18,8 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -61,7 +64,7 @@ import androidx.compose.ui.unit.sp
  * Integrates Module 03 (Sales Orders), Module 04 (13-Stage Production & Worker UI),
  * Module 07 (Finished Goods), Module 08/11 (Delivery Challan & Gate Pass), Module 09/14 (Finance & Bangla QR),
  * Module 12 (Vendor Subcontracting), Module 13 (Central Procurement), Module 18 (Prepress Imposition),
- * Module 19 (Substrate Stock Reservation), Module 20 (Affiliate), Module 21 (Machine OEE), Module 23 (Wallet), Module 24 (Bengali PDF).
+ * Module 19 (Substrate Stock Reservation), Module 20 (Affiliate), Module 21 (Machine OEE), Module 23 (Wallet), Module 24 (138 BI Reports).
  */
 @Composable
 fun RouterCanonicalModuleWorkspace(
@@ -71,14 +74,165 @@ fun RouterCanonicalModuleWorkspace(
     when (moduleCode) {
         "Module 03", "Orders" -> SalesOrderModuleScreen(onClose = onClose)
         "Module 04", "Production" -> ProductionWorkflowModuleScreen(onClose = onClose)
-        "Module 07", "Module 08/11", "Module 08", "Module 24", "Delivery" -> FinishedGoodsAndDeliveryChallanModuleScreen(onClose = onClose)
+        "Module 07", "Module 08/11", "Module 08", "Delivery" -> FinishedGoodsAndDeliveryChallanModuleScreen(onClose = onClose)
         "Module 09/14", "Finance" -> FinanceBillingModuleScreen(onClose = onClose)
         "Module 12", "Module 13", "Procurement" -> CentralProcurementHubModuleScreen(onClose = onClose)
         "Module 18", "Module 16" -> PrepressImpositionModuleScreen(onClose = onClose)
         "Module 19" -> SubstrateStockReservationModuleScreen(onClose = onClose)
         "Module 20", "Module 23", "Affiliate" -> AffiliateGovernanceModuleScreen(onClose = onClose)
         "Module 21" -> MachineOeeTelemetryModuleScreen(onClose = onClose)
+        "Module 24", "Reports" -> Module24ReportingCatalogScreen(onClose = onClose)
         else -> UniversalCanonicalModuleScreen(moduleCode = moduleCode, onClose = onClose)
+    }
+}
+
+// ============================================================================
+// MODULE 24: 138 READ-ONLY BUSINESS INTELLIGENCE REPORTS ENGINE SCREEN
+// ============================================================================
+@Composable
+fun Module24ReportingCatalogScreen(onClose: () -> Unit) {
+    val reportCategories = listOf(
+        "CAT-01: Sales & Revenue Analysis",
+        "CAT-02: Production Throughput",
+        "CAT-03: Material Consumption",
+        "CAT-04: Finished Goods Lot",
+        "CAT-05: Quality Control & Waste",
+        "CAT-06: Delivery Performance",
+        "CAT-07: Accounts Receivable Aging",
+        "CAT-08: Accounts Payable Vendor",
+        "CAT-09: Cash Flow MFS Reconciled",
+        "CAT-10: Gross Net Profitability",
+        "CAT-11: Machine Telemetry OEE",
+        "CAT-12: Operator Productivity",
+        "CAT-13: Affiliate Conversion ROI",
+        "CAT-14: Paper Grain Gang-Run",
+        "CAT-15: System Audit Logs"
+    )
+
+    var selectedCategory by remember { mutableStateOf(reportCategories.first()) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFF040914))
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        ModuleTopBar(
+            code = "Module 24",
+            title = "১৩৮টি বিআই বিজনেস ইন্টেলিজেন্স রিপোর্টস ইঞ্জিন (Read-Only CQRS Engine)",
+            onClose = onClose
+        )
+
+        // Read Model Invariant Header
+        Card(
+            shape = RoundedCornerShape(12.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFF0A1224)),
+            border = BorderStroke(1.dp, Color(0xFF00B4D8).copy(alpha = 0.4f)),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(14.dp)) {
+                Text(text = "CQRS বিশুদ্ধ রিড মডেল প্রিন্সিপাল (Pure Read-Only Projections):", fontSize = 12.sp, color = Color(0xFF94A3B8))
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "সব ১৩৮টি রিপোর্ট সরাসরি রিড প্রজেকশন থেকে রান হয়। কোনো ডাটাবেজ রাইট লক বা স্টেট মিউটেশন ঘটে না।",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF10B981)
+                )
+            }
+        }
+
+        // 15 Domain Categories Dropdown Selection
+        Card(
+            shape = RoundedCornerShape(12.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFF0A1224)),
+            border = BorderStroke(1.dp, Color(0xFF00B4D8).copy(alpha = 0.3f)),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(text = "১৫টি ক্যানোনিকাল বিআই ডোমেইন ক্যাটাগরি (15 BI Categories - 138 Reports)", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF00F0FF))
+                Spacer(modifier = Modifier.height(10.dp))
+
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    contentPadding = PaddingValues(vertical = 4.dp)
+                ) {
+                    items(reportCategories) { cat ->
+                        val isSelected = cat == selectedCategory
+                        Surface(
+                            color = if (isSelected) Color(0xFF0284C7) else Color(0xFF111C33),
+                            shape = RoundedCornerShape(12.dp),
+                            border = BorderStroke(1.dp, if (isSelected) Color(0xFF00F0FF) else Color(0xFF1E293B)),
+                            modifier = Modifier.clickable { selectedCategory = cat }
+                        ) {
+                            Text(
+                                text = cat,
+                                color = if (isSelected) Color.White else Color(0xFF94A3B8),
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                Text(text = "লাইভ রিপোর্ট রেজাল্ট কার্ডস ($selectedCategory):", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                Spacer(modifier = Modifier.height(8.dp))
+
+                BiReportItemRow("REP-001", "দৈনিক ও মাসিক সেলস রেভিনিউ প্রজেকশন", "আজকের মোট সেলস: ৳ ১,৩৭,৫০০ (৮৪টি অর্ডার)")
+                Spacer(modifier = Modifier.height(6.dp))
+                BiReportItemRow("REP-002", "কাস্টমার টায়ার ওয়াইজ রেভিনিউ ও কনভার্সন", "প্রিমিয়াম গ্রাহকদের প্রফিট মার্জিন: ৪২.৫%")
+                Spacer(modifier = Modifier.height(6.dp))
+                BiReportItemRow("REP-003", "প্রডাকশন থ্রুপুট ও বোতলনেক এনালাইসিস", "সিটিপি ও ফোল্ডিং স্টেজে গড় অবস্থান: ১.৪ ঘণ্টা")
+                Spacer(modifier = Modifier.height(6.dp))
+                BiReportItemRow("REP-004", "কাঁচামাল ও পেপার অপচয় (Paper Offcut Yield)", "গড় অফকাট অপচয়: ১০.৬% (প্যারেন্ট শিট ইউটিলাইজেশন ৮৯.৪%)")
+            }
+        }
+    }
+}
+
+@Composable
+private fun BiReportItemRow(code: String, title: String, summary: String) {
+    Surface(
+        shape = RoundedCornerShape(8.dp),
+        color = Color(0xFF111C33),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(text = "$code • $title", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Text(text = summary, fontSize = 11.sp, color = Color(0xFF10B981))
+                }
+
+                Surface(color = Color(0xFF0284C7).copy(alpha = 0.2f), shape = RoundedCornerShape(4.dp)) {
+                    Text(text = "READ-ONLY", fontSize = 9.sp, color = Color(0xFF00F0FF), modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Multi-Format Export Pipeline Buttons
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Surface(color = Color(0xFF1E293B), shape = RoundedCornerShape(4.dp), border = BorderStroke(1.dp, Color(0xFF00B4D8)), modifier = Modifier.clickable { /* Export CSV */ }) {
+                    Text(text = "⬇ CSV (Raw Dump)", fontSize = 9.sp, color = Color(0xFF00B4D8), fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp))
+                }
+                Surface(color = Color(0xFF1E293B), shape = RoundedCornerShape(4.dp), border = BorderStroke(1.dp, Color(0xFF38BDF8)), modifier = Modifier.clickable { /* Export JSON */ }) {
+                    Text(text = "⬇ JSON (Stream)", fontSize = 9.sp, color = Color(0xFF38BDF8), fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp))
+                }
+                Surface(color = Color(0xFF1E293B), shape = RoundedCornerShape(4.dp), border = BorderStroke(1.dp, Color(0xFF10B981)), modifier = Modifier.clickable { /* Export PDF */ }) {
+                    Text(text = "⬇ বাংলা PDF (Kalpurush)", fontSize = 9.sp, color = Color(0xFF10B981), fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp))
+                }
+            }
+        }
     }
 }
 
@@ -717,7 +871,7 @@ fun ProductionWorkflowModuleScreen(onClose: () -> Unit) {
                     border = BorderStroke(2.dp, Color(0xFF00F0FF)),
                     modifier = Modifier
                         .fillMaxWidth(0.85f)
-                        .clickable { /* prevent dismiss */ }
+                        .clickable { /* prevent click dismiss */ }
                         .padding(16.dp)
                 ) {
                     Column(modifier = Modifier.padding(20.dp)) {
@@ -1788,7 +1942,7 @@ private fun FinanceInvoiceRow(invId: String, customer: String, total: String, pa
                 shape = RoundedCornerShape(6.dp),
                 border = BorderStroke(1.dp, color)
             ) {
-                Text(text = status, fontSize = 11.sp, color = color, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
+                Text(text = status, fontSize = 11.sp, color = color, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
             }
         }
     }
