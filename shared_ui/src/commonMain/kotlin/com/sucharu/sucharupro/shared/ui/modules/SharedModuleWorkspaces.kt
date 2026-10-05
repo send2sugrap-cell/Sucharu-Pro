@@ -56,6 +56,7 @@ import androidx.compose.ui.unit.sp
 /**
  * Real Canonical Module Workspaces for Sucharu Pro ERP.
  * Integrates Module 03 (Sales Orders), Module 04 (Production & Job Cards), Module 09/14 (Finance),
+ * Module 18 (Prepress Imposition & Gang-Run), Module 19 (Substrate Stock Reservation),
  * Module 20 (Affiliate), Multi-Stage State Machine, Job Bag Generation, and Printable QR Tickets.
  */
 @Composable
@@ -67,6 +68,8 @@ fun RouterCanonicalModuleWorkspace(
         "Module 03", "Orders" -> SalesOrderModuleScreen(onClose = onClose)
         "Module 04", "Production" -> ProductionWorkflowModuleScreen(onClose = onClose)
         "Module 09/14", "Finance" -> FinanceBillingModuleScreen(onClose = onClose)
+        "Module 18", "Module 16" -> PrepressImpositionModuleScreen(onClose = onClose)
+        "Module 19" -> SubstrateStockReservationModuleScreen(onClose = onClose)
         "Module 20", "Affiliate" -> AffiliateGovernanceModuleScreen(onClose = onClose)
         else -> UniversalCanonicalModuleScreen(moduleCode = moduleCode, onClose = onClose)
     }
@@ -91,7 +94,7 @@ fun SalesOrderModuleScreen(onClose: () -> Unit) {
                 SalesOrderItem("SO-2026-881", "CALC-2026-904", "আহমেদ ট্রেডার্স", "১,০০০ পিস বুক ক্যাটালগ", "৳ ৪,৫০০", "২০২৬-১০-০৫", "৫০% অগ্রিম পরিশোধিত", "প্রোডাকশনে পাঠায়িত", Color(0xFFF59E0B)),
                 SalesOrderItem("SO-2026-880", "CALC-2026-812", "সুমন এন্টারপ্রাইজ", "৫,০০০ পিস ক্যাশ মেমো", "৳ ৭,২০০", "২০২৬-১০-০৪", "পূর্ণ পরিশোধিত", "অনুমোদিত", Color(0xFF10B981)),
                 SalesOrderItem("SO-2026-879", "CALC-2026-778", "আইটি ভিশন লিঃ", "৫০০ পিস ভিজটিং কার্ড", "৳ ১,২০০", "২০২৬-১০-০৪", "পূর্ণ পরিশোধিত", "সম্পন্ন", Color(0xFF00F0FF)),
-                SalesOrderItem("SO-2026-878", "CALC-2026-650", "গ্রিন মাল্টিমিডিয়া", "২,০০০ পিস ফ্লায়ার", "৳ ৩,৮োর", "২০২৬-১০-০৩", "অগ্রিম বকেয়া", "পেমেন্ট বকেয়া", Color(0xFFEF4444))
+                SalesOrderItem("SO-2026-878", "CALC-2026-650", "গ্রিন মাল্টিমিডিয়া", "২,০০০ পিস ফ্লায়ার", "৳ ৩,৮০০", "২০২৬-১০-০৩", "অগ্রিম বকেয়া", "পেমেন্ট বকেয়া", Color(0xFFEF4444))
             )
         )
     }
@@ -619,6 +622,263 @@ private fun getNextStage(currentStage: String): Triple<String, String, Color> {
         "POST_PRESS_FINISHING" -> Triple("QC_PASSED", "কিউসি সম্পন্ন", Color(0xFF00F0FF))
         "QC_PASSED" -> Triple("READY_FOR_DISPATCH", "ডেলিভারির জন্য প্রস্তুত", Color(0xFF10B981))
         else -> Triple("READY_FOR_DISPATCH", "ডেলিভারির জন্য প্রস্তুত", Color(0xFF10B981))
+    }
+}
+
+// ============================================================================
+// MODULE 18: PREPRESS IMPOSITION & GANG-RUN OPTIMIZATION SCREEN
+// ============================================================================
+@Composable
+fun PrepressImpositionModuleScreen(onClose: () -> Unit) {
+    var selectedParentSheet by remember { mutableStateOf("23\" x 36\" (Crown Sheet)") }
+    var selectedGsm by remember { mutableStateOf("150 GSM") }
+    var grainDirection by remember { mutableStateOf("LONG_GRAIN") }
+    var isGrainAligned by remember { mutableStateOf(true) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFF040914))
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        ModuleTopBar(
+            code = "Module 18/16",
+            title = "প্রেপ্রেস অপ্টিমাইজেশন, প্যারেন্ট শিট ও গ্যাং-রান ইম্পোজিশন ইঞ্জিন",
+            onClose = onClose
+        )
+
+        // Task 7.1: Parent Sheet & Substrate Parameter Modeling
+        Card(
+            shape = RoundedCornerShape(12.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFF0A1224)),
+            border = BorderStroke(1.dp, Color(0xFF00B4D8).copy(alpha = 0.3f)),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(text = "১. প্যারেন্ট শিট ও পেপার গ্রেইন ডিরেকশন প্যারামিটার (Task 7.1)", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF00F0FF))
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    ModuleInputField("প্যারেন্ট শিট ডাইমেনশন", selectedParentSheet, { selectedParentSheet = it }, Modifier.weight(1f))
+                    ModuleInputField("কাগজের ওয়েট (GSM)", selectedGsm, { selectedGsm = it }, Modifier.weight(1f))
+                    ModuleInputField("ফাইবার/গ্রেইন ডিরেকশন", grainDirection, {
+                        grainDirection = it
+                        isGrainAligned = !it.contains("SHORT", ignoreCase = true)
+                    }, Modifier.weight(1f))
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                // Paper Grain Alignment Warning Badge
+                Surface(
+                    color = if (isGrainAligned) Color(0xFF10B981).copy(alpha = 0.2f) else Color(0xFFF59E0B).copy(alpha = 0.2f),
+                    shape = RoundedCornerShape(8.dp),
+                    border = BorderStroke(1.dp, if (isGrainAligned) Color(0xFF10B981) else Color(0xFFF59E0B))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = if (isGrainAligned) Icons.Default.CheckCircle else Icons.Default.Warning,
+                            contentDescription = null,
+                            tint = if (isGrainAligned) Color(0xFF10B981) else Color(0xFFF59E0B),
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = if (isGrainAligned)
+                                "পারফেক্ট গ্রেইন ডিরেকশন (LONG GRAIN) — ভাজ বা ফোল্ডিংয়ে কাগজ ফাটবে না।"
+                            else
+                                "সতর্কতা: SHORT GRAIN ফোল্ডিং লাইনের বিপরীত — ভাজ করলে ক্র্যাকিং হতে পারে!",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (isGrainAligned) Color(0xFF10B981) else Color(0xFFF59E0B)
+                        )
+                    }
+                }
+            }
+        }
+
+        // Task 7.2: Multi-Job Gang-Run Optimization Engine
+        Card(
+            shape = RoundedCornerShape(12.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFF0A1224)),
+            border = BorderStroke(1.dp, Color(0xFF00B4D8).copy(alpha = 0.3f)),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(text = "২. মাল্টি-জব গ্যাং-রান ২ডি ইম্পোজিশন ইঞ্জিন (Task 7.2)", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF00F0FF))
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(text = "মার্জিন: ৩ মিমি ব্লিড (Bleed) + ১০ মিমি প্রেস গ্রিপার (Gripper Margin)", fontSize = 11.sp, color = Color(0xFF94A3B8))
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(text = "প্যারেন্ট শিট ইউটিলাইজেশন (Sheet Utilization)", fontSize = 11.sp, color = Color(0xFF94A3B8))
+                        Text(text = "৮৯.৪%", fontSize = 22.sp, fontWeight = FontWeight.Black, color = Color(0xFF10B981))
+                        Text(text = "অপচয় / অফকাট: ১০.৬%", fontSize = 10.sp, color = Color(0xFF94A3B8))
+                    }
+
+                    // 2D Master Sheet Preview Canvas
+                    Box(
+                        modifier = Modifier
+                            .size(width = 160.dp, height = 90.dp)
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(Color(0xFF111C33))
+                            .border(1.dp, Color(0xFF00F0FF)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Canvas(modifier = Modifier.fillMaxSize()) {
+                            val w = size.width
+                            val h = size.height
+                            val cols = 3
+                            val rows = 2
+                            val cellW = (w - 20) / cols
+                            val cellH = (h - 16) / rows
+
+                            // Gripper margin bar on bottom
+                            drawRect(color = Color(0xFFD97706), topLeft = Offset(0f, h - 8f), size = Size(w, 8f))
+
+                            for (r in 0 until rows) {
+                                for (c in 0 until cols) {
+                                    drawRect(
+                                        color = Color(0xFF0284C7).copy(alpha = 0.6f),
+                                        topLeft = Offset(10f + c * cellW + 2f, 4f + r * cellH + 2f),
+                                        size = Size(cellW - 4f, cellH - 4f)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                GangRunJobRow("SO-2026-881", "বুক ক্যাটালগ (৬ up)", "Art Paper 150 GSM", "৳ ৪,৫০০", Color(0xFF10B981))
+                Spacer(modifier = Modifier.height(4.dp))
+                GangRunJobRow("SO-2026-880", "ক্যাশ মেমো (১২ up)", "Art Paper 150 GSM", "৳ ৭,২০০", Color(0xFF00F0FF))
+            }
+        }
+    }
+}
+
+@Composable
+private fun GangRunJobRow(orderId: String, name: String, substrate: String, amount: String, color: Color) {
+    Surface(
+        shape = RoundedCornerShape(8.dp),
+        color = Color(0xFF111C33),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(10.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column {
+                Text(text = "$orderId • $name", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                Text(text = substrate, fontSize = 10.sp, color = Color(0xFF94A3B8))
+            }
+            Text(text = amount, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = color)
+        }
+    }
+}
+
+// ============================================================================
+// MODULE 19: SUBSTRATE STOCK RESERVATION GATEWAY SCREEN
+// ============================================================================
+@Composable
+fun SubstrateStockReservationModuleScreen(onClose: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFF040914))
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        ModuleTopBar(
+            code = "Module 19",
+            title = "সাবস্ট্রেট স্টক রিজার্ভেশন ও একটিভ হোল্ড গেটওয়ে",
+            onClose = onClose
+        )
+
+        // Task 7.3: Stock Reservation Gateway Formula Header
+        Card(
+            shape = RoundedCornerShape(12.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFF0A1224)),
+            border = BorderStroke(1.dp, Color(0xFF00B4D8).copy(alpha = 0.4f)),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(14.dp)) {
+                Text(text = "ক্যানোনিকাল ইনভেন্টরি রিজার্ভেশন সমীকরণ (Canonical Reservation Equation):", fontSize = 12.sp, color = Color(0xFF94A3B8))
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Available Stock = On-Hand Stock - Active Holds",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Black,
+                    color = Color(0xFF00F0FF)
+                )
+                Text(
+                    text = "সফ্ট হোল্ড (Quotation 2h Hold) • হার্ড হোল্ড (Job Card Hard Allocation)",
+                    fontSize = 10.sp,
+                    color = Color(0xFF10B981)
+                )
+            }
+        }
+
+        // Substrate Stock Table with Active Holds
+        Card(
+            shape = RoundedCornerShape(12.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFF0A1224)),
+            border = BorderStroke(1.dp, Color(0xFF00B4D8).copy(alpha = 0.3f)),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(text = "সাবস্ট্রেট স্টক রেজিস্ট্রি ও লাইভ হোল্ড স্ট্যাটাস (Zero Shadow Tables)", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                Spacer(modifier = Modifier.height(12.dp))
+
+                StockReservationRow("SKU-AP-150", "Art Paper 150 GSM (20x30\")", onHand = 50, softHold = 5, hardHold = 12, available = 33)
+                Spacer(modifier = Modifier.height(6.dp))
+                StockReservationRow("SKU-AC-300", "Art Card 300 GSM (23x36\")", onHand = 30, softHold = 2, hardHold = 8, available = 20)
+                Spacer(modifier = Modifier.height(6.dp))
+                StockReservationRow("SKU-OP-080", "Offset Paper 80 GSM (20x30\")", onHand = 80, softHold = 10, hardHold = 25, available = 45)
+            }
+        }
+    }
+}
+
+@Composable
+private fun StockReservationRow(sku: String, name: String, onHand: Int, softHold: Int, hardHold: Int, available: Int) {
+    Surface(
+        shape = RoundedCornerShape(8.dp),
+        color = Color(0xFF111C33),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column {
+                Text(text = "$sku • $name", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                Text(text = "অন-হ্যান্ড: $onHand রিম | সফট হোল্ড: $softHold | হার্ড হোল্ড: $hardHold", fontSize = 10.sp, color = Color(0xFF94A3B8))
+            }
+
+            Column(horizontalAlignment = Alignment.End) {
+                Text(text = "ফ্রি স্টক: $available রিম", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color(0xFF10B981))
+                Surface(color = Color(0xFF0284C7).copy(alpha = 0.2f), shape = RoundedCornerShape(4.dp)) {
+                    Text(text = "সক্রিয় হোল্ড", fontSize = 9.sp, color = Color(0xFF00F0FF), modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                }
+            }
+        }
     }
 }
 

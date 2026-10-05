@@ -7,7 +7,7 @@ import com.sucharu.sucharupro.domain.repository.ai.AiUserMemoryRepository
 /**
  * Production-grade PostgreSQL Repository implementation for Persistent AI User Memory.
  */
-class PostgresAiUserMemoryRepository(
+open class PostgresAiUserMemoryRepository(
     private val dataSource: PostgresAiUserMemoryDataSource
 ) : AiUserMemoryRepository {
 
