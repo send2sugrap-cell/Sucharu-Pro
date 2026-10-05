@@ -57,7 +57,8 @@ import androidx.compose.ui.unit.sp
 
 /**
  * Real Canonical Module Workspaces for Sucharu Pro ERP.
- * Integrates Module 03 (Sales Orders), Module 04 (13-Stage Production & Worker UI), Module 09/14 (Finance),
+ * Integrates Module 03 (Sales Orders), Module 04 (13-Stage Production & Worker UI),
+ * Module 09/14 (Finance), Module 12 (Vendor Subcontracting), Module 13 (Central Procurement),
  * Module 18 (Prepress Imposition & Gang-Run), Module 19 (Substrate Stock Reservation),
  * Module 20 (Affiliate), Module 21 (Machine OEE & Telemetry), Job Bag Generation, and QR Tickets.
  */
@@ -70,6 +71,7 @@ fun RouterCanonicalModuleWorkspace(
         "Module 03", "Orders" -> SalesOrderModuleScreen(onClose = onClose)
         "Module 04", "Production" -> ProductionWorkflowModuleScreen(onClose = onClose)
         "Module 09/14", "Finance" -> FinanceBillingModuleScreen(onClose = onClose)
+        "Module 12", "Module 13", "Procurement" -> CentralProcurementHubModuleScreen(onClose = onClose)
         "Module 18", "Module 16" -> PrepressImpositionModuleScreen(onClose = onClose)
         "Module 19" -> SubstrateStockReservationModuleScreen(onClose = onClose)
         "Module 20", "Affiliate" -> AffiliateGovernanceModuleScreen(onClose = onClose)
@@ -277,6 +279,19 @@ fun ProductionWorkflowModuleScreen(onClose: () -> Unit) {
     var workerWasteSheets by remember { mutableStateOf("500") }
     var activeWorkerStage by remember { mutableStateOf("PRINTING") }
 
+    // Task 9.1: Multi-Stage Vendor Subcontracting Assignments
+    var paperVendorInput by remember { mutableStateOf("প্যারামাউন্ট পেপার হাউস") }
+    var paperCommitmentInput by remember { mutableStateOf("৳ ৩৬,০০০ (২০ রিম @ ৳ ১,৮০০)") }
+
+    var ctpVendorInput by remember { mutableStateOf("আলমগীর সিটিপি বিউরো") }
+    var ctpCommitmentInput by remember { mutableStateOf("৳ ১,৪০০ (৪টি প্লেট @ ৳ ৩৫০)") }
+
+    var pressOutsourcedInput by remember { mutableStateOf("নিউ ঢাকা অফসেট প্রেস (আউটসোর্সড)") }
+    var pressCommitmentInput by remember { mutableStateOf("৳ ৪,০০০ (১০,০০০ imp @ ৳ ৪০০/k)") }
+
+    var bindingVendorInput by remember { mutableStateOf("সাগর বাইন্ডিং ওয়ার্কস") }
+    var bindingCommitmentInput by remember { mutableStateOf("৳ ২,৫০০ (পারফেক্ট বাইন্ডিং)") }
+
     val canonical13Stages = listOf(
         "DSN", "APR", "QC", "IA", "CTP", "PRT", "LAM", "FLD", "BND", "FQC", "PKG", "RDY", "DLV"
     )
@@ -345,6 +360,58 @@ fun ProductionWorkflowModuleScreen(onClose: () -> Unit) {
                                 )
                             }
                         }
+                    }
+                }
+            }
+
+            // Task 9.1: Multi-Stage Vendor Subcontracting Assignments Panel (Module 12)
+            Card(
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF0A1224)),
+                border = BorderStroke(1.dp, Color(0xFFA855F7).copy(alpha = 0.4f)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(text = "মাল্টি-স্টেপ ভেন্ডর সাবকন্ট্রাক্টিং ও ওয়ার্ক অর্ডার জেনারেটর (Module 12)", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFFA855F7))
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        ModuleInputField("ক) পেপার সাপ্লায়ার ভেন্ডর", paperVendorInput, { paperVendorInput = it }, Modifier.weight(1f))
+                        ModuleInputField("কাগজ বাবদ কস্ট (WO-2026-102-PAPER)", paperCommitmentInput, { paperCommitmentInput = it }, Modifier.weight(1f))
+                    }
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        ModuleInputField("খ) সিটিপি প্লেট বিউরো ভেন্ডর", ctpVendorInput, { ctpVendorInput = it }, Modifier.weight(1f))
+                        ModuleInputField("সিটিপি বিল (WO-2026-102-CTP)", ctpCommitmentInput, { ctpCommitmentInput = it }, Modifier.weight(1f))
+                    }
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        ModuleInputField("গ) আউটসোর্সড প্রেস ভেন্ডর", pressOutsourcedInput, { pressOutsourcedInput = it }, Modifier.weight(1f))
+                        ModuleInputField("প্রিন্টিং ছাপা বিল (WO-2026-102-PRESS)", pressCommitmentInput, { pressCommitmentInput = it }, Modifier.weight(1f))
+                    }
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        ModuleInputField("ঘ) বাইন্ডিং ও পোস্ট-প্রেস ভেন্ডর", bindingVendorInput, { bindingVendorInput = it }, Modifier.weight(1f))
+                        ModuleInputField("বাইন্ডিং চুক্তি (WO-2026-102-BIND)", bindingCommitmentInput, { bindingCommitmentInput = it }, Modifier.weight(1f))
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Surface(
+                        color = Color(0xFFA855F7),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.clickable { /* Issue Work Orders */ }
+                    ) {
+                        Text(
+                            text = "ওয়ার্ক অর্ডার ইস্যু করুন (Auto Work Order Sequences: WO-2026-XXXX-STEP)",
+                            color = Color.White,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                        )
                     }
                 }
             }
@@ -714,6 +781,214 @@ private fun getNextStage(currentStage: String): Triple<String, String, Color> {
         "FINAL_QC" -> Triple("PACKAGING", "১১. প্যাকিং সম্পন্ন", Color(0xFF10B981))
         "PACKAGING" -> Triple("READY", "১২. ডেলিভারির জন্য প্রস্তুত", Color(0xFF10B981))
         else -> Triple("DELIVERED", "১৩. ডেলিভার্ড সম্পন্ন", Color(0xFF10B981))
+    }
+}
+
+// ============================================================================
+// MODULE 12/13: CENTRAL PROCUREMENT HUB & VENDOR SUBCONTRACTING SCREEN
+// ============================================================================
+@Composable
+fun CentralProcurementHubModuleScreen(onClose: () -> Unit) {
+    var isVendorScopedView by remember { mutableStateOf(false) }
+
+    val procurementSteps = listOf(
+        "WO Issued", "Accepted", "ASN Notice", "GRN Inward", "3-Way Match", "QC Passed", "Clearance Queue"
+    )
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFF040914))
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        ModuleTopBar(
+            code = "Module 12/13",
+            title = "সেন্ট্রাল প্রকিউরমেন্ট হাব, ভেন্ডর সাবকন্ট্রাক্টিং ও ৩-ওয়ে ম্যাচিং",
+            onClose = onClose
+        )
+
+        // View Mode Selector (Admin Procurement vs Subcontractor Scoped View)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Surface(
+                color = if (!isVendorScopedView) Color(0xFF0284C7) else Color(0xFF1E293B),
+                shape = RoundedCornerShape(8.dp),
+                modifier = Modifier.clickable { isVendorScopedView = false }
+            ) {
+                Text(text = "অ্যাডমিন প্রকিউরমেন্ট ভিউ", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp))
+            }
+            Surface(
+                color = if (isVendorScopedView) Color(0xFFA855F7) else Color(0xFF1E293B),
+                shape = RoundedCornerShape(8.dp),
+                modifier = Modifier.clickable { isVendorScopedView = true }
+            ) {
+                Text(text = "সাবকন্ট্রাক্টর ভেন্ডর ওয়ার্কস্পেস ভিউ (Data Masked)", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp))
+            }
+        }
+
+        if (!isVendorScopedView) {
+            // Task 9.2: 27-Stage Procurement Hub Lifecycle Stepper
+            Card(
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF0A1224)),
+                border = BorderStroke(1.dp, Color(0xFF00B4D8).copy(alpha = 0.3f)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(14.dp)) {
+                    Text(text = "প্রকিউরমেন্ট ও সাবকন্ট্রাক্ট লাইফসাইকেল ট্র্যাকার (27-Stage Pipeline)", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF00F0FF))
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(3.dp)
+                    ) {
+                        procurementSteps.forEachIndexed { idx, st ->
+                            val isCompleted = idx <= 4
+                            Surface(
+                                color = if (isCompleted) Color(0xFF10B981).copy(alpha = 0.3f) else Color(0xFF132038),
+                                shape = RoundedCornerShape(4.dp),
+                                border = BorderStroke(1.dp, if (isCompleted) Color(0xFF10B981) else Color(0xFF1E293B)),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text(
+                                    text = st,
+                                    fontSize = 8.sp,
+                                    color = if (isCompleted) Color.White else Color(0xFF94A3B8),
+                                    fontWeight = FontWeight.Bold,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.padding(vertical = 5.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Task 9.3: Zero Shadow Ledger Double-Entry AP Posting
+            Card(
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF0A1224)),
+                border = BorderStroke(1.dp, Color(0xFF10B981).copy(alpha = 0.4f)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(14.dp)) {
+                    Text(text = "জিরো শ্যাডো লেজার ডাবল-এন্ট্রি একাউন্টিং স্ট্যাটাস (Zero Shadow Ledger)", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF10B981))
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "DEBIT: Job Direct Costs / WIP (Module 18) • ৳ ৪৩,৯০০\nCREDIT: Vendor Accounts Payable (Module 15 GL) • ৳ ৪৩,৯০০",
+                        fontSize = 11.sp,
+                        color = Color.White,
+                        lineHeight = 16.sp
+                    )
+                }
+            }
+
+            // Active Work Orders Table
+            Card(
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF0A1224)),
+                border = BorderStroke(1.dp, Color(0xFF00B4D8).copy(alpha = 0.3f)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(text = "সক্রিয় সাবকন্ট্রাক্ট ওয়ার্ক অর্ডার রেজিস্ট্রি (Active Work Orders)", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    ProcurementWoRow("WO-2026-102-PAPER", "প্যারামাউন্ট পেপার হাউস", "Art Paper 150 GSM (20 Reams)", "৳ ৩৬,০০০", "GRN verified (3-Way Match OK)", Color(0xFF10B981))
+                    Spacer(modifier = Modifier.height(6.dp))
+                    ProcurementWoRow("WO-2026-102-CTP", "আলমগীর সিটিপি বিউরো", "4-Color CTP Plates (4 Plates)", "৳ ১,৪০০", "3-Way Matched", Color(0xFF10B981))
+                    Spacer(modifier = Modifier.height(6.dp))
+                    ProcurementWoRow("WO-2026-102-PRESS", "নিউ ঢাকা অফসেট প্রেস", "10,000 Impressions Run", "৳ ৪,০০০", "ASN Received", Color(0xFFF59E0B))
+                    Spacer(modifier = Modifier.height(6.dp))
+                    ProcurementWoRow("WO-2026-102-BIND", "সাগর বাইন্ডিং ওয়ার্কস", "Perfect Binding 10,000 Copies", "৳ ২,৫০০", "WO Issued", Color(0xFF38BDF8))
+                }
+            }
+        } else {
+            // Task 9.4: Scoped Vendor Subcontractor View (Strict Customer Data Masking)
+            Card(
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF0A1224)),
+                border = BorderStroke(1.dp, Color(0xFFA855F7)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(text = "সাবকন্ট্রাক্টর ওয়ার্কস্পেস (WO: WO-2026-102-PRESS)", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFFA855F7))
+                        Surface(color = Color(0xFFA855F7).copy(alpha = 0.2f), shape = RoundedCornerShape(6.dp)) {
+                            Text(text = "STRICT DATA MASKED", fontSize = 10.sp, color = Color(0xFFA855F7), fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    VendorMaskedSpecRow("ওয়ার্ক অর্ডার আইডি", "WO-2026-102-PRESS")
+                    VendorMaskedSpecRow("কাস্টমার আইডেন্টিটি", "[RESTRICTED / VENDOR MASKED]")
+                    VendorMaskedSpecRow("জব টেকনিক্যাল স্পেক্স", "১০,০০০ প্রেস ইমপ্রেশন (Art Paper 150 GSM, CMYK 4-Color)")
+                    VendorMaskedSpecRow("ডেলিভারি সময়সীমা", "২০২৬-১০-০৭ বিকাল ৫:০০ টা")
+                    VendorMaskedSpecRow("ড্রপ-অফ লোকেশন", "সুচারু প্রো কারখানা, পুরানা পল্টন, ঢাকা")
+                    VendorMaskedSpecRow("চুক্তি মূল্যের সেলস মার্জিন", "[RESTRICTED / VENDOR MASKED]")
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    Surface(
+                        color = Color(0xFF10B981),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.clickable { /* Update Vendor Execution Status */ }
+                    ) {
+                        Text(
+                            text = "ASN (Advance Shipping Notice) জমা দিন ➔",
+                            color = Color.White,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProcurementWoRow(woId: String, vendor: String, spec: String, amount: String, status: String, color: Color) {
+    Surface(
+        shape = RoundedCornerShape(8.dp),
+        color = Color(0xFF111C33),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column {
+                Text(text = "$woId • $vendor", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                Text(text = spec, fontSize = 10.sp, color = Color(0xFF94A3B8))
+            }
+
+            Column(horizontalAlignment = Alignment.End) {
+                Text(text = amount, fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color(0xFF00F0FF))
+                Surface(color = color.copy(alpha = 0.2f), shape = RoundedCornerShape(4.dp)) {
+                    Text(text = status, fontSize = 9.sp, color = color, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun VendorMaskedSpecRow(label: String, value: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(text = label, fontSize = 11.sp, color = Color(0xFF94A3B8))
+        Text(text = value, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (value.contains("MASKED")) Color(0xFFA855F7) else Color.White)
     }
 }
 
@@ -1122,7 +1397,7 @@ private fun FinanceInvoiceRow(invId: String, customer: String, total: String, pa
                 shape = RoundedCornerShape(6.dp),
                 border = BorderStroke(1.dp, color)
             ) {
-                Text(text = status, fontSize = 11.sp, color = color, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
+                Text(text = status, fontSize = 11.sp, color = color, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
             }
         }
     }
@@ -1376,6 +1651,8 @@ private fun getCanonicalModuleName(code: String): String {
         "Module 07" -> "ফিনিশড গুডস ইনভেন্টরি"
         "Module 08/11" -> "ডেলিভারি চালান ও ডিসপ্যাচ"
         "Module 09/14" -> "ফিন্যান্স, মেমো ও ইনভয়েসিং"
+        "Module 12" -> "ভেন্ডর সাবকন্ট্রাক্টিং ও ওয়ার্ক অর্ডার"
+        "Module 13" -> "সেন্ট্রাল প্রকিউরমেন্ট হাব ও ৩-ওয়ে ম্যাচিং"
         "Module 15/18" -> "প্রডাকশন জব কস্টিং ও রেট কার্ড"
         "Module 19" -> "সাবস্ট্রেট স্টক রিজার্ভেশন"
         "Module 20" -> "আফিলিয়েট গভর্ন্যান্স Network"
