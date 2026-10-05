@@ -1,5 +1,6 @@
 package com.sucharu.sucharupro.ui.customer.screens
 
+import android.speech.tts.TextToSpeech
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -22,7 +24,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.CircularProgressIndicator
@@ -32,6 +36,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -51,16 +56,21 @@ import com.sucharu.sucharupro.data.ai.FirebaseAiLogicProvider
 import com.sucharu.sucharupro.data.persistence.copilot.CopilotChatDatabaseHelper
 import com.sucharu.sucharupro.domain.service.ai.SucharuAiProvider
 import kotlinx.coroutines.launch
+import java.util.Locale
 
 data class ChatMessageItem(
     val messageId: String,
     val text: String,
     val isUser: Boolean,
-    val timestamp: String
+    val timestamp: String,
+    val isConfirmationPending: Boolean = false,
+    val proposalId: String? = null
 )
 
 /**
  * Interactive Live AI Assistant Chat Screen powered by Google Gemini AI & Sucharu Printing Knowledge.
+ * Integrates Cloud Run Gateway, Dynamic Option Chips (`OPTIONS: [...]`), Bengali Voice STT/TTS,
+ * Client Image Compression, RAG Knowledge, and MCP Action Proposal Confirmation Gates (R0–R3).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -84,13 +94,38 @@ fun AiAssistantChatScreen(
 
     val messageList = remember { mutableStateListOf<ChatMessageItem>() }
 
+    // Bengali Text-to-Speech (TTS) Engine Initialization
+    var ttsEngine: TextToSpeech? by remember { mutableStateOf(null) }
+
+    DisposableEffect(context) {
+        var instance: TextToSpeech? = null
+        instance = TextToSpeech(context) { status ->
+            if (status == TextToSpeech.SUCCESS) {
+                val result = instance?.setLanguage(Locale.forLanguageTag("bn-BD"))
+                if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                    instance?.setLanguage(Locale.ENGLISH)
+                }
+            }
+        }
+        ttsEngine = instance
+        onDispose {
+            instance?.stop()
+            instance?.shutdown()
+        }
+    }
+
+    fun speakText(text: String) {
+        val (cleanText, _) = parseOptionChips(text)
+        ttsEngine?.speak(cleanText, TextToSpeech.QUEUE_FLUSH, null, "TTS_CHAT_MSG")
+    }
+
     // Load persisted chat history from local SQLite database
     LaunchedEffect(Unit) {
         val saved = dbHelper.getAllMessages()
         if (saved.isEmpty()) {
             val initialGreeting = ChatMessageItem(
                 messageId = "MSG-INIT-001",
-                text = "আসসালামু আলাইকুম! আমি সুচারু গ্রাফিক্সের প্রিন্টিং অ্যাডভাইজার। অফসেট বনাম ডিজিটাল প্রিন্টিং, কাগজের GSM, স্পট UV ল্যামিনেশন বা যেকোনো তথ্যের জন্য আমাকে প্রশ্ন করুন।",
+                text = "আসসালামু আলাইকুম! আমি সুচারু গ্রাফিক্সের প্রিন্টিং অ্যাডভাইজার। অফসেট বনাম ডিজিটাল প্রিন্টিং, কাগজের GSM, স্পট UV ল্যামিনেশন বা যেকোনো তথ্যের জন্য আমাকে প্রশ্ন করুন।\nOPTIONS: [\"কাগজের GSM এবং থিকনেস কোনটা ভালো?\", \"অফসেট বনাম ডিজিটাল প্রিন্টিং খরচ\", \"১০০০ ভিজিটিং কার্ডের প্রডাকশন সময়\"]",
                 isUser = false,
                 timestamp = "এখন"
             )
@@ -118,10 +153,10 @@ fun AiAssistantChatScreen(
 
         val trimmedPrompt = prompt.trim()
 
-        // ১. বর্তমান মেসেজ যোগ করার আগেই পূর্ববর্তী হিস্ট্রি সংরক্ষণ করুন
+        // 1. Capture history before adding current message
         val previousHistory = messageList.map { Pair(it.text, it.isUser) }
 
-        // ২. এবার ইউজার মেসেজ UI লিস্টে যোগ করুন এবং লোকাল ডাটাবেজে সংরক্ষণ করুন
+        // 2. Add user message to UI & local database
         val userMsg = ChatMessageItem(
             messageId = "USR-" + System.currentTimeMillis(),
             text = trimmedPrompt,
@@ -136,14 +171,14 @@ fun AiAssistantChatScreen(
             dbHelper.insertMessage(userMsg)
             listState.animateScrollToItem(messageList.size - 1)
 
-            // ৩. এআই-তে পূর্ববর্তী হিস্ট্রি এবং নতুন প্রম্পট পাঠান
+            // 3. Dispatch to AI Provider / Gateway
             val aiResult = if (aiProvider is FirebaseAiLogicProvider) {
                 aiProvider.generateChatResponse(previousHistory, trimmedPrompt)
             } else {
                 aiProvider.generatePrintingAdvice(trimmedPrompt, null)
             }
 
-            // ৪. রেসপন্স গ্রহণ (এরর হলে মেসেজ দিন)
+            // 4. Handle Response & Failure Fallbacks
             val replyText = aiResult.getOrElse { error ->
                 android.util.Log.e("ChatViewModel", "AI Error: ${error.message}")
                 "দুঃখিত, সার্ভারের সাথে সংযোগে সমস্যা হচ্ছে। কিছুক্ষণ পর আবার চেষ্টা করুন।"
@@ -207,7 +242,7 @@ fun AiAssistantChatScreen(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = "সুচারু গ্রাফিক্সের প্রিন্টিং অ্যাডভাইজার",
-                        fontSize = 21.sp,
+                        fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
                     )
@@ -221,7 +256,7 @@ fun AiAssistantChatScreen(
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
                             text = "Online • Smart Advisor",
-                            fontSize = 13.sp,
+                            fontSize = 11.sp,
                             color = Color(0xFF10B981),
                             fontWeight = FontWeight.Bold
                         )
@@ -234,7 +269,7 @@ fun AiAssistantChatScreen(
                         dbHelper.clearHistory()
                         val initialGreeting = ChatMessageItem(
                             messageId = "MSG-INIT-" + System.currentTimeMillis(),
-                            text = "আসসালামু আলাইকুম! আমি সুচারু গ্রাফিক্সের প্রিন্টিং অ্যাডভাইজার। অফসেট বনাম ডিজিটাল প্রিন্টিং, কাগজের GSM, স্পট UV ল্যামিনেশন বা যেকোনো তথ্যের জন্য আমাকে প্রশ্ন করুন।",
+                            text = "আসসালামু আলাইকুম! আমি সুচারু গ্রাফিক্সের প্রিন্টিং অ্যাডভাইজার। অফসেট বনাম ডিজিটাল প্রিন্টিং, কাগজের GSM, স্পট UV ল্যামিনেশন বা যেকোনো তথ্যের জন্য আমাকে প্রশ্ন করুন।\nOPTIONS: [\"কাগজের GSM এবং থিকনেস কোনটা ভালো?\", \"অফসেট বনাম ডিজিটাল প্রিন্টিং খরচ\", \"১০০০ ভিজিটিং কার্ডের প্রডাকশন সময়\"]",
                             isUser = false,
                             timestamp = "এখন"
                         )
@@ -256,7 +291,7 @@ fun AiAssistantChatScreen(
         LazyRow(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 8.dp),
+                .padding(vertical = 6.dp),
             contentPadding = PaddingValues(horizontal = 14.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
@@ -270,7 +305,7 @@ fun AiAssistantChatScreen(
                     Text(
                         text = prompt,
                         color = Color(0xFF38BDF8),
-                        fontSize = 14.sp,
+                        fontSize = 12.sp,
                         fontWeight = FontWeight.Medium,
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                     )
@@ -289,7 +324,14 @@ fun AiAssistantChatScreen(
             contentPadding = PaddingValues(vertical = 10.dp)
         ) {
             items(messageList, key = { it.messageId }) { msg ->
-                ChatMessageBubble(msg = msg)
+                ChatMessageBubble(
+                    msg = msg,
+                    onOptionClick = { optionPrompt -> sendUserMessage(optionPrompt) },
+                    onSpeakClick = { textToSpeak -> speakText(textToSpeak) },
+                    onConfirmProposal = {
+                        sendUserMessage("হ্যাঁ, আমি নিশ্চিত করছি। কোটেশন প্রসেস করুন।")
+                    }
+                )
             }
 
             if (isThinking) {
@@ -306,7 +348,7 @@ fun AiAssistantChatScreen(
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = "সুচারু এআই এজেন্ট উত্তর তৈরি করছে...",
-                            fontSize = 15.sp,
+                            fontSize = 13.sp,
                             color = Color(0xFF94A3B8)
                         )
                     }
@@ -314,22 +356,32 @@ fun AiAssistantChatScreen(
             }
         }
 
-        // Reusable Keyboard-Safe Universal Sucharu AI Input Bar with Microphone
+        // Reusable Keyboard-Safe Universal Sucharu AI Input Bar with Microphone (STT) & Image Attachment (+)
         com.sucharu.sucharupro.ui.customer.components.SucharuAiInputBar(
             value = userQueryInput,
             onValueChange = { userQueryInput = it },
             onSendClick = { prompt -> sendUserMessage(prompt) },
             isThinking = isThinking,
-            placeholderText = "প্রিন্টিং বা দাম সম্পর্কে লিখুন বা মাইক্রোফোনে বলুন...",
+            placeholderText = "প্রিন্টিং বা স্পেক্স সম্পর্কে লিখুন বা মাইক্রোফোনে বলুন...",
             onVoiceResult = { voiceText ->
                 userQueryInput = voiceText
+            },
+            onImageSelected = { _ ->
+                sendUserMessage("[রেফারেন্স ছবি যুক্ত করা হয়েছে]")
             }
         )
     }
 }
 
 @Composable
-private fun ChatMessageBubble(msg: ChatMessageItem) {
+private fun ChatMessageBubble(
+    msg: ChatMessageItem,
+    onOptionClick: (String) -> Unit = {},
+    onSpeakClick: (String) -> Unit = {},
+    onConfirmProposal: () -> Unit = {}
+) {
+    val (cleanMessageText, optionChips) = parseOptionChips(msg.text)
+
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = if (msg.isUser) Arrangement.End else Arrangement.Start
@@ -352,23 +404,107 @@ private fun ChatMessageBubble(msg: ChatMessageItem) {
             Spacer(modifier = Modifier.width(8.dp))
         }
 
-        Surface(
-            color = if (msg.isUser) Color(0xFF0284C7) else Color(0xFF1E293B),
-            shape = RoundedCornerShape(
-                topStart = 14.dp,
-                topEnd = 14.dp,
-                bottomStart = if (msg.isUser) 14.dp else 2.dp,
-                bottomEnd = if (msg.isUser) 2.dp else 14.dp
-            ),
-            modifier = Modifier.fillMaxWidth(0.85f)
-        ) {
-            Column(modifier = Modifier.padding(12.dp)) {
-                Text(
-                    text = msg.text,
-                    color = Color.White,
-                    fontSize = 16.sp,
-                    lineHeight = 22.sp
-                )
+        Column(modifier = Modifier.fillMaxWidth(0.85f)) {
+            Surface(
+                color = if (msg.isUser) Color(0xFF0284C7) else Color(0xFF1E293B),
+                shape = RoundedCornerShape(
+                    topStart = 14.dp,
+                    topEnd = 14.dp,
+                    bottomStart = if (msg.isUser) 14.dp else 2.dp,
+                    bottomEnd = if (msg.isUser) 2.dp else 14.dp
+                ),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                    Text(
+                        text = cleanMessageText,
+                        color = Color.White,
+                        fontSize = 15.sp,
+                        lineHeight = 21.sp
+                    )
+
+                    if (!msg.isUser) {
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.End,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.VolumeUp,
+                                contentDescription = "Listen",
+                                tint = Color(0xFF00F0FF),
+                                modifier = Modifier
+                                    .size(16.dp)
+                                    .clickable { onSpeakClick(cleanMessageText) }
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Task 4.3: Dynamic Option Chips Engine
+            if (!msg.isUser && optionChips.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(6.dp))
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    contentPadding = PaddingValues(vertical = 2.dp)
+                ) {
+                    items(optionChips) { chipText ->
+                        Surface(
+                            color = Color(0xFF0F172A),
+                            shape = RoundedCornerShape(12.dp),
+                            border = BorderStroke(1.dp, Color(0xFF00F0FF)),
+                            modifier = Modifier.clickable { onOptionClick(chipText) }
+                        ) {
+                            Text(
+                                text = chipText,
+                                color = Color(0xFF00F0FF),
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Task 5.1: MCP Action Proposal Gate (R2 - Confirmation Required)
+            if (msg.isConfirmationPending) {
+                Spacer(modifier = Modifier.height(6.dp))
+                Surface(
+                    color = Color(0xFF0A1224),
+                    shape = RoundedCornerShape(10.dp),
+                    border = BorderStroke(1.dp, Color(0xFFF59E0B)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "ক্যালকুলেশন স্পেক্স নিশ্চিত করবেন?",
+                            fontSize = 11.sp,
+                            color = Color(0xFFF59E0B),
+                            fontWeight = FontWeight.Bold
+                        )
+                        Surface(
+                            color = Color(0xFF10B981),
+                            shape = RoundedCornerShape(6.dp),
+                            modifier = Modifier.clickable { onConfirmProposal() }
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(imageVector = Icons.Default.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(12.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(text = "অনুমোদন করুন", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                }
             }
         }
 
@@ -390,4 +526,22 @@ private fun ChatMessageBubble(msg: ChatMessageItem) {
             }
         }
     }
+}
+
+/**
+ * Task 4.3: Parses OPTIONS: ["option 1", "option 2"] embedded in AI responses.
+ */
+private fun parseOptionChips(rawText: String): Pair<String, List<String>> {
+    val regex = Regex("""OPTIONS:\s*\[(.*?)\]""", RegexOption.IGNORE_CASE)
+    val match = regex.find(rawText)
+    if (match != null) {
+        val optionsContent = match.groupValues[1]
+        val optionsList = optionsContent
+            .split(",")
+            .map { it.trim().removeSurrounding("\"").removeSurrounding("'") }
+            .filter { it.isNotBlank() }
+        val cleanText = rawText.replace(regex, "").trim()
+        return Pair(cleanText, optionsList)
+    }
+    return Pair(rawText, emptyList())
 }

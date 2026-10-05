@@ -1,12 +1,18 @@
 package com.sucharu.sucharupro.ui.customer.components
 
 import android.Manifest
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.net.Uri
 import android.os.Bundle
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
+import android.util.Base64
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -46,13 +52,16 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import java.io.ByteArrayOutputStream
 
 enum class MicState {
     IDLE, LISTENING, PROCESSING, SUCCESS
 }
 
 /**
- * Universal Reusable Keyboard-Safe Sucharu AI Input Bar with Microphone & Send right side placement.
+ * Universal Reusable Keyboard-Safe Sucharu AI Input Bar with Bengali Speech-to-Text (STT),
+ * '+' Image Attachment Picker with Client-Side Bitmap Compression (800x800, 70% JPEG),
+ * and Right-Hand Send Button.
  */
 @Composable
 fun SucharuAiInputBar(
@@ -62,10 +71,26 @@ fun SucharuAiInputBar(
     modifier: Modifier = Modifier,
     placeholderText: String = "সুচারু AI-কে প্রশ্ন করুন...",
     isThinking: Boolean = false,
-    onVoiceResult: (String) -> Unit = {}
+    onVoiceResult: (String) -> Unit = {},
+    onImageSelected: (base64Image: String) -> Unit = {}
 ) {
     val context = LocalContext.current
     var micState by remember { mutableStateOf(MicState.IDLE) }
+
+    // Client-Side Image Attachment Launcher with Bitmap Compression
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            val base64 = compressAndEncodeBitmap(context, uri)
+            if (base64 != null) {
+                onImageSelected(base64)
+                Toast.makeText(context, "ছবি যুক্ত করা হয়েছে", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(context, "ছবি প্রসেস করতে ব্যর্থ হয়েছে", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
 
     val speechRecognizer = remember {
         try {
@@ -99,7 +124,7 @@ fun SucharuAiInputBar(
         }
 
         if (speechRecognizer == null) {
-            android.widget.Toast.makeText(context, "ভয়েস ইনপুট এই ডিভাইসে উপলব্ধ নয়", android.widget.Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "ভয়েস ইনপুট এই ডিভাইসে উপলব্ধ নয়", Toast.LENGTH_SHORT).show()
             micState = MicState.IDLE
             return
         }
@@ -130,7 +155,7 @@ fun SucharuAiInputBar(
                     SpeechRecognizer.ERROR_NETWORK -> "নেটওয়ার্ক সমস্যা, আবার চেষ্টা করুন"
                     else -> "ভয়েস ইনপুট সমস্যা হয়েছে"
                 }
-                android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
             }
             override fun onResults(results: Bundle?) {
                 val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
@@ -160,7 +185,7 @@ fun SucharuAiInputBar(
         if (isGranted) {
             startListening()
         } else {
-            android.widget.Toast.makeText(context, "ভয়েস ইনপুট ব্যবহারের জন্য মাইক্রোফোন পারমিশন প্রয়োজন", android.widget.Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "ভয়েস ইনপুট ব্যবহারের জন্য মাইক্রোফোন পারমিশন প্রয়োজন", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -187,7 +212,7 @@ fun SucharuAiInputBar(
                 .padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Pill Shaped Input Text Field (+ Icon on left, Microphone Icon on right)
+            // Pill Shaped Input Text Field (+ Icon on left for image attach, Microphone Icon on right)
             OutlinedTextField(
                 value = value,
                 onValueChange = onValueChange,
@@ -199,12 +224,20 @@ fun SucharuAiInputBar(
                     )
                 },
                 leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = "Add",
-                        tint = Color(0xFF94A3B8),
-                        modifier = Modifier.size(20.dp)
-                    )
+                    Box(
+                        modifier = Modifier
+                            .size(28.dp)
+                            .clip(CircleShape)
+                            .clickable { imagePickerLauncher.launch("image/*") },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "Attach Image",
+                            tint = Color(0xFF00F0FF),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
                 },
                 trailingIcon = {
                     Box(
@@ -269,5 +302,37 @@ fun SucharuAiInputBar(
                 }
             }
         }
+    }
+}
+
+/**
+ * Task 4.5: Compress bitmap to max 800x800 resolution and ~70% JPEG quality before Base64 encoding.
+ */
+private fun compressAndEncodeBitmap(context: Context, uri: Uri): String? {
+    return try {
+        val inputStream = context.contentResolver.openInputStream(uri) ?: return null
+        val originalBitmap = BitmapFactory.decodeStream(inputStream) ?: return null
+
+        val maxDimension = 800
+        val scale = Math.min(
+            maxDimension.toFloat() / originalBitmap.width,
+            maxDimension.toFloat() / originalBitmap.height
+        )
+
+        val targetWidth = if (scale < 1.0f) (originalBitmap.width * scale).toInt() else originalBitmap.width
+        val targetHeight = if (scale < 1.0f) (originalBitmap.height * scale).toInt() else originalBitmap.height
+
+        val scaledBitmap = if (scale < 1.0f) {
+            Bitmap.createScaledBitmap(originalBitmap, targetWidth, targetHeight, true)
+        } else {
+            originalBitmap
+        }
+
+        val outputStream = ByteArrayOutputStream()
+        scaledBitmap.compress(Bitmap.CompressFormat.JPEG, 70, outputStream)
+        val byteArray = outputStream.toByteArray()
+        Base64.encodeToString(byteArray, Base64.NO_WRAP)
+    } catch (e: Exception) {
+        null
     }
 }
