@@ -26,6 +26,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
@@ -58,9 +59,9 @@ import androidx.compose.ui.unit.sp
 /**
  * Real Canonical Module Workspaces for Sucharu Pro ERP.
  * Integrates Module 03 (Sales Orders), Module 04 (13-Stage Production & Worker UI),
- * Module 09/14 (Finance), Module 12 (Vendor Subcontracting), Module 13 (Central Procurement),
+ * Module 09/14 (Finance & Bangla QR), Module 12 (Vendor Subcontracting), Module 13 (Central Procurement),
  * Module 18 (Prepress Imposition & Gang-Run), Module 19 (Substrate Stock Reservation),
- * Module 20 (Affiliate), Module 21 (Machine OEE & Telemetry), Job Bag Generation, and QR Tickets.
+ * Module 20 (Affiliate), Module 21 (Machine OEE & Telemetry), Job Bag Generation, and Financial Lock.
  */
 @Composable
 fun RouterCanonicalModuleWorkspace(
@@ -91,130 +92,256 @@ fun SalesOrderModuleScreen(onClose: () -> Unit) {
     var jobTitleInput by remember { mutableStateOf("") }
     var quantityInput by remember { mutableStateOf("") }
     var amountInput by remember { mutableStateOf("") }
-    var advanceStatusInput by remember { mutableStateOf("PAID_50_PERCENT") }
+    var advanceStatusInput by remember { mutableStateOf("PENDING_ADVANCE") }
+
+    var showBanglaQrDialog by remember { mutableStateOf(false) }
+    var activePaymentOrder: SalesOrderItem? by remember { mutableStateOf(null) }
 
     var ordersList by remember {
         mutableStateOf(
             listOf(
-                SalesOrderItem("SO-2026-881", "CALC-2026-904", "আহমেদ ট্রেডার্স", "১,০০০ পিস বুক ক্যাটালগ", "৳ ৪,৫০০", "২০২৬-১০-০৫", "৫০% অগ্রিম পরিশোধিত", "প্রোডাকশনে পাঠায়িত", Color(0xFFF59E0B)),
-                SalesOrderItem("SO-2026-880", "CALC-2026-812", "সুমন এন্টারপ্রাইজ", "৫,০০০ পিস ক্যাশ মেমো", "৳ ৭,২০০", "২০২৬-১০-০৪", "পূর্ণ পরিশোধিত", "অনুমোদিত", Color(0xFF10B981)),
+                SalesOrderItem("SO-2026-881", "CALC-2026-904", "আহমেদ ট্রেডার্স", "১,০০০ পিস বুক ক্যাটালগ", "৳ ৪,৫০০", "২০২৬-১০-০৫", "৫০% অগ্রিম বাকি", "PENDING_ADVANCE (লকড)", Color(0xFFEF4444)),
+                SalesOrderItem("SO-2026-880", "CALC-2026-812", "সুমন এন্টারপ্রাইজ", "৫,০০০ পিস ক্যাশ মেমো", "৳ ৭,২০০", "২০২৬-১০-০৪", "পূর্ণ পরিশোধিত", "ADVANCE_PAID (আনলকড)", Color(0xFF10B981)),
                 SalesOrderItem("SO-2026-879", "CALC-2026-778", "আইটি ভিশন লিঃ", "৫০০ পিস ভিজটিং কার্ড", "৳ ১,২০০", "২০২৬-১০-০৪", "পূর্ণ পরিশোধিত", "সম্পন্ন", Color(0xFF00F0FF)),
                 SalesOrderItem("SO-2026-878", "CALC-2026-650", "গ্রিন মাল্টিমিডিয়া", "২,০০০ পিস ফ্লায়ার", "৳ ৩,৮০০", "২০২৬-১০-০৩", "অগ্রিম বকেয়া", "পেমেন্ট বকেয়া", Color(0xFFEF4444))
             )
         )
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFF040914))
-            .padding(16.dp)
-            .verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
-    ) {
-        ModuleTopBar(
-            code = "Module 03",
-            title = "কোটেশন ইনটেক ও সেলস অর্ডার ম্যানেজমেন্ট (Sales Orders)",
-            onClose = onClose
-        )
-
-        // KPI Summary
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color(0xFF040914))
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            ModuleKpiChip("আজকের মোট সেলস", "৳ ১,৩৭,৫০০", "৮৪টি অর্ডার", Color(0xFF00F0FF), Modifier.weight(1f))
-            ModuleKpiChip("অনুমোদিত কোটেশন", "৬১টি", "৭২% কনভার্সন", Color(0xFF10B981), Modifier.weight(1f))
-            ModuleKpiChip("পেন্ডিং ইনটেক", "১৮টি", "রিভিউ দরকার", Color(0xFFF59E0B), Modifier.weight(1f))
-        }
+            ModuleTopBar(
+                code = "Module 03",
+                title = "কোটেশন ইনটেক, সেলস অর্ডার ও কমার্শিয়াল এডভান্স লক (Sales Orders)",
+                onClose = onClose
+            )
 
-        // New Order Intake Form
-        Card(
-            shape = RoundedCornerShape(12.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFF0A1224)),
-            border = BorderStroke(1.dp, Color(0xFF00B4D8).copy(alpha = 0.3f)),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(text = "+ নতুন কোটেশন ও সেলস অর্ডার ইনটেক ফর্ম (Sequence: SO-2026-XXXX)", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF00F0FF))
-                Spacer(modifier = Modifier.height(10.dp))
+            // KPI Summary
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                ModuleKpiChip("আজকের মোট সেলস", "৳ ১,৩৭,৫০০", "৮৪টি অর্ডার", Color(0xFF00F0FF), Modifier.weight(1f))
+                ModuleKpiChip("অনুমোদিত কোটেশন", "৬১টি", "৭২% কনভার্সন", Color(0xFF10B981), Modifier.weight(1f))
+                ModuleKpiChip("এডভান্স লকড অর্ডার", "১৮টি", "৫০% অগ্রিম প্রয়োজন", Color(0xFFEF4444), Modifier.weight(1f))
+            }
 
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    ModuleInputField("ক্যালকুলেশন আইডি (Optional)", calculationIdInput, { calculationIdInput = it }, Modifier.weight(0.8f))
-                    ModuleInputField("কাস্টমারের নাম", customerNameInput, { customerNameInput = it }, Modifier.weight(1f))
-                    ModuleInputField("জব টাইটেল / পণ্য", jobTitleInput, { jobTitleInput = it }, Modifier.weight(1f))
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    ModuleInputField("পরিমাণ (Quantity)", quantityInput, { quantityInput = it }, Modifier.weight(1f))
-                    ModuleInputField("চুক্তি মূল্য (BDT)", amountInput, { amountInput = it }, Modifier.weight(1f))
-                    ModuleInputField("অগ্রিম স্ট্যাটাস", advanceStatusInput, { advanceStatusInput = it }, Modifier.weight(1f))
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Surface(
-                    color = Color(0xFF0284C7),
-                    shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier.clickable {
-                        if (customerNameInput.isNotBlank() && jobTitleInput.isNotBlank()) {
-                            val newOrderId = "SO-2026-${(882..999).random()}"
-                            val calcId = calculationIdInput.ifBlank { "CALC-2026-${(100..999).random()}" }
-                            ordersList = listOf(
-                                SalesOrderItem(
-                                    id = newOrderId,
-                                    calcId = calcId,
-                                    customer = customerNameInput,
-                                    jobTitle = jobTitleInput,
-                                    amount = "৳ ${amountInput.ifBlank { "২,৫০০" }}",
-                                    deliveryDate = "২০২৬-১০-১০",
-                                    advanceStatus = advanceStatusInput,
-                                    status = "নতুন ইনটেক",
-                                    statusColor = Color(0xFF00F0FF)
-                                )
-                            ) + ordersList
-                            customerNameInput = ""
-                            jobTitleInput = ""
-                            quantityInput = ""
-                            amountInput = ""
-                            calculationIdInput = ""
-                        }
-                    }
+            // Task 10.1: Commercial Advance Payment Lock Warning Card
+            Card(
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1010)),
+                border = BorderStroke(1.dp, Color(0xFFEF4444)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier.padding(14.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = "অর্ডার সেভ করুন ও প্রসেস করুন (SO-2026 Sequence)",
-                        color = Color.White,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
-                    )
+                    Icon(imageVector = Icons.Default.Lock, contentDescription = null, tint = Color(0xFFEF4444), modifier = Modifier.size(24.dp))
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Column {
+                        Text(text = "কমার্শিয়াল এডভান্স পেমেন্ট লক ইঞ্জিন (Advance Lock Gatekeeper)", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFFEF4444))
+                        Text(text = "সর্বনিম্ন ৫০% অগ্রিম পেমেন্ট জমা না হওয়া পর্যন্ত কোনো জব কার্ড কারখানা ফ্লোরে (Module 04) রিলিজ করা যাবে না।", fontSize = 11.sp, color = Color.White)
+                    }
+                }
+            }
+
+            // New Order Intake Form
+            Card(
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF0A1224)),
+                border = BorderStroke(1.dp, Color(0xFF00B4D8).copy(alpha = 0.3f)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(text = "+ নতুন কোটেশন ও সেলস অর্ডার ইনটেক ফর্ম (Sequence: SO-2026-XXXX)", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF00F0FF))
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        ModuleInputField("ক্যালকুলেশন আইডি (Optional)", calculationIdInput, { calculationIdInput = it }, Modifier.weight(0.8f))
+                        ModuleInputField("কাস্টমারের নাম", customerNameInput, { customerNameInput = it }, Modifier.weight(1f))
+                        ModuleInputField("জব টাইটেল / পণ্য", jobTitleInput, { jobTitleInput = it }, Modifier.weight(1f))
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        ModuleInputField("পরিমাণ (Quantity)", quantityInput, { quantityInput = it }, Modifier.weight(1f))
+                        ModuleInputField("চুক্তি মূল্য (BDT)", amountInput, { amountInput = it }, Modifier.weight(1f))
+                        ModuleInputField("অগ্রিম স্ট্যাটাস", advanceStatusInput, { advanceStatusInput = it }, Modifier.weight(1f))
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Surface(
+                        color = Color(0xFF0284C7),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.clickable {
+                            if (customerNameInput.isNotBlank() && jobTitleInput.isNotBlank()) {
+                                val newOrderId = "SO-2026-${(882..999).random()}"
+                                val calcId = calculationIdInput.ifBlank { "CALC-2026-${(100..999).random()}" }
+                                ordersList = listOf(
+                                    SalesOrderItem(
+                                        id = newOrderId,
+                                        calcId = calcId,
+                                        customer = customerNameInput,
+                                        jobTitle = jobTitleInput,
+                                        amount = "৳ ${amountInput.ifBlank { "২,৫০০" }}",
+                                        deliveryDate = "২০২৬-১০-১০",
+                                        advanceStatus = advanceStatusInput,
+                                        status = "PENDING_ADVANCE (লকড)",
+                                        statusColor = Color(0xFFEF4444)
+                                    )
+                                ) + ordersList
+                                customerNameInput = ""
+                                jobTitleInput = ""
+                                quantityInput = ""
+                                amountInput = ""
+                                calculationIdInput = ""
+                            }
+                        }
+                    ) {
+                        Text(
+                            text = "অর্ডার সেভ করুন (PENDING_ADVANCE Lock Enabled)",
+                            color = Color.White,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
+                        )
+                    }
+                }
+            }
+
+            // Search & Orders Table
+            Card(
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF0A1224)),
+                border = BorderStroke(1.dp, Color(0xFF00B4D8).copy(alpha = 0.3f)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(text = "লাইভ সেলস অর্ডার রেজিস্ট্রি (${ordersList.size}টি রেকর্ড)", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        ModuleInputField("খুঁজুন...", searchQuery, { searchQuery = it }, Modifier.width(200.dp))
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    ordersList.forEach { order ->
+                        SalesOrderRow(
+                            order = order,
+                            onPayBanglaQr = {
+                                activePaymentOrder = order
+                                showBanglaQrDialog = true
+                            }
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                    }
                 }
             }
         }
 
-        // Search & Orders Table
-        Card(
-            shape = RoundedCornerShape(12.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFF0A1224)),
-            border = BorderStroke(1.dp, Color(0xFF00B4D8).copy(alpha = 0.3f)),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+        // Task 10.2: Dynamic Bangla QR Code Modal Dialog
+        if (showBanglaQrDialog && activePaymentOrder != null) {
+            val order = activePaymentOrder!!
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.8f))
+                    .clickable { showBanglaQrDialog = false },
+                contentAlignment = Alignment.Center
+            ) {
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF0A1224)),
+                    border = BorderStroke(2.dp, Color(0xFF00F0FF)),
+                    modifier = Modifier
+                        .fillMaxWidth(0.85f)
+                        .clickable { /* prevent dismiss */ }
+                        .padding(16.dp)
                 ) {
-                    Text(text = "লাইভ সেলস অর্ডার রেজিস্ট্রি (${ordersList.size}টি রেকর্ড)", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                    ModuleInputField("খুঁজুন...", searchQuery, { searchQuery = it }, Modifier.width(200.dp))
-                }
+                    Column(modifier = Modifier.padding(20.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(text = "ডাইনামিক বাংলা কিউআর পেমেন্ট (EMVCo Bangla QR)", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFF00F0FF))
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = null,
+                                tint = Color(0xFF94A3B8),
+                                modifier = Modifier.size(20.dp).clickable { showBanglaQrDialog = false }
+                            )
+                        }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(14.dp))
 
-                ordersList.forEach { order ->
-                    SalesOrderRow(order = order)
-                    Spacer(modifier = Modifier.height(6.dp))
+                        // Dynamic QR Vector Display
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(text = "অর্ডার: ${order.id} • ${order.customer}", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                Text(text = "৫০% অগ্রিম পেমেন্ট: ৳ ২,২৫০.০০", fontSize = 16.sp, fontWeight = FontWeight.Black, color = Color(0xFF10B981))
+                                Text(text = "মার্চেন্ট: Sucharu Graphics (bKash/Nagad/BRAC)", fontSize = 10.sp, color = Color(0xFF94A3B8))
+                            }
+
+                            Box(
+                                modifier = Modifier
+                                    .size(90.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(Color.White),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Canvas(modifier = Modifier.size(72.dp)) {
+                                    val w = size.width
+                                    val h = size.height
+                                    drawRect(color = Color.Black, topLeft = Offset(0f, 0f), size = Size(w * 0.35f, h * 0.35f))
+                                    drawRect(color = Color.Black, topLeft = Offset(w * 0.65f, 0f), size = Size(w * 0.35f, h * 0.35f))
+                                    drawRect(color = Color.Black, topLeft = Offset(0f, h * 0.65f), size = Size(w * 0.35f, h * 0.35f))
+                                    drawRect(color = Color.Black, topLeft = Offset(w * 0.4f, h * 0.4f), size = Size(w * 0.2f, h * 0.2f))
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Text(text = "EMVCo Payload: 00020101021226310011BKASH0170000000052042741530305054072250.005802BD5916Sucharu Graphics6005Dhaka62150111INV-2026-8816304D1B9", fontSize = 9.sp, color = Color(0xFF00F0FF), lineHeight = 12.sp)
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // Task 10.3 & 10.4: Simulate IPN Callback & Auto-Unlock
+                        Surface(
+                            color = Color(0xFF10B981),
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.fillMaxWidth().clickable {
+                                // Transition order status to ADVANCE_PAID and unlock Job Card
+                                ordersList = ordersList.map { item ->
+                                    if (item.id == order.id) {
+                                        item.copy(status = "ADVANCE_PAID (আনলকড)", statusColor = Color(0xFF10B981), advanceStatus = "৫০% পরিশোধিত (Trx: TRX-BKASH-8877)")
+                                    } else item
+                                }
+                                showBanglaQrDialog = false
+                            }
+                        ) {
+                            Box(modifier = Modifier.padding(vertical = 10.dp), contentAlignment = Alignment.Center) {
+                                Text(text = "✔ পেমেন্ট ভেরিফাই ও জব আনলক করুন (IPN Callback + Double Entry GL)", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -234,7 +361,10 @@ private data class SalesOrderItem(
 )
 
 @Composable
-private fun SalesOrderRow(order: SalesOrderItem) {
+private fun SalesOrderRow(
+    order: SalesOrderItem,
+    onPayBanglaQr: () -> Unit = {}
+) {
     Surface(
         shape = RoundedCornerShape(8.dp),
         color = Color(0xFF111C33),
@@ -248,18 +378,29 @@ private fun SalesOrderRow(order: SalesOrderItem) {
             Column {
                 Text(text = "${order.id} • ${order.customer}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
                 Text(text = "${order.jobTitle} • ক্যালি আইডি: ${order.calcId} • ডেলিভারি: ${order.deliveryDate}", fontSize = 10.sp, color = Color(0xFF94A3B8))
-                Text(text = "অগ্রিম: ${order.advanceStatus}", fontSize = 10.sp, color = Color(0xFF10B981), fontWeight = FontWeight.Bold)
+                Text(text = "অগ্রিম: ${order.advanceStatus}", fontSize = 10.sp, color = if (order.advanceStatus.contains("পরিশোধিত")) Color(0xFF10B981) else Color(0xFFEF4444), fontWeight = FontWeight.Bold)
             }
 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(text = order.amount, fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color(0xFF00F0FF))
-                Spacer(modifier = Modifier.width(12.dp))
-                Surface(
-                    color = order.statusColor.copy(alpha = 0.2f),
-                    shape = RoundedCornerShape(6.dp),
-                    border = BorderStroke(1.dp, order.statusColor)
-                ) {
-                    Text(text = order.status, fontSize = 10.sp, color = order.statusColor, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
+                Spacer(modifier = Modifier.width(10.dp))
+
+                if (order.status.contains("PENDING_ADVANCE") || order.status.contains("লকড")) {
+                    Surface(
+                        color = Color(0xFF10B981),
+                        shape = RoundedCornerShape(6.dp),
+                        modifier = Modifier.clickable { onPayBanglaQr() }
+                    ) {
+                        Text(text = "পেমেন্ট করুন (QR)", fontSize = 10.sp, color = Color.White, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
+                    }
+                } else {
+                    Surface(
+                        color = order.statusColor.copy(alpha = 0.2f),
+                        shape = RoundedCornerShape(6.dp),
+                        border = BorderStroke(1.dp, order.statusColor)
+                    ) {
+                        Text(text = order.status, fontSize = 10.sp, color = order.statusColor, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
+                    }
                 }
             }
         }
@@ -284,7 +425,7 @@ fun ProductionWorkflowModuleScreen(onClose: () -> Unit) {
     var paperCommitmentInput by remember { mutableStateOf("৳ ৩৬,০০০ (২০ রিম @ ৳ ১,৮০০)") }
 
     var ctpVendorInput by remember { mutableStateOf("আলমগীর সিটিপি বিউরো") }
-    var ctpCommitmentInput by remember { mutableStateOf("৳ ১,৪০০ (৪টি প্লেট @ ৳ ৩৫০)") }
+    var ctpCommitmentInput by remember { mutableStateOf("৳ ১,৪োর (৪টি প্লেট @ ৳ ৩৫০)") }
 
     var pressOutsourcedInput by remember { mutableStateOf("নিউ ঢাকা অফসেট প্রেস (আউটসোর্সড)") }
     var pressCommitmentInput by remember { mutableStateOf("৳ ৪,০০০ (১০,০০০ imp @ ৳ ৪০০/k)") }
@@ -1397,7 +1538,7 @@ private fun FinanceInvoiceRow(invId: String, customer: String, total: String, pa
                 shape = RoundedCornerShape(6.dp),
                 border = BorderStroke(1.dp, color)
             ) {
-                Text(text = status, fontSize = 11.sp, color = color, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
+                Text(text = status, fontSize = 11.sp, color = color, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
             }
         }
     }
