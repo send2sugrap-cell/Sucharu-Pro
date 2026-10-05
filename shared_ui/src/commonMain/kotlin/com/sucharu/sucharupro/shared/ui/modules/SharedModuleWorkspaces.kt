@@ -61,7 +61,7 @@ import androidx.compose.ui.unit.sp
  * Integrates Module 03 (Sales Orders), Module 04 (13-Stage Production & Worker UI),
  * Module 07 (Finished Goods), Module 08/11 (Delivery Challan & Gate Pass), Module 09/14 (Finance & Bangla QR),
  * Module 12 (Vendor Subcontracting), Module 13 (Central Procurement), Module 18 (Prepress Imposition),
- * Module 19 (Substrate Stock Reservation), Module 20 (Affiliate), Module 21 (Machine OEE), Module 24 (Bengali PDF).
+ * Module 19 (Substrate Stock Reservation), Module 20 (Affiliate), Module 21 (Machine OEE), Module 23 (Wallet), Module 24 (Bengali PDF).
  */
 @Composable
 fun RouterCanonicalModuleWorkspace(
@@ -76,7 +76,7 @@ fun RouterCanonicalModuleWorkspace(
         "Module 12", "Module 13", "Procurement" -> CentralProcurementHubModuleScreen(onClose = onClose)
         "Module 18", "Module 16" -> PrepressImpositionModuleScreen(onClose = onClose)
         "Module 19" -> SubstrateStockReservationModuleScreen(onClose = onClose)
-        "Module 20", "Affiliate" -> AffiliateGovernanceModuleScreen(onClose = onClose)
+        "Module 20", "Module 23", "Affiliate" -> AffiliateGovernanceModuleScreen(onClose = onClose)
         "Module 21" -> MachineOeeTelemetryModuleScreen(onClose = onClose)
         else -> UniversalCanonicalModuleScreen(moduleCode = moduleCode, onClose = onClose)
     }
@@ -717,7 +717,7 @@ fun ProductionWorkflowModuleScreen(onClose: () -> Unit) {
                     border = BorderStroke(2.dp, Color(0xFF00F0FF)),
                     modifier = Modifier
                         .fillMaxWidth(0.85f)
-                        .clickable { /* prevent click dismiss */ }
+                        .clickable { /* prevent dismiss */ }
                         .padding(16.dp)
                 ) {
                     Column(modifier = Modifier.padding(20.dp)) {
@@ -1788,17 +1788,21 @@ private fun FinanceInvoiceRow(invId: String, customer: String, total: String, pa
                 shape = RoundedCornerShape(6.dp),
                 border = BorderStroke(1.dp, color)
             ) {
-                Text(text = status, fontSize = 11.sp, color = color, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
+                Text(text = status, fontSize = 11.sp, color = color, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
             }
         }
     }
 }
 
 // ============================================================================
-// MODULE 20: AFFILIATE GOVERNANCE & COMMISSION WALLET
+// MODULE 20 / 23: AFFILIATE GOVERNANCE & COMMISSION WALLET
 // ============================================================================
 @Composable
 fun AffiliateGovernanceModuleScreen(onClose: () -> Unit) {
+    var payoutAccountNameInput by remember { mutableStateOf("তানভির হাসান") }
+    var payoutAccountNumberInput by remember { mutableStateOf("01700000000") }
+    var payoutMethodInput by remember { mutableStateOf("bKash Personal") }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -1808,20 +1812,12 @@ fun AffiliateGovernanceModuleScreen(onClose: () -> Unit) {
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         ModuleTopBar(
-            code = "Module 20",
-            title = "অ্যাফিলিয়েট পার্টনার নেটওয়ার্ক ও কমিশন ওয়ালেট (Affiliate Governance)",
+            code = "Module 20/23",
+            title = "অ্যাফিলিয়েট গ্রোথ হাব, পার্টনার কমিশন ও ওয়ালেট গভর্ন্যান্স",
             onClose = onClose
         )
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            ModuleKpiChip("সক্রিয় পার্টনার", "২৮ জন", "↑ +৮ জন এই মাসে", Color(0xFF00F0FF), Modifier.weight(1f))
-            ModuleKpiChip("রেফারেল বিক্রি", "৳ ১,৭৩,২০০", "২৮টি সাকসেসফুল সেলস", Color(0xFF10B981), Modifier.weight(1f))
-            ModuleKpiChip("কমিশন বাকি", "৳ ১২,৪৫০", "৫ জন পার্টনারের পেআউট", Color(0xFFF59E0B), Modifier.weight(1f))
-        }
-
+        // Task 12.1: Referral Link & Unique Vector QR Card
         Card(
             shape = RoundedCornerShape(12.dp),
             colors = CardDefaults.cardColors(containerColor = Color(0xFF0A1224)),
@@ -1829,7 +1825,94 @@ fun AffiliateGovernanceModuleScreen(onClose: () -> Unit) {
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text(text = "অ্যাফিলিয়েট পার্টনার লেজার ও উইথড্রয়াল রিকুয়েস্ট", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                Text(text = "১. ইউনিক রেফারেল লিঙ্ক ও কিউআর কোড (Task 12.1 Referral Hub)", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF00F0FF))
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(text = "রেফারেল লিঙ্ক: https://sucharu.pro/ref/AFF-2026-102", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        Text(text = "লিঙ্ক ক্লিক: ১৮৪ | সাইনআপ: ১২ জন | সফল অর্ডার: ৮টি (কনভার্সন: ৬.৫%)", fontSize = 10.sp, color = Color(0xFF94A3B8))
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .size(60.dp)
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(Color.White),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Canvas(modifier = Modifier.size(48.dp)) {
+                            val w = size.width
+                            val h = size.height
+                            drawRect(color = Color.Black, topLeft = Offset(0f, 0f), size = Size(w * 0.35f, h * 0.35f))
+                            drawRect(color = Color.Black, topLeft = Offset(w * 0.65f, 0f), size = Size(w * 0.35f, h * 0.35f))
+                            drawRect(color = Color.Black, topLeft = Offset(0f, h * 0.65f), size = Size(w * 0.35f, h * 0.35f))
+                            drawRect(color = Color.Black, topLeft = Offset(w * 0.4f, h * 0.4f), size = Size(w * 0.2f, h * 0.2f))
+                        }
+                    }
+                }
+            }
+        }
+
+        // Task 12.3: Wallet Reconciliation Equation Cards
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            ModuleKpiChip("ফ্রি ওয়ালেট ব্যালেন্স", "৳ ২,৫০", "উইথড্রয়াল উপযোগী (Min ৳ ৫০০)", Color(0xFF10B981), Modifier.weight(1f))
+            ModuleKpiChip("পেন্ডিং উইথড্রয়াল হোল্ড", "৳ ২,৯০০", "এডমিন রিভিউর অপেক্ষায়", Color(0xFFF59E0B), Modifier.weight(1f))
+            ModuleKpiChip("মোট পেআউট ডিসবার্সড", "৳ ১৯,৬০০", "ব্যাংক/MFS এ পেইড", Color(0xFF00F0FF), Modifier.weight(1f))
+            ModuleKpiChip("সর্বমোট অর্জিত কমিশন", "৳ ২৫,০০০", "Verified Lifetime Earnings", Color(0xFFA855F7), Modifier.weight(1f))
+        }
+
+        // Task 12.3: Payout Withdrawal Request Form (Strict Zero Secret Storage Policy - NO PIN Fields)
+        Card(
+            shape = RoundedCornerShape(12.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFF0A1224)),
+            border = BorderStroke(1.dp, Color(0xFF00B4D8).copy(alpha = 0.3f)),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(text = "+ পেআউট উইথড্রয়াল রিকুয়েস্ট ফর্ম (Min ৳ ৫০০ | Zero Secret Storage Policy)", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF00F0FF))
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    ModuleInputField("একাউন্ট হোল্ডার নেম", payoutAccountNameInput, { payoutAccountNameInput = it }, Modifier.weight(1f))
+                    ModuleInputField("একাউন্ট/মোবাইল নং", payoutAccountNumberInput, { payoutAccountNumberInput = it }, Modifier.weight(1f))
+                    ModuleInputField("পেআউট মেথড (bKash/Nagad/Bank)", payoutMethodInput, { payoutMethodInput = it }, Modifier.weight(1f))
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Surface(
+                    color = Color(0xFF10B981),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.clickable { /* Submit payout request */ }
+                ) {
+                    Text(
+                        text = "উইথড্রয়াল রিকুয়েস্ট জমা দিন (Min ৳ ৫০০ Threshold OK)",
+                        color = Color.White,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
+                    )
+                }
+            }
+        }
+
+        // Task 12.4: Admin Payout Clearance & Double-Entry GL Disbursement
+        Card(
+            shape = RoundedCornerShape(12.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFF0A1224)),
+            border = BorderStroke(1.dp, Color(0xFF10B981).copy(alpha = 0.4f)),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(text = "এডমিন পেআউট ক্লিয়ারেন্স ও জিএল ডিসবার্সমেন্ট (Task 12.4 Module 15 GL)", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF10B981))
                 Spacer(modifier = Modifier.height(12.dp))
 
                 AffiliatePartnerRow("AFF-102", "তানভির হাসান (ঢাকা প্রসেস)", "১২টি অর্ডার", "৳ ৫৮,০০০", "৳ ২,৯০০ (প্রসেসিং)", Color(0xFFF59E0B))
