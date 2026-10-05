@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -26,6 +27,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Star
@@ -55,9 +57,9 @@ import androidx.compose.ui.unit.sp
 
 /**
  * Real Canonical Module Workspaces for Sucharu Pro ERP.
- * Integrates Module 03 (Sales Orders), Module 04 (Production & Job Cards), Module 09/14 (Finance),
+ * Integrates Module 03 (Sales Orders), Module 04 (13-Stage Production & Worker UI), Module 09/14 (Finance),
  * Module 18 (Prepress Imposition & Gang-Run), Module 19 (Substrate Stock Reservation),
- * Module 20 (Affiliate), Multi-Stage State Machine, Job Bag Generation, and Printable QR Tickets.
+ * Module 20 (Affiliate), Module 21 (Machine OEE & Telemetry), Job Bag Generation, and QR Tickets.
  */
 @Composable
 fun RouterCanonicalModuleWorkspace(
@@ -71,6 +73,7 @@ fun RouterCanonicalModuleWorkspace(
         "Module 18", "Module 16" -> PrepressImpositionModuleScreen(onClose = onClose)
         "Module 19" -> SubstrateStockReservationModuleScreen(onClose = onClose)
         "Module 20", "Affiliate" -> AffiliateGovernanceModuleScreen(onClose = onClose)
+        "Module 21" -> MachineOeeTelemetryModuleScreen(onClose = onClose)
         else -> UniversalCanonicalModuleScreen(moduleCode = moduleCode, onClose = onClose)
     }
 }
@@ -262,31 +265,32 @@ private fun SalesOrderRow(order: SalesOrderItem) {
 }
 
 // ============================================================================
-// MODULE 04: 13-STAGE PRODUCTION EXECUTION & JOB CARD WORKFLOW
+// MODULE 04: 13-STAGE PRODUCTION EXECUTION & SHOP-FLOOR WORKER UI SCREEN
 // ============================================================================
 @Composable
 fun ProductionWorkflowModuleScreen(onClose: () -> Unit) {
     var activeJobTicket: JobCardItem? by remember { mutableStateOf(null) }
 
+    // Task 8.2: Tactile Worker Execution State
+    var workerOperatorId by remember { mutableStateOf("OP-102 (রফিক)") }
+    var workerGoodSheets by remember { mutableStateOf("9500") }
+    var workerWasteSheets by remember { mutableStateOf("500") }
+    var activeWorkerStage by remember { mutableStateOf("PRINTING") }
+
+    val canonical13Stages = listOf(
+        "DSN", "APR", "QC", "IA", "CTP", "PRT", "LAM", "FLD", "BND", "FQC", "PKG", "RDY", "DLV"
+    )
+
     var jobCardsList by remember {
         mutableStateOf(
             listOf(
-                JobCardItem("JC-2026-102", "SO-2026-881", "আহমেদ ট্রেডার্স", "বুক ক্যাটালগ ১০০০০ পিস", "Art Paper 150 GSM (20x30\")", "CMYK 4-Color (4 Plates)", "Heidelberg Speedmaster", "Thermal Matt + Die-Cut + Perfect Bind", "ON_PRESS", "প্রিন্টিং চলমান", "রফিক", Color(0xFF10B981)),
-                JobCardItem("JC-2026-101", "SO-2026-880", "সুমন এন্টারপ্রাইজ", "বক্স প্যাকেজিং ৫০০০ পিস", "Box Board 300 GSM (25x37\")", "CMYK 4-Color (4 Plates)", "Automatic Die-Cutter", "Thermal Gloss + Die-Cut + Pasting", "POST_PRESS_FINISHING", "ডাই-কাটিং চলমান", "করিম", Color(0xFFF59E0B)),
-                JobCardItem("JC-2026-100", "SO-2026-879", "আইটি ভিশন লিঃ", "ক্যালেন্ডার ২০২৬ ২০০০ পিস", "Art Card 300 GSM (23x36\")", "CMYK 4-Color (4 Plates)", "Wire-O Binder", "Thermal Gloss + Wire-O Bind", "QC_PASSED", "কিউসি সম্পন্ন", "জামাল", Color(0xFF00F0FF)),
-                JobCardItem("JC-2026-099", "SO-2026-878", "গ্রিন মাল্টিমিডিয়া", "ফ্লায়ার ২০০০ পিস", "Art Paper 120 GSM (20x30\")", "2-Color (2 Plates)", "Offset Single Color", "Folding", "PENDING_PLATES", "সিটিপি প্লেট অপেক্ষমান", "রহিম", Color(0xFFEF4444))
+                JobCardItem("JC-2026-102", "SO-2026-881", "আহমেদ ট্রেডার্স", "বুক ক্যাটালগ ১০০০০ পিস", "Art Paper 150 GSM (20x30\")", "CMYK 4-Color (4 Plates)", "Heidelberg Speedmaster", "Thermal Matt + Die-Cut + Perfect Bind", "PRINTING", "৬. প্রিন্টিং (৭৫%)", "রফিক", Color(0xFF10B981)),
+                JobCardItem("JC-2026-101", "SO-2026-880", "সুমন এন্টারপ্রাইজ", "বক্স প্যাকেজিং ৫০০০ পিস", "Box Board 300 GSM (25x37\")", "CMYK 4-Color (4 Plates)", "Automatic Die-Cutter", "Thermal Gloss + Die-Cut + Pasting", "LAMINATION", "৭. ল্যামিনেশন (৪০%)", "করিম", Color(0xFFF59E0B)),
+                JobCardItem("JC-2026-100", "SO-2026-879", "আইটি ভিশন লিঃ", "ক্যালেন্ডার ২০২৬ ২০০০ পিস", "Art Card 300 GSM (23x36\")", "CMYK 4-Color (4 Plates)", "Wire-O Binder", "Thermal Gloss + Wire-O Bind", "FINAL_QC", "১০. ফাইনাল কিউসি", "জামাল", Color(0xFF00F0FF)),
+                JobCardItem("JC-2026-099", "SO-2026-878", "গ্রিন মাল্টিমিডিয়া", "ফ্লায়ার ২০০০ পিস", "Art Paper 120 GSM (20x30\")", "2-Color (2 Plates)", "Offset Single Color", "Folding", "CTP", "৫. সিটিপি প্লেট মেকিং", "রহিম", Color(0xFFEF4444))
             )
         )
     }
-
-    val stateMachineStages = listOf(
-        "PENDING_PLATES",
-        "CTP_READY",
-        "ON_PRESS",
-        "POST_PRESS_FINISHING",
-        "QC_PASSED",
-        "READY_FOR_DISPATCH"
-    )
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -299,11 +303,11 @@ fun ProductionWorkflowModuleScreen(onClose: () -> Unit) {
         ) {
             ModuleTopBar(
                 code = "Module 04",
-                title = "প্রোডাকশন প্ল্যানিং, জব কার্ড (Job Bag) ও শপ-ফ্লোর পাইপলাইন",
+                title = "১৩-স্টেপ ক্যানোনিকাল প্রডাকশন পাইপলাইন ও শপ-ফ্লোর ওয়ার্কার ইন্টারফেস",
                 onClose = onClose
             )
 
-            // Production Floor State Machine Pipeline Summary
+            // Task 8.1: Canonical 13-Stage Production Pipeline Tracker
             Card(
                 shape = RoundedCornerShape(12.dp),
                 colors = CardDefaults.cardColors(containerColor = Color(0xFF0A1224)),
@@ -311,28 +315,114 @@ fun ProductionWorkflowModuleScreen(onClose: () -> Unit) {
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(14.dp)) {
-                    Text(text = "প্রোডাকশন ফ্লোর স্টেট মেশিন (Floor State Machine)", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF00F0FF))
+                    Text(text = "১৩-ধাপের ক্যানোনিকাল প্রডাকশন পাইপলাইন (Canonical 13-Stage Pipeline)", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF00F0FF))
                     Spacer(modifier = Modifier.height(10.dp))
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        horizontalArrangement = Arrangement.spacedBy(3.dp)
                     ) {
-                        stateMachineStages.forEach { st ->
+                        canonical13Stages.forEachIndexed { idx, st ->
+                            val isPassed = idx < 6
+                            val isCurrent = idx == 5
                             Surface(
-                                color = Color(0xFF0284C7).copy(alpha = 0.2f),
-                                shape = RoundedCornerShape(6.dp),
-                                border = BorderStroke(1.dp, Color(0xFF00F0FF)),
+                                color = when {
+                                    isCurrent -> Color(0xFF10B981)
+                                    isPassed -> Color(0xFF0284C7).copy(alpha = 0.4f)
+                                    else -> Color(0xFF132038)
+                                },
+                                shape = RoundedCornerShape(4.dp),
+                                border = BorderStroke(1.dp, if (isCurrent) Color(0xFF10B981) else Color(0xFF1E293B)),
                                 modifier = Modifier.weight(1f)
                             ) {
                                 Text(
-                                    text = st.replace("_", " "),
+                                    text = st,
                                     fontSize = 8.sp,
                                     color = Color.White,
                                     fontWeight = FontWeight.Bold,
                                     textAlign = TextAlign.Center,
-                                    modifier = Modifier.padding(vertical = 6.dp, horizontal = 2.dp)
+                                    modifier = Modifier.padding(vertical = 5.dp)
                                 )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Task 8.2: Tactile Shop-Floor Tablet / Smartphone Worker Interface (min 56dp touch target)
+            Card(
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF06152B)),
+                border = BorderStroke(2.dp, Color(0xFF10B981)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(imageVector = Icons.Default.Person, contentDescription = null, tint = Color(0xFF10B981), modifier = Modifier.size(20.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(text = "শপ-ফ্লোর প্রেস রুম ওয়ার্কার ইন্টারফেস (Tactile Worker UI)", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF10B981))
+                        }
+                        Surface(color = Color(0xFF10B981).copy(alpha = 0.2f), shape = RoundedCornerShape(6.dp)) {
+                            Text(text = "লাইভ অপারেটর মোড (Min 56dp Target)", fontSize = 10.sp, color = Color(0xFF10B981), fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        ModuleInputField("অপারেটর নাম/আইডি", workerOperatorId, { workerOperatorId = it }, Modifier.weight(1f))
+                        ModuleInputField("ভালো প্রস্তুতকৃত শিট", workerGoodSheets, { workerGoodSheets = it }, Modifier.weight(1f))
+                        ModuleInputField("ওয়েস্ট/নষ্ট শিট", workerWasteSheets, { workerWasteSheets = it }, Modifier.weight(1f))
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    // Single-Tap Large Touch Target Action Buttons (Min 56dp height)
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Surface(
+                            color = Color(0xFF0284C7),
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier
+                                .weight(1f)
+                                .heightIn(min = 56.dp)
+                                .clickable {
+                                    activeWorkerStage = "PRINTING_RUNNING"
+                                }
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Icon(imageVector = Icons.Default.PlayArrow, contentDescription = null, tint = Color.White, modifier = Modifier.size(24.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(text = "▶ স্টেজ শুরু করুন (START STAGE)", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+
+                        Surface(
+                            color = Color(0xFF10B981),
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier
+                                .weight(1f)
+                                .heightIn(min = 56.dp)
+                                .clickable {
+                                    activeWorkerStage = "STAGE_COMPLETED"
+                                }
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Icon(imageVector = Icons.Default.CheckCircle, contentDescription = null, tint = Color.White, modifier = Modifier.size(24.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(text = "✔ স্টেজ সম্পন্ন করুন (COMPLETE)", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                             }
                         }
                     }
@@ -366,8 +456,8 @@ fun ProductionWorkflowModuleScreen(onClose: () -> Unit) {
                                     ctp = "CMYK 4-Color (4 Plates)",
                                     machine = "Offset Press",
                                     finishing = "Lamination & Trim",
-                                    stageCode = "PENDING_PLATES",
-                                    stageLabel = "সিটিপি প্লেট অপেক্ষমান",
+                                    stageCode = "CTP",
+                                    stageLabel = "৫. সিটিপি প্লেট মেকিং",
                                     operator = "অপারেটর অসামঞ্জস্য",
                                     statusColor = Color(0xFFEF4444)
                                 )
@@ -616,12 +706,14 @@ private fun JobCardRow(
 
 private fun getNextStage(currentStage: String): Triple<String, String, Color> {
     return when (currentStage) {
-        "PENDING_PLATES" -> Triple("CTP_READY", "সিটিপি প্লেট রেডি", Color(0xFF38BDF8))
-        "CTP_READY" -> Triple("ON_PRESS", "প্রিন্টিং চলমান", Color(0xFF10B981))
-        "ON_PRESS" -> Triple("POST_PRESS_FINISHING", "ফিনিশিং চলমান", Color(0xFFF59E0B))
-        "POST_PRESS_FINISHING" -> Triple("QC_PASSED", "কিউসি সম্পন্ন", Color(0xFF00F0FF))
-        "QC_PASSED" -> Triple("READY_FOR_DISPATCH", "ডেলিভারির জন্য প্রস্তুত", Color(0xFF10B981))
-        else -> Triple("READY_FOR_DISPATCH", "ডেলিভারির জন্য প্রস্তুত", Color(0xFF10B981))
+        "CTP" -> Triple("PRINTING", "৬. প্রিন্টিং চলমান", Color(0xFF10B981))
+        "PRINTING" -> Triple("LAMINATION", "৭. ল্যামিনেশন চলমান", Color(0xFFF59E0B))
+        "LAMINATION" -> Triple("FOLDING", "৮. ফোল্ডিং চলমান", Color(0xFF38BDF8))
+        "FOLDING" -> Triple("BINDING", "৯. বাইন্ডিং চলমান", Color(0xFFA855F7))
+        "BINDING" -> Triple("FINAL_QC", "১০. ফাইনাল কিউসি", Color(0xFF00F0FF))
+        "FINAL_QC" -> Triple("PACKAGING", "১১. প্যাকিং সম্পন্ন", Color(0xFF10B981))
+        "PACKAGING" -> Triple("READY", "১২. ডেলিভারির জন্য প্রস্তুত", Color(0xFF10B981))
+        else -> Triple("DELIVERED", "১৩. ডেলিভার্ড সম্পন্ন", Color(0xFF10B981))
     }
 }
 
@@ -876,6 +968,84 @@ private fun StockReservationRow(sku: String, name: String, onHand: Int, softHold
                 Text(text = "ফ্রি স্টক: $available রিম", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color(0xFF10B981))
                 Surface(color = Color(0xFF0284C7).copy(alpha = 0.2f), shape = RoundedCornerShape(4.dp)) {
                     Text(text = "সক্রিয় হোল্ড", fontSize = 9.sp, color = Color(0xFF00F0FF), modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                }
+            }
+        }
+    }
+}
+
+// ============================================================================
+// MODULE 21: MACHINE TELEMETRY & OEE FRAMEWORK SCREEN
+// ============================================================================
+@Composable
+fun MachineOeeTelemetryModuleScreen(onClose: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFF040914))
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        ModuleTopBar(
+            code = "Module 21",
+            title = "মেশিন টেলিমেট্রি ও OEE এনালিটিক্স (Overall Equipment Effectiveness)",
+            onClose = onClose
+        )
+
+        // Task 8.3: OEE Formula KPI Cards
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            ModuleKpiChip("গড় OEE স্কোর", "৮৬.৮%", "OEE = Availability x Performance x Quality", Color(0xFF10B981), Modifier.weight(1f))
+            ModuleKpiChip("মেশিন এভেইল্যাবিলিটি", "৯২.৪%", "ডাউনটাইম: ১.২ ঘন্টা", Color(0xFF00F0FF), Modifier.weight(1f))
+            ModuleKpiChip("পারফরম্যান্স রেট", "৯৫.০%", "স্পিড: ৮,৫০০ imp/hr", Color(0xFFF59E0B), Modifier.weight(1f))
+            ModuleKpiChip("কোয়ালিটি রেট", "৯৮.৮%", "ওয়েস্ট শিট: ১.২%", Color(0xFFA855F7), Modifier.weight(1f))
+        }
+
+        // Live Machine Telemetry & OEE Breakdown
+        Card(
+            shape = RoundedCornerShape(12.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFF0A1224)),
+            border = BorderStroke(1.dp, Color(0xFF00B4D8).copy(alpha = 0.3f)),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(text = "কারখানা লাইভ মেশিন ও ইসিইউ টেলিমেট্রি স্ট্যাটাস (OEE Breakdown)", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                Spacer(modifier = Modifier.height(12.dp))
+
+                MachineOeeRow("MAC-01", "Heidelberg Speedmaster SM-102", oee = "৮৭.৪%", avail = "৯২.০%", perf = "৯৬.০%", qual = "৯৮.৮%", status = "রানিং (ONLINE)", statusColor = Color(0xFF10B981))
+                Spacer(modifier = Modifier.height(6.dp))
+                MachineOeeRow("MAC-02", "Automatic Die-Cutter Pro", oee = "৮২.১%", avail = "৮৮.০%", perf = "৯৪.০%", qual = "৯৯.২%", status = "ডাউনটাইম (Plate Wash)", statusColor = Color(0xFFF59E0B))
+                Spacer(modifier = Modifier.height(6.dp))
+                MachineOeeRow("MAC-03", "Wire-O Automatic Binder", oee = "৯১.০%", avail = "৯৫.০%", perf = "৯৭.০%", qual = "৯৮.৬%", status = "রানিং (ONLINE)", statusColor = Color(0xFF10B981))
+            }
+        }
+    }
+}
+
+@Composable
+private fun MachineOeeRow(code: String, name: String, oee: String, avail: String, perf: String, qual: String, status: String, statusColor: Color) {
+    Surface(
+        shape = RoundedCornerShape(8.dp),
+        color = Color(0xFF111C33),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column {
+                Text(text = "$code • $name", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                Text(text = "এভেইল্যাবিলিটি: $avail | পারফরম্যান্স: $perf | কোয়ালিটি: $qual", fontSize = 10.sp, color = Color(0xFF94A3B8))
+            }
+
+            Column(horizontalAlignment = Alignment.End) {
+                Text(text = "OEE: $oee", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color(0xFF00F0FF))
+                Surface(color = statusColor.copy(alpha = 0.2f), shape = RoundedCornerShape(4.dp)) {
+                    Text(text = status, fontSize = 9.sp, color = statusColor, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
                 }
             }
         }
