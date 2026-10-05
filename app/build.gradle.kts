@@ -15,7 +15,7 @@ if (localPropertiesFile.exists()) {
 }
 val geminiApiKey = localProperties.getProperty("GEMINI_API_KEY")
     ?: System.getenv("GEMINI_API_KEY")
-    ?: "AIzaSyAAJ0seMLnsNB9hU5fRHEeWXUfUMYB0Rs0"
+    ?: ""
 
 android {
     namespace = "com.sucharu.sucharupro"
