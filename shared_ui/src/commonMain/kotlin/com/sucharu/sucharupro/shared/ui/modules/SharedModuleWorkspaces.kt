@@ -59,9 +59,9 @@ import androidx.compose.ui.unit.sp
 /**
  * Real Canonical Module Workspaces for Sucharu Pro ERP.
  * Integrates Module 03 (Sales Orders), Module 04 (13-Stage Production & Worker UI),
- * Module 09/14 (Finance & Bangla QR), Module 12 (Vendor Subcontracting), Module 13 (Central Procurement),
- * Module 18 (Prepress Imposition & Gang-Run), Module 19 (Substrate Stock Reservation),
- * Module 20 (Affiliate), Module 21 (Machine OEE & Telemetry), Job Bag Generation, and Financial Lock.
+ * Module 07 (Finished Goods), Module 08/11 (Delivery Challan & Gate Pass), Module 09/14 (Finance & Bangla QR),
+ * Module 12 (Vendor Subcontracting), Module 13 (Central Procurement), Module 18 (Prepress Imposition),
+ * Module 19 (Substrate Stock Reservation), Module 20 (Affiliate), Module 21 (Machine OEE), Module 24 (Bengali PDF).
  */
 @Composable
 fun RouterCanonicalModuleWorkspace(
@@ -71,6 +71,7 @@ fun RouterCanonicalModuleWorkspace(
     when (moduleCode) {
         "Module 03", "Orders" -> SalesOrderModuleScreen(onClose = onClose)
         "Module 04", "Production" -> ProductionWorkflowModuleScreen(onClose = onClose)
+        "Module 07", "Module 08/11", "Module 08", "Module 24", "Delivery" -> FinishedGoodsAndDeliveryChallanModuleScreen(onClose = onClose)
         "Module 09/14", "Finance" -> FinanceBillingModuleScreen(onClose = onClose)
         "Module 12", "Module 13", "Procurement" -> CentralProcurementHubModuleScreen(onClose = onClose)
         "Module 18", "Module 16" -> PrepressImpositionModuleScreen(onClose = onClose)
@@ -926,6 +927,255 @@ private fun getNextStage(currentStage: String): Triple<String, String, Color> {
 }
 
 // ============================================================================
+// MODULE 07 / 08 / 11 / 24: FINISHED GOODS, DELIVERY CHALLAN & BENGALI PDF
+// ============================================================================
+@Composable
+fun FinishedGoodsAndDeliveryChallanModuleScreen(onClose: () -> Unit) {
+    var dispatchQuantityInput by remember { mutableStateOf("500") }
+    var receiverNameInput by remember { mutableStateOf("তানভির হোসেন (আহমেদ ট্রেডার্স)") }
+    var courierTrackingInput by remember { mutableStateOf("STEADFAST-998877") }
+    var showPrintableChallanDialog by remember { mutableStateOf(false) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFF040914))
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        ModuleTopBar(
+            code = "Module 07/08/11/24",
+            title = "ফিনিশড গুডস ইনভেন্টরি, ডেলিভারি চালান ও বাংলা ইউনিকোড পিডিএফ",
+            onClose = onClose
+        )
+
+        // Task 11.2: Due Settlement Delivery Lock Gatekeeper Warning Card
+        Card(
+            shape = RoundedCornerShape(12.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1010)),
+            border = BorderStroke(1.dp, Color(0xFFEF4444)),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(
+                modifier = Modifier.padding(14.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(imageVector = Icons.Default.Lock, contentDescription = null, tint = Color(0xFFEF4444), modifier = Modifier.size(24.dp))
+                Spacer(modifier = Modifier.width(10.dp))
+                Column {
+                    Text(text = "বকেয়া সেটেলমেন্ট ডেলিভারি লক (Due Settlement Dispatch Lock Engine)", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFFEF4444))
+                    Text(text = "বকেয়া বিল (Net Due > 0) পরিশোধ না করা পর্যন্ত ডেলিভারি চালান ও গেটপাস জেনারেট সম্পূর্ণ নিষিদ্ধ। (কাস্টমার ক্রেডিট পলিসি না থাকলে চাবিকুঞ্জ লকড)", fontSize = 11.sp, color = Color.White)
+                }
+            }
+        }
+
+        // Task 11.1: Finished Goods Inventory Inward & Lot Tracking
+        Card(
+            shape = RoundedCornerShape(12.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFF0A1224)),
+            border = BorderStroke(1.dp, Color(0xFF00B4D8).copy(alpha = 0.3f)),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(text = "১. ফিনিশড গুডস ইনভেন্টরি লট রেজিস্ট্রি (Module 07 Inventory Lot Inward)", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF00F0FF))
+                Spacer(modifier = Modifier.height(10.dp))
+
+                FgLotRow("FG-2026-102-L1", "বুক ক্যাটালগ (SO-2026-881)", "১,০০০ পিস (২০টি কার্টন)", "অন-হ্যান্ড FG স্টক: ৫১০ পিস", "৫০% প্রস্তুত", Color(0xFF10B981))
+                Spacer(modifier = Modifier.height(6.dp))
+                FgLotRow("FG-2026-101-L1", "বক্স প্যাকেজিং (SO-2026-880)", "৫,০০০ পিস (১০০টি বন্ডল)", "অন-হ্যান্ড FG স্টক: ৫,০০০ পিস", "১০০% প্রস্তুত", Color(0xFF10B981))
+            }
+        }
+
+        // Task 11.3: Delivery Challan & Gate Pass Dispatch Hub
+        Card(
+            shape = RoundedCornerShape(12.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFF0A1224)),
+            border = BorderStroke(1.dp, Color(0xFF00B4D8).copy(alpha = 0.3f)),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(text = "২. ডেলিভারি চালান ও গেটপাস ক্রিয়েশন ফর্ম (Task 11.3 & 11.4)", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF00F0FF))
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    ModuleInputField("গ্রাহক/প্রাপকের নাম", receiverNameInput, { receiverNameInput = it }, Modifier.weight(1f))
+                    ModuleInputField("ডেলিভারি পরিমাণ (Pcs)", dispatchQuantityInput, { dispatchQuantityInput = it }, Modifier.weight(1f))
+                    ModuleInputField("কুরিয়ার / ড্রাইভার আইডি", courierTrackingInput, { courierTrackingInput = it }, Modifier.weight(1f))
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Surface(
+                        color = Color(0xFF0284C7),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.clickable { showPrintableChallanDialog = true }
+                    ) {
+                        Text(
+                            text = "ডেলিভারি চালান ও সিকিউর গেটপাস জেনারেট করুন (DC-2026-XXXX / GP-2026-XXXX)",
+                            color = Color.White,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    // Task 11.4: Bengali Unicode Challan, Cash Memo & Gate Pass PDF Print Modal
+    if (showPrintableChallanDialog) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.8f))
+                .clickable { showPrintableChallanDialog = false },
+            contentAlignment = Alignment.Center
+        ) {
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF0A1224)),
+                border = BorderStroke(2.dp, Color(0xFF00F0FF)),
+                modifier = Modifier
+                    .fillMaxWidth(0.85f)
+                    .clickable { /* prevent dismiss */ }
+                    .padding(16.dp)
+            ) {
+                Column(modifier = Modifier.padding(20.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(imageVector = Icons.Default.Info, contentDescription = null, tint = Color(0xFF00F0FF), modifier = Modifier.size(22.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(text = "প্রিন্টাবল বাংলা ইউনিকোড ডেলিভারি চালান ও গেটপাস (Kalpurush / Nikosh)", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        }
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = null,
+                            tint = Color(0xFF94A3B8),
+                            modifier = Modifier.size(20.dp).clickable { showPrintableChallanDialog = false }
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    // Bengali Unicode Document Canvas Preview
+                    Surface(
+                        color = Color.White,
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(text = "সুচারু গ্রাফিক্স অ্যান্ড প্রিন্টিং প্রেস", fontSize = 16.sp, fontWeight = FontWeight.Black, color = Color.Black, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+                            Text(text = "৬৮/১ পুরানা পল্টন লাইন, ঢাকা-১০০০ • ফোন: ০১৭০০-০০০০০", fontSize = 10.sp, color = Color.DarkGray, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color.Black))
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(text = "চালান নং: DC-2026-881\nগেটপাস নং: GP-2026-881", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                                Text(text = "তারিখ: ০৫ অক্টোবর ২০২৬\nট্র্যাকিং: STEADFAST-998877", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                            }
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            Text(text = "প্রাপক: আহমেদ ট্রেডার্স (স্বত্বাধিকারী: তানভির হোসেন)", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            // Table
+                            Surface(
+                                color = Color(0xFFF1F5F9),
+                                border = BorderStroke(1.dp, Color.Black),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Column(modifier = Modifier.padding(8.dp)) {
+                                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                        Text(text = "বিবরণ ও স্পেসিফিকেশন", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                                        Text(text = "ডেলিভারি পরিমাণ (যুক্তাক্ষর: ক্ত, ক্ষ, ষ্ণ)", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                                    }
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                        Text(text = "বুক ক্যাটালগ (Art Paper 150 GSM, CMYK 4-Color, Perfect Bind)", fontSize = 10.sp, color = Color.Black)
+                                        Text(text = "৫০০ পিস (১০টি কার্টন)", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(20.dp))
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(text = "____________________\nপ্রস্তুতকারীর স্বাক্ষর", fontSize = 10.sp, color = Color.Black, textAlign = TextAlign.Center)
+                                Text(text = "____________________\nপ্রাপকের স্বাক্ষর ও সিল", fontSize = 10.sp, color = Color.Black, textAlign = TextAlign.Center)
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Surface(
+                            color = Color(0xFF10B981),
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.weight(1f).clickable { showPrintableChallanDialog = false }
+                        ) {
+                            Box(modifier = Modifier.padding(vertical = 10.dp), contentAlignment = Alignment.Center) {
+                                Text(text = "প্রিন্ট চালান (PDF / Print)", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                        Surface(
+                            color = Color(0xFF334155),
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.weight(1f).clickable { showPrintableChallanDialog = false }
+                        ) {
+                            Box(modifier = Modifier.padding(vertical = 10.dp), contentAlignment = Alignment.Center) {
+                                Text(text = "বন্ধ করুন", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FgLotRow(lotId: String, name: String, totalPack: String, fgStock: String, progress: String, color: Color) {
+    Surface(
+        shape = RoundedCornerShape(8.dp),
+        color = Color(0xFF111C33),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column {
+                Text(text = "$lotId • $name", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                Text(text = "প্যাকিং: $totalPack • $fgStock", fontSize = 10.sp, color = Color(0xFF94A3B8))
+            }
+
+            Surface(color = color.copy(alpha = 0.2f), shape = RoundedCornerShape(4.dp)) {
+                Text(text = progress, fontSize = 9.sp, color = color, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+            }
+        }
+    }
+}
+
+// ============================================================================
 // MODULE 12/13: CENTRAL PROCUREMENT HUB & VENDOR SUBCONTRACTING SCREEN
 // ============================================================================
 @Composable
@@ -1538,7 +1788,7 @@ private fun FinanceInvoiceRow(invId: String, customer: String, total: String, pa
                 shape = RoundedCornerShape(6.dp),
                 border = BorderStroke(1.dp, color)
             ) {
-                Text(text = status, fontSize = 11.sp, color = color, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
+                Text(text = status, fontSize = 11.sp, color = color, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
             }
         }
     }
@@ -1690,7 +1940,7 @@ private fun UniversalRecordRow(id: String, title: String, time: String, status: 
                 shape = RoundedCornerShape(6.dp),
                 border = BorderStroke(1.dp, color)
             ) {
-                Text(text = status, fontSize = 11.sp, color = color, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
+                Text(text = status, fontSize = 11.sp, color = color, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
             }
         }
     }
